@@ -14,6 +14,7 @@ const EventEmitter = require('./EventEmitter');
 const LRUCache = require('./LRUCache');
 const RateLimiter = require('./RateLimiter');
 const retry = require('./retry');
+const debug = require('./debug');
 
 module.exports = {
   // Byte manipulation
@@ -78,6 +79,12 @@ module.exports = {
   retryOn: retry.retryOn,
   retryExcept: retry.retryExcept,
   retryOnCodes: retry.retryOnCodes,
+
+  // Debug
+  debug,
+  createDebugger: debug.createDebugger,
+  enableDebug: debug.enable,
+  disableDebug: debug.disable,
 
   // Sub-modules (for specific imports)
   bytes,

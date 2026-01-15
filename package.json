@@ -3,7 +3,28 @@
   "version": "1.0.0",
   "description": "Production-ready BLE Mesh Network with Noise Protocol security",
   "main": "src/index.js",
+  "module": "src/index.mjs",
   "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./src/index.js",
+      "import": "./src/index.mjs",
+      "types": "./src/index.d.ts"
+    },
+    "./adapters": {
+      "require": "./src/transport/adapters/index.js",
+      "import": "./src/transport/adapters/index.mjs"
+    },
+    "./errors": {
+      "require": "./src/errors/index.js"
+    },
+    "./crypto": {
+      "require": "./src/crypto/index.js"
+    },
+    "./utils": {
+      "require": "./src/utils/index.js"
+    }
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -14,7 +35,9 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "docs": "jsdoc -c jsdoc.json",
-    "validate": "npm run lint && npm test"
+    "validate": "npm run lint && npm test",
+    "example:node": "node examples/node-quickstart/index.js",
+    "example:chat": "node examples/node-chat/chat.js"
   },
   "keywords": [
     "bluetooth",
@@ -25,8 +48,8 @@
     "noise-protocol",
     "encryption",
     "react-native",
+    "node",
     "offline-first",
-    "ed25519",
     "x25519",
     "chacha20-poly1305"
   ],
@@ -37,16 +60,21 @@
     "jest": "^29.7.0"
   },
   "peerDependencies": {
-    "react-native-ble-plx": ">=2.0.0"
+    "react-native-ble-plx": ">=2.0.0",
+    "@abandonware/noble": ">=1.9.0"
   },
   "peerDependenciesMeta": {
     "react-native-ble-plx": {
+      "optional": true
+    },
+    "@abandonware/noble": {
       "optional": true
     }
   },
   "files": [
     "src",
     "docs",
+    "examples",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

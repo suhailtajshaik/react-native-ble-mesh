@@ -11,6 +11,7 @@ const ConnectionError = require('./ConnectionError');
 const HandshakeError = require('./HandshakeError');
 const MessageError = require('./MessageError');
 const ValidationError = require('./ValidationError');
+const AudioError = require('./AudioError');
 
 module.exports = {
   MeshError,
@@ -18,5 +19,6 @@ module.exports = {
   ConnectionError,
   HandshakeError,
   MessageError,
-  ValidationError
+  ValidationError,
+  AudioError
 };

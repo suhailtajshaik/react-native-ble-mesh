@@ -3,7 +3,13 @@
     "allow": [
       "Bash(git push:*)",
       "Bash(gh auth:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "WebSearch",
+      "Bash(npm test:*)",
+      "Bash(find:*)",
+      "Bash(node:*)",
+      "Bash(npm run lint:*)",
+      "Bash(ls:*)"
     ]
   }
 }

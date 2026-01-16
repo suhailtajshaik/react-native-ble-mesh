@@ -68,7 +68,25 @@ const EVENTS = Object.freeze({
   // Session events
   SESSION_CREATED: 'session:created',
   SESSION_DESTROYED: 'session:destroyed',
-  SESSION_EXPIRED: 'session:expired'
+  SESSION_EXPIRED: 'session:expired',
+
+  // Audio streaming events
+  AUDIO_STREAM_REQUEST: 'audio:stream-request',
+  AUDIO_STREAM_STARTED: 'audio:stream-started',
+  AUDIO_STREAM_ENDED: 'audio:stream-ended',
+  AUDIO_STREAM_PAUSED: 'audio:stream-paused',
+  AUDIO_STREAM_RESUMED: 'audio:stream-resumed',
+
+  // Voice message events
+  VOICE_MESSAGE_RECEIVED: 'audio:voice-message-received',
+  VOICE_MESSAGE_SENT: 'audio:voice-message-sent',
+  VOICE_MESSAGE_PROGRESS: 'audio:voice-message-progress',
+  VOICE_MESSAGE_FAILED: 'audio:voice-message-failed',
+
+  // Audio quality events
+  AUDIO_BUFFER_UNDERRUN: 'audio:buffer-underrun',
+  AUDIO_BUFFER_OVERFLOW: 'audio:buffer-overflow',
+  AUDIO_QUALITY_CHANGE: 'audio:quality-change'
 });
 
 module.exports = {

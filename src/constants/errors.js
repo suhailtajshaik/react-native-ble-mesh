@@ -89,7 +89,21 @@ const ERROR_CODE = Object.freeze({
   E901: 'OPERATION_CANCELLED',
   E902: 'TIMEOUT',
   E903: 'NOT_SUPPORTED',
-  E904: 'INTERNAL_ERROR'
+  E904: 'INTERNAL_ERROR',
+
+  // Audio errors (EAxx)
+  EA00: 'AUDIO_ERROR',
+  EA01: 'CODEC_INIT_FAILED',
+  EA02: 'ENCODING_FAILED',
+  EA03: 'DECODING_FAILED',
+  EA04: 'AUDIO_SESSION_FAILED',
+  EA05: 'AUDIO_BUFFER_OVERFLOW',
+  EA06: 'AUDIO_BUFFER_UNDERRUN',
+  EA07: 'VOICE_MESSAGE_TOO_LARGE',
+  EA08: 'AUDIO_STREAM_REJECTED',
+  EA09: 'CODEC_NOT_AVAILABLE',
+  EA10: 'AUDIO_INVALID_CONFIG',
+  EA11: 'VOICE_MESSAGE_TIMEOUT'
 });
 
 /**
@@ -166,7 +180,20 @@ const ERROR_MESSAGES = Object.freeze({
   E901: 'Operation was cancelled',
   E902: 'Operation timed out',
   E903: 'Operation not supported',
-  E904: 'Internal error'
+  E904: 'Internal error',
+
+  EA00: 'Audio operation failed',
+  EA01: 'LC3 codec initialization failed',
+  EA02: 'Audio encoding failed',
+  EA03: 'Audio decoding failed',
+  EA04: 'Audio session failed',
+  EA05: 'Audio buffer overflow',
+  EA06: 'Audio buffer underrun',
+  EA07: 'Voice message exceeds maximum size',
+  EA08: 'Audio stream was rejected',
+  EA09: 'LC3 codec not available - native module not installed',
+  EA10: 'Invalid audio configuration',
+  EA11: 'Voice message assembly timed out'
 });
 
 module.exports = {

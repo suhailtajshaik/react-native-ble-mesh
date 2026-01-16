@@ -15,6 +15,9 @@ const LRUCache = require('./LRUCache');
 const RateLimiter = require('./RateLimiter');
 const retry = require('./retry');
 const debug = require('./debug');
+const BoundedMap = require('./BoundedMap');
+const TimeoutManager = require('./TimeoutManager');
+const base64 = require('./base64');
 
 module.exports = {
   // Byte manipulation
@@ -72,6 +75,13 @@ module.exports = {
   EventEmitter,
   LRUCache,
   RateLimiter,
+  BoundedMap,
+  TimeoutManager,
+
+  // Optimized Base64 (for React Native)
+  base64Encode: base64.encode,
+  base64Decode: base64.decode,
+  isValidBase64: base64.isValid,
 
   // Retry
   retry: retry.retry,
@@ -91,5 +101,6 @@ module.exports = {
   encoding,
   uuid,
   time,
-  validation
+  validation,
+  base64
 };

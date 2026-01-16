@@ -697,6 +697,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
+This project is inspired by [bitchat](https://github.com/permissionlesstech/bitchat).
+
 - [Noise Protocol Framework](https://noiseprotocol.org/) - Cryptographic handshake pattern
 - [react-native-ble-plx](https://github.com/Polidea/react-native-ble-plx) - React Native BLE library
 - [Noble](https://github.com/abandonware/noble) - Node.js BLE library

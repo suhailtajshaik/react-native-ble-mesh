@@ -10,11 +10,13 @@ const ble = require('./ble');
 const crypto = require('./crypto');
 const errors = require('./errors');
 const events = require('./events');
+const audio = require('./audio');
 
 module.exports = {
   ...protocol,
   ...ble,
   ...crypto,
   ...errors,
-  ...events
+  ...events,
+  ...audio
 };

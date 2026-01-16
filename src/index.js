@@ -33,6 +33,15 @@ const storage = require('./storage');
 // Utils
 const utils = require('./utils');
 
+// Audio (from service module)
+const audio = require('./service/audio');
+
+// Text (from service module)
+const text = require('./service/text');
+
+// React Native hooks
+const hooks = require('./hooks');
+
 /**
  * Create a new MeshService instance
  * @param {Object} [config] - Configuration options
@@ -54,13 +63,13 @@ function createMeshService(config) {
  */
 async function createNodeMesh(options = {}) {
   const { MemoryStorage } = storage;
-  const mesh = new MeshService({
+  const meshInstance = new MeshService({
     displayName: options.displayName || 'MeshNode'
   });
-  await mesh.initialize({
+  await meshInstance.initialize({
     storage: options.storage || new MemoryStorage()
   });
-  return mesh;
+  return meshInstance;
 }
 
 /**
@@ -77,24 +86,27 @@ async function createTestMesh(options = {}) {
   const { MockTransport } = transport;
   const { generateUUID } = utils;
 
-  const mesh = new MeshService({
+  const meshInstance = new MeshService({
     displayName: options.displayName || 'TestNode'
   });
 
   const mockTransport = new MockTransport({ localPeerId: generateUUID() });
 
-  await mesh.initialize({
+  await meshInstance.initialize({
     storage: new MemoryStorage()
   });
 
-  await mesh.start(mockTransport);
+  await meshInstance.start(mockTransport);
 
-  return { mesh, transport: mockTransport };
+  return { mesh: meshInstance, transport: mockTransport };
 }
 
 // Re-export commonly used classes at top level for convenience
 const { BLETransport, MockTransport, Transport } = transport;
 const { MemoryStorage, AsyncStorageAdapter, Storage, MessageStore } = storage;
+const { AudioManager, LC3Codec, VoiceMessage, AudioSession } = audio;
+const { TextManager, TextMessage, Channel, ChannelManager, BroadcastManager } = text;
+const { useMesh, usePeers, useMessages, AppStateManager } = hooks;
 
 module.exports = {
   // Main factory functions
@@ -138,5 +150,33 @@ module.exports = {
   storage,
 
   // Utilities
-  utils
+  utils,
+
+  // Audio classes (top-level for convenience)
+  AudioManager,
+  LC3Codec,
+  VoiceMessage,
+  AudioSession,
+
+  // Audio layer
+  audio,
+
+  // Text classes (top-level for convenience)
+  TextManager,
+  TextMessage,
+  Channel,
+  ChannelManager,
+  BroadcastManager,
+
+  // Text layer
+  text,
+
+  // React Native hooks (top-level for convenience)
+  useMesh,
+  usePeers,
+  useMessages,
+  AppStateManager,
+
+  // Hooks module
+  hooks
 };

@@ -6,11 +6,12 @@
  */
 
 const EventEmitter = require('events');
-const { MeshError, ValidationError } = require('../errors');
+const { MeshError, ValidationError, AudioError } = require('../errors');
 const { SERVICE_STATE, MESSAGE_TYPE, EVENTS, ERROR_CODE } = require('../constants');
 const SessionManager = require('./SessionManager');
 const HandshakeManager = require('./HandshakeManager');
-const ChannelManager = require('./ChannelManager');
+const { AudioManager } = require('./audio');
+const { TextManager, ChannelManager } = require('./text');
 
 /**
  * Main orchestrator for the BLE Mesh Network.
@@ -28,6 +29,8 @@ class MeshService extends EventEmitter {
     this._handshakeManager = null;
     this._channelManager = null;
     this._peerManager = null;
+    this._audioManager = null;
+    this._textManager = null;
     this._messageCounter = 0;
   }
 
@@ -69,6 +72,8 @@ class MeshService extends EventEmitter {
     await this.stop();
     this._sessionManager?.clear();
     this._channelManager?.clear();
+    if (this._textManager) await this._textManager.destroy();
+    if (this._audioManager) await this._audioManager.destroy();
     this._transport = null;
     this._setState(SERVICE_STATE.DESTROYED);
     this.emit(EVENTS.DESTROYED);
@@ -106,8 +111,12 @@ class MeshService extends EventEmitter {
     this.emit(EVENTS.PEER_UNBLOCKED, { peerId: id });
   }
 
+  // Text messaging methods
   sendBroadcast(content) {
     this._validateState([SERVICE_STATE.ACTIVE]);
+    if (this._textManager) {
+      return this._textManager.sendBroadcast(content);
+    }
     const messageId = this._generateMessageId();
     this.emit(EVENTS.BROADCAST_SENT, { messageId, content });
     return messageId;
@@ -115,6 +124,9 @@ class MeshService extends EventEmitter {
 
   async sendPrivateMessage(peerId, content) {
     this._validateState([SERVICE_STATE.ACTIVE]);
+    if (this._textManager) {
+      return this._textManager.sendPrivateMessage(peerId, content);
+    }
     if (!this._sessionManager.hasSession(peerId)) await this.initiateHandshake(peerId);
     const messageId = this._generateMessageId();
     const plaintext = new TextEncoder().encode(content);
@@ -126,6 +138,9 @@ class MeshService extends EventEmitter {
 
   sendChannelMessage(channelId, content) {
     this._validateState([SERVICE_STATE.ACTIVE]);
+    if (this._textManager) {
+      return this._textManager.sendChannelMessage(channelId, content);
+    }
     if (!this._channelManager.isInChannel(channelId)) {
       throw new MeshError('Not in channel', ERROR_CODE.E602);
     }
@@ -134,16 +149,103 @@ class MeshService extends EventEmitter {
     return messageId;
   }
 
-  joinChannel(channelId, password) { this._channelManager.joinChannel(channelId, password); }
-  leaveChannel(channelId) { this._channelManager.leaveChannel(channelId); }
-  getChannels() { return this._channelManager.getChannels(); }
+  joinChannel(channelId, password) {
+    if (this._textManager) {
+      return this._textManager.joinChannel(channelId, password);
+    }
+    this._channelManager.joinChannel(channelId, password);
+  }
+
+  leaveChannel(channelId) {
+    if (this._textManager) {
+      return this._textManager.leaveChannel(channelId);
+    }
+    this._channelManager.leaveChannel(channelId);
+  }
+
+  getChannels() {
+    if (this._textManager) {
+      return this._textManager.getChannels();
+    }
+    return this._channelManager.getChannels();
+  }
+
+  // Text manager methods
+  async initializeText(options = {}) {
+    this._validateState([SERVICE_STATE.READY, SERVICE_STATE.ACTIVE]);
+    if (this._textManager) {
+      throw new MeshError('Text already initialized', ERROR_CODE.E002);
+    }
+    this._textManager = new TextManager(options);
+    await this._textManager.initialize(this);
+    this._setupTextEventForwarding();
+  }
+
+  getTextManager() { return this._textManager; }
+
+  // Audio methods
+  async initializeAudio(options = {}) {
+    this._validateState([SERVICE_STATE.READY, SERVICE_STATE.ACTIVE]);
+    if (this._audioManager) {
+      throw new MeshError('Audio already initialized', ERROR_CODE.E002);
+    }
+    this._audioManager = new AudioManager(options);
+    await this._audioManager.initialize(this);
+    this._setupAudioEventForwarding();
+  }
+
+  getAudioManager() { return this._audioManager; }
+
+  async sendVoiceMessage(peerId, voiceMessage) {
+    this._validateState([SERVICE_STATE.ACTIVE]);
+    if (!this._audioManager) {
+      throw AudioError.codecNotAvailable();
+    }
+    return this._audioManager.sendVoiceMessage(peerId, voiceMessage);
+  }
+
+  async requestAudioStream(peerId) {
+    this._validateState([SERVICE_STATE.ACTIVE]);
+    if (!this._audioManager) {
+      throw AudioError.codecNotAvailable();
+    }
+    return this._audioManager.requestStream(peerId);
+  }
+
+  _setupTextEventForwarding() {
+    if (!this._textManager) return;
+    const textEvents = [
+      EVENTS.PRIVATE_MESSAGE_RECEIVED, EVENTS.PRIVATE_MESSAGE_SENT,
+      EVENTS.BROADCAST_SENT, EVENTS.BROADCAST_RECEIVED,
+      EVENTS.CHANNEL_JOINED, EVENTS.CHANNEL_LEFT, EVENTS.CHANNEL_MESSAGE,
+      EVENTS.CHANNEL_MEMBER_JOINED, EVENTS.CHANNEL_MEMBER_LEFT
+    ];
+    textEvents.forEach(e => this._textManager.on(e, d => this.emit(e, d)));
+  }
+
+  _setupAudioEventForwarding() {
+    if (!this._audioManager) return;
+    const audioEvents = [
+      EVENTS.AUDIO_STREAM_REQUEST, EVENTS.AUDIO_STREAM_STARTED, EVENTS.AUDIO_STREAM_ENDED,
+      EVENTS.VOICE_MESSAGE_RECEIVED, EVENTS.VOICE_MESSAGE_SENT, EVENTS.VOICE_MESSAGE_PROGRESS
+    ];
+    audioEvents.forEach(e => this._audioManager.on(e, d => this.emit(e, d)));
+  }
+
+  async _sendRaw(peerId, data) {
+    if (this._transport) {
+      await this._transport.send(peerId, data);
+    }
+  }
 
   getStatus() {
     return {
       state: this._state, identity: this.getIdentity(),
       peerCount: this.getConnectedPeers().length, securedPeerCount: this.getSecuredPeers().length,
       channelCount: this._channelManager?.getChannels().length || 0,
-      sessionCount: this._sessionManager?.getAllSessionPeerIds().length || 0
+      sessionCount: this._sessionManager?.getAllSessionPeerIds().length || 0,
+      hasTextManager: !!this._textManager,
+      hasAudioManager: !!this._audioManager
     };
   }
 
@@ -190,7 +292,21 @@ class MeshService extends EventEmitter {
     if (type >= MESSAGE_TYPE.HANDSHAKE_INIT && type <= MESSAGE_TYPE.HANDSHAKE_FINAL) {
       this._handshakeManager.handleIncomingHandshake(peerId, type, payload, this._transport);
     } else if (type === MESSAGE_TYPE.CHANNEL_MESSAGE) {
-      this._channelManager.handleChannelMessage({ channelId: '', senderId: peerId, content: payload });
+      if (this._textManager) {
+        this._textManager.handleIncomingMessage(peerId, type, payload);
+      } else {
+        this._channelManager.handleChannelMessage({ channelId: '', senderId: peerId, content: payload });
+      }
+    } else if (type >= MESSAGE_TYPE.VOICE_MESSAGE_START && type <= MESSAGE_TYPE.AUDIO_STREAM_END) {
+      if (this._audioManager) {
+        this._audioManager.handleIncomingMessage(peerId, type, payload);
+      }
+    } else if (type === MESSAGE_TYPE.TEXT || type === MESSAGE_TYPE.PRIVATE_MESSAGE) {
+      if (this._textManager) {
+        this._textManager.handleIncomingMessage(peerId, type, payload);
+      } else {
+        this.emit(EVENTS.MESSAGE_RECEIVED, { peerId, type, payload });
+      }
     } else {
       this.emit(EVENTS.MESSAGE_RECEIVED, { peerId, type, payload });
     }

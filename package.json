@@ -23,6 +23,9 @@
     },
     "./utils": {
       "require": "./src/utils/index.js"
+    },
+    "./hooks": {
+      "require": "./src/hooks/index.js"
     }
   },
   "engines": {

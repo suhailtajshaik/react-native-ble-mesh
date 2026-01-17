@@ -1,6 +1,6 @@
 {
   "name": "react-native-ble-mesh",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Production-ready React Native BLE Mesh Network with Noise Protocol security",
   "main": "src/index.js",
   "types": "src/index.d.ts",

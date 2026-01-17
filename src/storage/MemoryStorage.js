@@ -196,7 +196,7 @@ class MemoryStorage extends Storage {
 
   /**
    * Gets all entries as an array of [key, value] pairs
-   * @returns {Promise<Array<[string, any]>>} Array of entries
+   * @returns {Promise<Array>} Array of [key, value] entries
    */
   async entries() {
     const allKeys = await this.keys();

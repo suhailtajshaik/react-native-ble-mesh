@@ -1,20 +1,21 @@
 'use strict';
 
 /**
- * @fileoverview Debug and logging utilities for BLE Mesh
- * @module utils/debug
+ * Debug and logging utilities for BLE Mesh
  *
  * Enable debug output by setting:
- *   - Environment variable: DEBUG=ble-mesh:*
- *   - Or programmatically: debug.enable('ble-mesh:*')
+ * - Environment variable: DEBUG=ble-mesh:*
+ * - Or programmatically: debug.enable('ble-mesh:*')
  *
  * Namespaces:
- *   - ble-mesh:service - MeshService events
- *   - ble-mesh:transport - Transport layer
- *   - ble-mesh:crypto - Cryptographic operations
- *   - ble-mesh:handshake - Noise handshake
- *   - ble-mesh:mesh - Mesh routing
- *   - ble-mesh:* - All namespaces
+ * - ble-mesh:service - MeshService events
+ * - ble-mesh:transport - Transport layer
+ * - ble-mesh:crypto - Cryptographic operations
+ * - ble-mesh:handshake - Noise handshake
+ * - ble-mesh:mesh - Mesh routing
+ * - ble-mesh:* - All namespaces
+ *
+ * @module utils/debug
  */
 
 // Check for debug environment variable

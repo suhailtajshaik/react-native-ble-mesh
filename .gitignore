@@ -75,6 +75,7 @@ junit.xml
 
 # Documentation build
 docs/_build/
+docs/api/
 
 # npm pack output
 *.tgz

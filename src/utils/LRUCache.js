@@ -134,7 +134,7 @@ class LRUCache {
 
   /**
    * Returns all entries in the cache (most recent last)
-   * @returns {Array<[K, V]>} Array of [key, value] pairs
+   * @returns {Array} Array of [key, value] pairs
    */
   entries() {
     return Array.from(this._cache.entries());

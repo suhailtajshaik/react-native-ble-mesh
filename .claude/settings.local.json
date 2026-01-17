@@ -14,7 +14,10 @@
       "Bash(git add:*)",
       "Bash(git restore:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: remove GitHub CI workflows\n\nRemoving CI workflows that were failing due to coverage threshold issues.\nThese can be re-added later once test coverage is improved.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm install)",
+      "Bash(npm run docs:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

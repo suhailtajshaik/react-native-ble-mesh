@@ -2,7 +2,7 @@
 
 > Inspired by [Bitchat](https://github.com/permissionlesstech/bitchat) - this is the React Native version.
 
-A **production-ready BLE Mesh Network library** for Node.js and React Native with Noise Protocol security. This library enables peer-to-peer communication over Bluetooth Low Energy with end-to-end encryption, multi-hop routing, and offline-first capabilities.
+A **production-ready BLE Mesh Network library** for React Native with Noise Protocol security. This library enables peer-to-peer communication over Bluetooth Low Energy with end-to-end encryption, multi-hop routing, and offline-first capabilities.
 
 [![npm version](https://img.shields.io/npm/v/react-native-ble-mesh.svg)](https://www.npmjs.com/package/react-native-ble-mesh)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -32,24 +32,55 @@ A **production-ready BLE Mesh Network library** for Node.js and React Native wit
 ## Installation
 
 ```bash
-npm install react-native-ble-mesh
-```
-
-### React Native
-
-For React Native projects, you also need to install the BLE dependency:
-
-```bash
-npm install react-native-ble-plx
+npm install react-native-ble-mesh react-native-get-random-values react-native-ble-plx
 cd ios && pod install
 ```
 
-### Node.js
+### Required Setup
 
-For Node.js projects using Noble:
+**IMPORTANT:** You must import `react-native-get-random-values` at the very top of your entry file (index.js or App.js) **before any other imports**:
 
-```bash
-npm install @abandonware/noble
+```javascript
+// index.js or App.js - This MUST be the first import!
+import 'react-native-get-random-values';
+
+// Now you can import other modules
+import { AppRegistry } from 'react-native';
+import App from './App';
+import { name as appName } from './app.json';
+
+AppRegistry.registerComponent(appName, () => App);
+```
+
+This polyfill provides the Web Crypto API (`crypto.getRandomValues`) which is required for cryptographic operations in the mesh network.
+
+### iOS Setup
+
+Add Bluetooth permissions to your `Info.plist`:
+
+```xml
+<key>NSBluetoothAlwaysUsageDescription</key>
+<string>This app uses Bluetooth to communicate with nearby devices</string>
+<key>NSBluetoothPeripheralUsageDescription</key>
+<string>This app uses Bluetooth to communicate with nearby devices</string>
+<key>UIBackgroundModes</key>
+<array>
+  <string>bluetooth-central</string>
+  <string>bluetooth-peripheral</string>
+</array>
+```
+
+### Android Setup
+
+Add Bluetooth permissions to your `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.BLUETOOTH" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 ```
 
 ## Quick Start

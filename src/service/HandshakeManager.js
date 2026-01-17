@@ -5,7 +5,7 @@
  * @module service/HandshakeManager
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../utils/EventEmitter');
 const { HandshakeError } = require('../errors');
 const { MESSAGE_TYPE, MESH_CONFIG, EVENTS } = require('../constants');
 

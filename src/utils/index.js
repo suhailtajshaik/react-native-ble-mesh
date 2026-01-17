@@ -14,9 +14,6 @@ const EventEmitter = require('./EventEmitter');
 const LRUCache = require('./LRUCache');
 const RateLimiter = require('./RateLimiter');
 const retry = require('./retry');
-const debug = require('./debug');
-const BoundedMap = require('./BoundedMap');
-const TimeoutManager = require('./TimeoutManager');
 const base64 = require('./base64');
 
 module.exports = {
@@ -34,10 +31,13 @@ module.exports = {
   // Encoding
   bytesToHex: encoding.bytesToHex,
   hexToBytes: encoding.hexToBytes,
-  bytesToBase64: encoding.bytesToBase64,
-  base64ToBytes: encoding.base64ToBytes,
   stringToBytes: encoding.stringToBytes,
   bytesToString: encoding.bytesToString,
+
+  // Base64 (optimized for React Native)
+  base64Encode: base64.encode,
+  base64Decode: base64.decode,
+  isValidBase64: base64.isValid,
 
   // UUID
   generateUUID: uuid.generateUUID,
@@ -45,17 +45,12 @@ module.exports = {
   bytesToUuid: uuid.bytesToUuid,
   isValidUUID: uuid.isValidUUID,
   generateShortId: uuid.generateShortId,
-  shortenUUID: uuid.shortenUUID,
-  compareUUID: uuid.compareUUID,
 
   // Time
   delay: time.delay,
   withTimeout: time.withTimeout,
   now: time.now,
-  hrTime: time.hrTime,
-  elapsed: time.elapsed,
   isExpired: time.isExpired,
-  formatDuration: time.formatDuration,
   debounce: time.debounce,
   throttle: time.throttle,
 
@@ -63,40 +58,21 @@ module.exports = {
   validateString: validation.validateString,
   validateBytes: validation.validateBytes,
   validatePositiveInt: validation.validatePositiveInt,
-  validateEnum: validation.validateEnum,
   validateNonNegativeInt: validation.validateNonNegativeInt,
-  validateRange: validation.validateRange,
   validateBoolean: validation.validateBoolean,
   validateFunction: validation.validateFunction,
   validateObject: validation.validateObject,
-  validateOptional: validation.validateOptional,
 
   // Classes
   EventEmitter,
   LRUCache,
   RateLimiter,
-  BoundedMap,
-  TimeoutManager,
-
-  // Optimized Base64 (for React Native)
-  base64Encode: base64.encode,
-  base64Decode: base64.decode,
-  isValidBase64: base64.isValid,
 
   // Retry
   retry: retry.retry,
   retryable: retry.retryable,
-  retryOn: retry.retryOn,
-  retryExcept: retry.retryExcept,
-  retryOnCodes: retry.retryOnCodes,
 
-  // Debug
-  debug,
-  createDebugger: debug.createDebugger,
-  enableDebug: debug.enable,
-  disableDebug: debug.disable,
-
-  // Sub-modules (for specific imports)
+  // Sub-modules
   bytes,
   encoding,
   uuid,

@@ -5,7 +5,7 @@
  * @module mesh/peer/PeerDiscovery
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../utils/EventEmitter');
 const { MESSAGE_TYPE, EVENTS } = require('../../constants');
 const { ValidationError } = require('../../errors');
 

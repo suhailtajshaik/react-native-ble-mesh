@@ -5,7 +5,7 @@
  * @module service/text/TextManager
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../utils/EventEmitter');
 const { MeshError } = require('../../errors');
 const { MESSAGE_TYPE, EVENTS, ERROR_CODE } = require('../../constants');
 const TextMessage = require('./message/TextMessage');

@@ -5,7 +5,7 @@
  * @module transport/Transport
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../utils/EventEmitter');
 
 /**
  * Transport states

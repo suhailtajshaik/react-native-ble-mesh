@@ -5,7 +5,7 @@
  * @module service/text/channel/ChannelManager
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../../utils/EventEmitter');
 const { MeshError } = require('../../../errors');
 const { EVENTS, ERROR_CODE } = require('../../../constants');
 const Channel = require('./Channel');

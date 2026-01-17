@@ -5,7 +5,7 @@
  * @module service/text/broadcast/BroadcastManager
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../../utils/EventEmitter');
 const TextMessage = require('../message/TextMessage');
 
 /**

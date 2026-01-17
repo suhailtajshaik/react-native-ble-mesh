@@ -1,5 +1,7 @@
 # react-native-ble-mesh
 
+> Inspired by [Bitchat](https://github.com/permissionlesstech/bitchat) - this is the React Native version.
+
 A **production-ready BLE Mesh Network library** for Node.js and React Native with Noise Protocol security. This library enables peer-to-peer communication over Bluetooth Low Energy with end-to-end encryption, multi-hop routing, and offline-first capabilities.
 
 [![npm version](https://img.shields.io/npm/v/react-native-ble-mesh.svg)](https://www.npmjs.com/package/react-native-ble-mesh)

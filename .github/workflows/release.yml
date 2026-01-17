@@ -1,6 +1,13 @@
 name: Release & Publish
 
 on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
   workflow_dispatch:
     inputs:
       version_type:
@@ -17,6 +24,8 @@ jobs:
   release:
     name: Release & Publish to npm
     runs-on: ubuntu-latest
+    # Skip if commit message indicates this is a release commit (prevents infinite loops)
+    if: "!contains(github.event.head_commit.message, 'chore(release):')"
     permissions:
       contents: write
       packages: write
@@ -47,7 +56,13 @@ jobs:
 
       - name: Set version bump type
         id: version_type
-        run: echo "type=${{ inputs.version_type }}" >> $GITHUB_OUTPUT
+        run: |
+          # Use input value for manual dispatch, default to 'patch' for push triggers
+          VERSION_TYPE="${{ inputs.version_type }}"
+          if [ -z "$VERSION_TYPE" ]; then
+            VERSION_TYPE="patch"
+          fi
+          echo "type=$VERSION_TYPE" >> $GITHUB_OUTPUT
 
       - name: Bump version
         id: bump
@@ -55,8 +70,12 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
 
-          NEW_VERSION=$(npm version ${{ steps.version_type.outputs.type }} --no-git-tag-version)
-          NEW_VERSION=${NEW_VERSION#v}
+          # Use --ignore-scripts to prevent lifecycle scripts from running
+          # The workflow handles validation and pushing separately
+          npm version ${{ steps.version_type.outputs.type }} --no-git-tag-version --ignore-scripts
+
+          # Read the new version from package.json to avoid capturing npm output
+          NEW_VERSION=$(node -p "require('./package.json').version")
           echo "New version: $NEW_VERSION"
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
@@ -112,9 +131,12 @@ jobs:
           $NEW_ENTRY" > CHANGELOG.md
           fi
 
+      - name: Generate docs
+        run: npm run docs
+
       - name: Commit version bump
         run: |
-          git add package.json package-lock.json CHANGELOG.md
+          git add package.json package-lock.json CHANGELOG.md docs/
           git commit -m "chore(release): v${{ steps.bump.outputs.version }}"
           git tag -a "v${{ steps.bump.outputs.version }}" -m "Release v${{ steps.bump.outputs.version }}"
 

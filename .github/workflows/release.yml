@@ -1,0 +1,157 @@
+name: Release & Publish
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    name: Release & Publish to npm
+    runs-on: ubuntu-latest
+    # Only run on master branch
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version bump type
+        id: version_type
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "type=${{ inputs.version_type }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-detect from commit messages
+            COMMITS=$(git log --oneline $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD 2>/dev/null || git log --oneline)
+            if echo "$COMMITS" | grep -qiE "^[a-f0-9]+ (feat|feature)(\(.+\))?!:|BREAKING CHANGE"; then
+              echo "type=major" >> $GITHUB_OUTPUT
+            elif echo "$COMMITS" | grep -qiE "^[a-f0-9]+ (feat|feature)"; then
+              echo "type=minor" >> $GITHUB_OUTPUT
+            else
+              echo "type=patch" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Bump version
+        id: bump
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          NEW_VERSION=$(npm version ${{ steps.version_type.outputs.type }} --no-git-tag-version)
+          NEW_VERSION=${NEW_VERSION#v}
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog entry
+        id: changelog
+        run: |
+          VERSION=${{ steps.bump.outputs.version }}
+          DATE=$(date +%Y-%m-%d)
+
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" -20)
+          fi
+
+          ENTRY="## [$VERSION] - $DATE
+
+          $COMMITS
+          "
+
+          echo "entry<<EOF" >> $GITHUB_OUTPUT
+          echo "$ENTRY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update CHANGELOG.md
+        run: |
+          VERSION=${{ steps.bump.outputs.version }}
+          DATE=$(date +%Y-%m-%d)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" -20)
+          fi
+
+          NEW_ENTRY="## [$VERSION] - $DATE
+
+          $COMMITS
+
+          "
+
+          if [ -f CHANGELOG.md ]; then
+            head -n 2 CHANGELOG.md > CHANGELOG.tmp
+            echo "" >> CHANGELOG.tmp
+            echo "$NEW_ENTRY" >> CHANGELOG.tmp
+            tail -n +3 CHANGELOG.md >> CHANGELOG.tmp
+            mv CHANGELOG.tmp CHANGELOG.md
+          else
+            echo "# Changelog
+
+          $NEW_ENTRY" > CHANGELOG.md
+          fi
+
+      - name: Commit version bump
+        run: |
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore(release): v${{ steps.bump.outputs.version }}"
+          git tag -a "v${{ steps.bump.outputs.version }}" -m "Release v${{ steps.bump.outputs.version }}"
+
+      - name: Push changes
+        run: |
+          git push origin HEAD
+          git push origin "v${{ steps.bump.outputs.version }}"
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.bump.outputs.version }}
+          name: v${{ steps.bump.outputs.version }}
+          body: ${{ steps.changelog.outputs.entry }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

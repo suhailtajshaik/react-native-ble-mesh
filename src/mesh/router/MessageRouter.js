@@ -5,7 +5,7 @@
  * @module mesh/router/MessageRouter
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../utils/EventEmitter');
 const { MESH_CONFIG, MESSAGE_TYPE, MESSAGE_FLAGS, EVENTS } = require('../../constants');
 const { ValidationError } = require('../../errors');
 const { DedupManager } = require('../dedup');

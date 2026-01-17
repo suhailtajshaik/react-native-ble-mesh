@@ -1,7 +1,7 @@
 {
   "name": "react-native-ble-mesh",
-  "version": "1.0.1",
-  "description": "Production-ready BLE Mesh Network with Noise Protocol security",
+  "version": "1.0.2",
+  "description": "Production-ready React Native BLE Mesh Network with Noise Protocol security",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "exports": {
@@ -14,10 +14,6 @@
       "require": "./src/transport/adapters/index.js",
       "default": "./src/transport/adapters/index.js"
     },
-    "./errors": {
-      "require": "./src/errors/index.js",
-      "default": "./src/errors/index.js"
-    },
     "./crypto": {
       "require": "./src/crypto/index.js",
       "default": "./src/crypto/index.js"
@@ -29,35 +25,20 @@
     "./hooks": {
       "require": "./src/hooks/index.js",
       "default": "./src/hooks/index.js"
-    },
-    "./package.json": "./package.json"
+    }
   },
   "sideEffects": false,
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "react-native": "src/index.js",
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "test:watch": "jest --watch",
-    "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit",
-    "docs": "jsdoc -c jsdoc.json",
-    "validate": "npm run lint && npm test",
-    "prepublishOnly": "npm run validate",
-    "preversion": "npm run validate",
-    "version": "npm run docs && git add -A docs",
-    "postversion": "git push && git push --tags",
-    "release": "npm version patch && npm publish",
-    "release:minor": "npm version minor && npm publish",
-    "release:major": "npm version major && npm publish",
-    "size": "node -e \"const s=require('fs').statSync('src/index.js');console.log('Index size:',s.size,'bytes')\"",
-    "example:node": "node examples/node-quickstart/index.js",
-    "example:chat": "node examples/node-chat/chat.js"
+    "validate": "npm run lint && npm test"
   },
   "keywords": [
+    "react-native",
     "bluetooth",
     "ble",
     "mesh",
@@ -65,8 +46,6 @@
     "peer-to-peer",
     "noise-protocol",
     "encryption",
-    "react-native",
-    "node",
     "offline-first",
     "x25519",
     "chacha20-poly1305"
@@ -76,29 +55,26 @@
   "devDependencies": {
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "jest-junit": "^16.0.0",
-    "jsdoc": "^4.0.4",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@abandonware/noble": ">=1.9.0",
+    "react-native": ">=0.60.0",
+    "react-native-get-random-values": ">=1.8.0",
     "react-native-ble-plx": ">=2.0.0"
   },
   "peerDependenciesMeta": {
-    "react-native-ble-plx": {
+    "react-native": {
       "optional": true
     },
-    "@abandonware/noble": {
+    "react-native-ble-plx": {
       "optional": true
     }
   },
   "files": [
     "src",
     "docs",
-    "examples",
     "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "repository": {
     "type": "git",

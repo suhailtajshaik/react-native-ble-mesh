@@ -5,7 +5,7 @@
  * @module mesh/router/PathFinder
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../utils/EventEmitter');
 const { MESH_CONFIG } = require('../../constants');
 const { ValidationError } = require('../../errors');
 

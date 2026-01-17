@@ -5,7 +5,7 @@
  * @module mesh/peer/PeerManager
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../../utils/EventEmitter');
 const Peer = require('./Peer');
 const { CONNECTION_STATE, MESH_CONFIG, EVENTS } = require('../../constants');
 const { ValidationError, ConnectionError } = require('../../errors');

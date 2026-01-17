@@ -5,7 +5,7 @@
  * @module service/MeshService
  */
 
-const EventEmitter = require('events');
+const EventEmitter = require('../utils/EventEmitter');
 const { MeshError, ValidationError, AudioError } = require('../errors');
 const { SERVICE_STATE, MESSAGE_TYPE, EVENTS, ERROR_CODE } = require('../constants');
 const SessionManager = require('./SessionManager');

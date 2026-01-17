@@ -1,9 +1,37 @@
 /**
  * TypeScript definitions for react-native-ble-mesh
  * BLE Mesh Network Library with Noise Protocol Security
+ *
+ * This library is designed for React Native applications.
+ * Required setup:
+ *   npm install react-native-get-random-values
+ *   // In your entry file (index.js or App.js), add at the TOP:
+ *   import 'react-native-get-random-values';
  */
 
-import { EventEmitter } from 'events';
+// ============================================================================
+// EventEmitter (React Native compatible)
+// ============================================================================
+
+/**
+ * React Native compatible EventEmitter interface.
+ * This replaces the Node.js 'events' module which is not available in React Native.
+ */
+export interface EventEmitter {
+  on(event: string, listener: (...args: unknown[]) => void): this;
+  once(event: string, listener: (...args: unknown[]) => void): this;
+  off(event: string, listener: (...args: unknown[]) => void): this;
+  emit(event: string, ...args: unknown[]): boolean;
+  removeAllListeners(event?: string): this;
+  listenerCount(event: string): number;
+  eventNames(): string[];
+  setMaxListeners(n: number): this;
+  getMaxListeners(): number;
+}
+
+export class EventEmitter implements EventEmitter {
+  constructor(options?: { maxListeners?: number });
+}
 
 // ============================================================================
 // Constants

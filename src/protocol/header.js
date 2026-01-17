@@ -8,6 +8,7 @@
 const { crc32 } = require('./crc32');
 const { PROTOCOL_VERSION, MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
 const { MessageError } = require('../errors');
+const { randomBytes } = require('../utils/bytes');
 
 /**
  * Header size in bytes.
@@ -161,18 +162,11 @@ class MessageHeader {
 }
 
 /**
- * Generates a random 16-byte UUID.
+ * Generates a random 16-byte UUID (v4).
  * @returns {Uint8Array} 16-byte UUID
  */
 function generateUuid() {
-  const uuid = new Uint8Array(16);
-  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
-    globalThis.crypto.getRandomValues(uuid);
-  } else {
-    const nodeCrypto = require('crypto');
-    const randomBuffer = nodeCrypto.randomBytes(16);
-    uuid.set(randomBuffer);
-  }
+  const uuid = randomBytes(16);
   // Set version 4 (random) and variant bits
   uuid[6] = (uuid[6] & 0x0f) | 0x40;
   uuid[8] = (uuid[8] & 0x3f) | 0x80;

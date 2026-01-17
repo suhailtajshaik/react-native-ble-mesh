@@ -51,6 +51,14 @@ function constantTimeEqual(a, b) {
 
 /**
  * Generates cryptographically secure random bytes
+ *
+ * For React Native, you must install and import 'react-native-get-random-values'
+ * at the top of your entry file (index.js or App.js) BEFORE any other imports:
+ *
+ * ```javascript
+ * import 'react-native-get-random-values';
+ * ```
+ *
  * @param {number} length - Number of bytes to generate
  * @returns {Uint8Array} Random bytes
  * @throws {Error} If crypto is not available
@@ -66,29 +74,25 @@ function randomBytes(length) {
 
   const bytes = new Uint8Array(length);
 
-  // Try Web Crypto API (browser and modern Node.js)
+  // Try Web Crypto API (browser, React Native with polyfill, modern Node.js)
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     crypto.getRandomValues(bytes);
     return bytes;
   }
 
-  // Try globalThis.crypto (Node.js 19+, browsers)
-  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
+  // Try globalThis.crypto (Node.js 19+, browsers, React Native with polyfill)
+  if (typeof globalThis !== 'undefined' &&
+      typeof globalThis.crypto !== 'undefined' &&
+      globalThis.crypto.getRandomValues) {
     globalThis.crypto.getRandomValues(bytes);
     return bytes;
   }
 
-  // Try Node.js crypto module
-  try {
-    const nodeCrypto = require('crypto');
-    const nodeBytes = nodeCrypto.randomBytes(length);
-    bytes.set(nodeBytes);
-    return bytes;
-  } catch (e) {
-    // Ignore and throw error below
-  }
-
-  throw new Error('No secure random number generator available');
+  throw new Error(
+    'No secure random number generator available. ' +
+    'For React Native, install and import "react-native-get-random-values" ' +
+    'at the top of your entry file before any other imports.'
+  );
 }
 
 /**

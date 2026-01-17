@@ -7,7 +7,7 @@
 
 const { MessageHeader, HEADER_SIZE } = require('./header');
 const { Message } = require('./message');
-const { crc32, verifyCrc32 } = require('./crc32');
+const { crc32 } = require('./crc32');
 const { MessageError } = require('../errors');
 
 /**

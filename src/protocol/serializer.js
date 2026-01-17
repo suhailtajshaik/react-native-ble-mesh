@@ -5,7 +5,7 @@
  * @module protocol/serializer
  */
 
-const { MessageHeader, HEADER_SIZE } = require('./header');
+const { HEADER_SIZE } = require('./header');
 const { Message } = require('./message');
 const { crc32 } = require('./crc32');
 const { PROTOCOL_VERSION, MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
@@ -32,7 +32,7 @@ function serializeHeader(header) {
   const view = new DataView(buffer.buffer);
 
   // Validate required fields
-  if (header.messageId == null || header.messageId.length !== 16) {
+  if (header.messageId === null || header.messageId === undefined || header.messageId.length !== 16) {
     throw new Error('Invalid messageId');
   }
 

@@ -51,9 +51,9 @@ class EventEmitter {
     // Warn if max listeners exceeded
     if (listeners.length >= this._maxListeners) {
       console.warn(
-        `MaxListenersExceededWarning: Possible EventEmitter memory leak detected. ` +
+        'MaxListenersExceededWarning: Possible EventEmitter memory leak detected. ' +
         `${listeners.length + 1} ${event} listeners added. ` +
-        `Use setMaxListeners() to increase limit`
+        'Use setMaxListeners() to increase limit'
       );
     }
 

@@ -169,7 +169,7 @@ class AsyncStorageAdapter extends Storage {
     this._ensureInitialized();
 
     const allKeys = await this._storage.getAllKeys();
-    const prefix = this._options.prefix + ':';
+    const prefix = `${this._options.prefix}:`;
     const keysToRemove = allKeys.filter(key => key.startsWith(prefix));
 
     if (keysToRemove.length > 0) {
@@ -185,7 +185,7 @@ class AsyncStorageAdapter extends Storage {
     this._ensureInitialized();
 
     const allKeys = await this._storage.getAllKeys();
-    const prefix = this._options.prefix + ':';
+    const prefix = `${this._options.prefix}:`;
 
     return allKeys
       .filter(key => key.startsWith(prefix))

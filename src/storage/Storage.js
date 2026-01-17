@@ -47,7 +47,7 @@ class Storage {
    * @returns {Promise<any>} Stored value or undefined
    * @throws {Error} If not implemented by subclass
    */
-  async get(key) {
+  async get(_key) {
     throw new Error('Storage.get() must be implemented by subclass');
   }
 
@@ -59,7 +59,7 @@ class Storage {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async set(key, value) {
+  async set(_key, _value) {
     throw new Error('Storage.set() must be implemented by subclass');
   }
 
@@ -70,7 +70,7 @@ class Storage {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async delete(key) {
+  async delete(_key) {
     throw new Error('Storage.delete() must be implemented by subclass');
   }
 
@@ -81,7 +81,7 @@ class Storage {
    * @returns {Promise<boolean>} True if key exists
    * @throws {Error} If not implemented by subclass
    */
-  async has(key) {
+  async has(_key) {
     throw new Error('Storage.has() must be implemented by subclass');
   }
 

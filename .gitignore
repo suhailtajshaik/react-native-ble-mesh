@@ -72,6 +72,10 @@ android/app/build/
 
 # Jest
 jest-results/
+junit.xml
 
 # Documentation build
 docs/_build/
+
+# npm pack output
+*.tgz

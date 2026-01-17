@@ -451,7 +451,7 @@ class TextManager extends EventEmitter {
   _flushReadReceipts() {
     this._readReceiptBatchTimeout = null;
 
-    if (this._pendingReadReceipts.size === 0) return;
+    if (this._pendingReadReceipts.size === 0) { return; }
 
     const messageIds = Array.from(this._pendingReadReceipts);
     this._pendingReadReceipts.clear();

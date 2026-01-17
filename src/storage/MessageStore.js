@@ -130,14 +130,14 @@ class MessageStore {
 
     for (const key of allKeys) {
       const message = await this.getMessage(key);
-      if (!message) continue;
+      if (!message) { continue; }
 
       // Apply filters
-      if (senderId && message.senderId !== senderId) continue;
-      if (recipientId && message.recipientId !== recipientId) continue;
-      if (type !== undefined && message.type !== type) continue;
-      if (since && message.timestamp < since) continue;
-      if (until && message.timestamp > until) continue;
+      if (senderId && message.senderId !== senderId) { continue; }
+      if (recipientId && message.recipientId !== recipientId) { continue; }
+      if (type !== undefined && message.type !== type) { continue; }
+      if (since && message.timestamp < since) { continue; }
+      if (until && message.timestamp > until) { continue; }
 
       messages.push(message);
     }
@@ -246,7 +246,7 @@ class MessageStore {
 
     for (const key of allKeys) {
       const message = await this.getMessage(key);
-      if (!message) continue;
+      if (!message) { continue; }
 
       const isMatch =
         (message.senderId === peerId1 && message.recipientId === peerId2) ||

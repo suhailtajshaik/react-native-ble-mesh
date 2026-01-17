@@ -74,11 +74,11 @@ function createTextHeader(options) {
 
   // Calculate flags
   let flags = 0;
-  if (hasSender) flags |= TEXT_HEADER_FLAGS.HAS_SENDER;
-  if (hasRecipient) flags |= TEXT_HEADER_FLAGS.HAS_RECIPIENT;
-  if (hasChannel) flags |= TEXT_HEADER_FLAGS.HAS_CHANNEL;
-  if (isRead) flags |= TEXT_HEADER_FLAGS.IS_READ;
-  if (requiresAck) flags |= TEXT_HEADER_FLAGS.REQUIRES_ACK;
+  if (hasSender) { flags |= TEXT_HEADER_FLAGS.HAS_SENDER; }
+  if (hasRecipient) { flags |= TEXT_HEADER_FLAGS.HAS_RECIPIENT; }
+  if (hasChannel) { flags |= TEXT_HEADER_FLAGS.HAS_CHANNEL; }
+  if (isRead) { flags |= TEXT_HEADER_FLAGS.IS_READ; }
+  if (requiresAck) { flags |= TEXT_HEADER_FLAGS.REQUIRES_ACK; }
 
   header[0] = version;
   header[1] = type;

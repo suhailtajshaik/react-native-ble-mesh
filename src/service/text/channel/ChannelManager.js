@@ -126,14 +126,15 @@ class ChannelManager extends EventEmitter {
    */
   handleChannelMessage(message) {
     const { channelId, senderId, content, timestamp } = message;
-    if (!this._channels.has(channelId)) return;
+    if (!this._channels.has(channelId)) { return; }
 
     const channel = this._channels.get(channelId);
     if (senderId && !channel.hasMember(senderId)) {
       channel.addMember(senderId);
       this.emit(EVENTS.CHANNEL_MEMBER_JOINED, { channelId, peerId: senderId });
     }
-    this.emit(EVENTS.CHANNEL_MESSAGE, { channelId, senderId, content, timestamp: timestamp || Date.now() });
+    const ts = timestamp || Date.now();
+    this.emit(EVENTS.CHANNEL_MESSAGE, { channelId, senderId, content, timestamp: ts });
   }
 
   /**
@@ -144,7 +145,7 @@ class ChannelManager extends EventEmitter {
    */
   verifyPassword(channelId, password) {
     const channel = this._channels.get(channelId);
-    if (!channel) return false;
+    if (!channel) { return false; }
     return channel.validatePassword(password);
   }
 

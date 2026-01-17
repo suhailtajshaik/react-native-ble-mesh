@@ -5,7 +5,7 @@
  * @module mesh/fragment/Fragmenter
  */
 
-const { MESH_CONFIG, MESSAGE_TYPE, MESSAGE_FLAGS } = require('../../constants');
+const { MESH_CONFIG } = require('../../constants');
 const { ValidationError } = require('../../errors');
 
 /**
@@ -155,13 +155,13 @@ function getFragmentInfo(fragmentData) {
  * @returns {boolean} True if valid
  */
 function isValidFragment(fragmentData) {
-  if (!(fragmentData instanceof Uint8Array)) return false;
-  if (fragmentData.length < FRAGMENT_HEADER_SIZE) return false;
+  if (!(fragmentData instanceof Uint8Array)) { return false; }
+  if (fragmentData.length < FRAGMENT_HEADER_SIZE) { return false; }
 
   const header = parseFragmentHeader(fragmentData);
-  if (header.index >= header.total) return false;
-  if (header.total === 0) return false;
-  if (fragmentData.length < FRAGMENT_HEADER_SIZE + header.payloadLength) return false;
+  if (header.index >= header.total) { return false; }
+  if (header.total === 0) { return false; }
+  if (fragmentData.length < FRAGMENT_HEADER_SIZE + header.payloadLength) { return false; }
 
   return true;
 }

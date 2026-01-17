@@ -46,8 +46,8 @@ class ValidationError extends MeshError {
    * @private
    */
   static sanitizeValue(value) {
-    if (value === null) return 'null';
-    if (value === undefined) return 'undefined';
+    if (value === null) { return 'null'; }
+    if (value === undefined) { return 'undefined'; }
 
     const type = typeof value;
 

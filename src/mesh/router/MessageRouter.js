@@ -7,7 +7,7 @@
 
 const EventEmitter = require('events');
 const { MESH_CONFIG, MESSAGE_TYPE, MESSAGE_FLAGS, EVENTS } = require('../../constants');
-const { MessageError, ValidationError } = require('../../errors');
+const { ValidationError } = require('../../errors');
 const { DedupManager } = require('../dedup');
 const RouteTable = require('./RouteTable');
 const { randomBytes } = require('../../utils/bytes');
@@ -132,7 +132,7 @@ class MessageRouter extends EventEmitter {
   processIncoming(message, sourcePeerId) {
     this._stats.messagesReceived++;
 
-    const { messageId, type, hopCount, maxHops, expiresAt, senderId } = message;
+    const { messageId, hopCount, maxHops, expiresAt, senderId } = message;
 
     // Check for duplicates
     if (this._dedupManager.isDuplicate(messageId)) {

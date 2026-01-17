@@ -1,0 +1,55 @@
+# Development files
+__tests__/
+.github/
+.vscode/
+.idea/
+
+# Configuration files
+.eslintrc.js
+.eslintignore
+jest.config.js
+jsdoc.json
+tsconfig.json
+.editorconfig
+
+# Development artifacts
+coverage/
+.nyc_output/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+*.tgz
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Claude/AI
+CLAUDE.md
+
+# Development docs (API docs included via files field)
+CONTRIBUTING.md
+FEATURE_STATUS.md
+CODE_OF_CONDUCT.md
+
+# Examples are included but tests are not
+# examples/ is in files field
+
+# Misc
+*.orig
+*.rej
+.npmrc

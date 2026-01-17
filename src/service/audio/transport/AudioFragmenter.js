@@ -8,7 +8,6 @@
 const EventEmitter = require('../../../utils/EventEmitter');
 const { MESSAGE_TYPE } = require('../../../constants/protocol');
 const { VOICE_MESSAGE_CONFIG } = require('../../../constants/audio');
-const AudioError = require('../../../errors/AudioError');
 
 /**
  * Fragments voice message data for BLE transport
@@ -176,7 +175,7 @@ class AudioAssembler extends EventEmitter {
    */
   _assemble(messageId) {
     const entry = this._pending.get(messageId);
-    if (!entry) return null;
+    if (!entry) { return null; }
 
     clearTimeout(entry.timer);
 
@@ -214,7 +213,7 @@ class AudioAssembler extends EventEmitter {
    */
   getProgress(messageId) {
     const entry = this._pending.get(messageId);
-    if (!entry) return null;
+    if (!entry) { return null; }
 
     return {
       received: entry.fragments.size,

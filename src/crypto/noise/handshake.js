@@ -319,7 +319,7 @@ class NoiseHandshake {
 
   /**
    * Gets the NoiseSession for transport encryption.
-   * @returns {import('./session').NoiseSession} Transport session
+   * @returns {NoiseSession} Transport session
    * @throws {Error} If handshake is not complete
    */
   getSession() {

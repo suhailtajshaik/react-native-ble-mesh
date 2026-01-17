@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: service/text/message/TextMessage.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: service/text/message/TextMessage.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+/**
+ * @fileoverview Text message class for text-based messaging
+ * @module service/text/message/TextMessage
+ */
+
+const { generateUUID } = require('../../../utils');
+
+/**
+ * Text message for private, broadcast, and channel messaging
+ * @class TextMessage
+ */
+class TextMessage {
+  /**
+   * Creates a new TextMessage
+   * @param {Object} options - Message options
+   * @param {string} [options.id] - Message ID
+   * @param {string} options.content - Message content
+   * @param {string} [options.senderId] - Sender peer ID
+   * @param {string} [options.recipientId] - Recipient peer ID (for private messages)
+   * @param {string} [options.channelId] - Channel ID (for channel messages)
+   * @param {number} [options.timestamp] - Message timestamp
+   * @param {boolean} [options.isRead] - Whether message has been read
+   */
+  constructor(options) {
+    const { id, content, senderId, recipientId, channelId, timestamp, isRead } = options;
+
+    /** @private */
+    this._id = id || generateUUID();
+    /** @private */
+    this._content = content || '';
+    /** @private */
+    this._senderId = senderId || null;
+    /** @private */
+    this._recipientId = recipientId || null;
+    /** @private */
+    this._channelId = channelId || null;
+    /** @private */
+    this._timestamp = timestamp || Date.now();
+    /** @private */
+    this._isRead = isRead || false;
+  }
+
+  /**
+   * Creates a TextMessage from a string
+   * @param {string} content - Message content
+   * @param {Object} [options] - Additional options
+   * @returns {TextMessage}
+   */
+  static fromString(content, options = {}) {
+    return new TextMessage({ content, ...options });
+  }
+
+  /**
+   * Creates a TextMessage from serialized data
+   * @param {Uint8Array} data - Serialized message data
+   * @returns {TextMessage}
+   */
+  static fromSerialized(data) {
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+
+    // Read header - version is at data[0] (reserved for future use)
+    const flags = data[1];
+    const timestamp = Number(view.getBigUint64(2, false));
+    const contentLength = view.getUint16(10, false);
+
+    let offset = 12;
+
+    // Read sender ID if present
+    let senderId = null;
+    if (flags &amp; 0x01) {
+      senderId = new TextDecoder().decode(data.slice(offset, offset + 36));
+      offset += 36;
+    }
+
+    // Read recipient ID if present
+    let recipientId = null;
+    if (flags &amp; 0x02) {
+      recipientId = new TextDecoder().decode(data.slice(offset, offset + 36));
+      offset += 36;
+    }
+
+    // Read channel ID if present
+    let channelId = null;
+    if (flags &amp; 0x04) {
+      const channelIdLength = data[offset];
+      offset += 1;
+      channelId = new TextDecoder().decode(data.slice(offset, offset + channelIdLength));
+      offset += channelIdLength;
+    }
+
+    // Read message ID
+    const messageIdLength = data[offset];
+    offset += 1;
+    const id = new TextDecoder().decode(data.slice(offset, offset + messageIdLength));
+    offset += messageIdLength;
+
+    // Read content
+    const content = new TextDecoder().decode(data.slice(offset, offset + contentLength));
+
+    return new TextMessage({
+      id,
+      content,
+      senderId,
+      recipientId,
+      channelId,
+      timestamp,
+      isRead: (flags &amp; 0x08) !== 0
+    });
+  }
+
+  /**
+   * Returns the message ID
+   * @returns {string}
+   */
+  getId() {
+    return this._id;
+  }
+
+  /**
+   * Returns the message content
+   * @returns {string}
+   */
+  getContent() {
+    return this._content;
+  }
+
+  /**
+   * Returns the message content as bytes
+   * @returns {Uint8Array}
+   */
+  getContentBytes() {
+    return new TextEncoder().encode(this._content);
+  }
+
+  /**
+   * Returns the sender ID
+   * @returns {string|null}
+   */
+  getSenderId() {
+    return this._senderId;
+  }
+
+  /**
+   * Returns the recipient ID
+   * @returns {string|null}
+   */
+  getRecipientId() {
+    return this._recipientId;
+  }
+
+  /**
+   * Returns the channel ID
+   * @returns {string|null}
+   */
+  getChannelId() {
+    return this._channelId;
+  }
+
+  /**
+   * Returns the message timestamp
+   * @returns {number}
+   */
+  getTimestamp() {
+    return this._timestamp;
+  }
+
+  /**
+   * Returns whether the message has been read
+   * @returns {boolean}
+   */
+  isRead() {
+    return this._isRead;
+  }
+
+  /**
+   * Marks the message as read
+   */
+  markAsRead() {
+    this._isRead = true;
+  }
+
+  /**
+   * Serializes the message to bytes
+   * @returns {Uint8Array}
+   */
+  serialize() {
+    const contentBytes = this.getContentBytes();
+    const idBytes = new TextEncoder().encode(this._id);
+
+    // Calculate flags
+    let flags = 0;
+    if (this._senderId) { flags |= 0x01; }
+    if (this._recipientId) { flags |= 0x02; }
+    if (this._channelId) { flags |= 0x04; }
+    if (this._isRead) { flags |= 0x08; }
+
+    // Calculate size
+    let size = 12 + 1 + idBytes.length + contentBytes.length; // header + id length + id + content
+    if (this._senderId) { size += 36; }
+    if (this._recipientId) { size += 36; }
+    if (this._channelId) {
+      const channelIdBytes = new TextEncoder().encode(this._channelId);
+      size += 1 + channelIdBytes.length;
+    }
+
+    const result = new Uint8Array(size);
+    const view = new DataView(result.buffer);
+
+    // Write header
+    result[0] = 1; // version
+    result[1] = flags;
+    view.setBigUint64(2, BigInt(this._timestamp), false);
+    view.setUint16(10, contentBytes.length, false);
+
+    let offset = 12;
+
+    // Write sender ID if present
+    if (this._senderId) {
+      const senderBytes = new TextEncoder().encode(this._senderId.padEnd(36, '\0').slice(0, 36));
+      result.set(senderBytes, offset);
+      offset += 36;
+    }
+
+    // Write recipient ID if present
+    if (this._recipientId) {
+      const recipientBytes = new TextEncoder().encode(this._recipientId.padEnd(36, '\0').slice(0, 36));
+      result.set(recipientBytes, offset);
+      offset += 36;
+    }
+
+    // Write channel ID if present
+    if (this._channelId) {
+      const channelIdBytes = new TextEncoder().encode(this._channelId);
+      result[offset] = channelIdBytes.length;
+      offset += 1;
+      result.set(channelIdBytes, offset);
+      offset += channelIdBytes.length;
+    }
+
+    // Write message ID
+    result[offset] = idBytes.length;
+    offset += 1;
+    result.set(idBytes, offset);
+    offset += idBytes.length;
+
+    // Write content
+    result.set(contentBytes, offset);
+
+    return result;
+  }
+
+  /**
+   * Returns message metadata
+   * @returns {Object}
+   */
+  getMetadata() {
+    return {
+      id: this._id,
+      senderId: this._senderId,
+      recipientId: this._recipientId,
+      channelId: this._channelId,
+      timestamp: this._timestamp,
+      isRead: this._isRead,
+      contentLength: this._content.length
+    };
+  }
+
+  /**
+   * Converts to JSON representation
+   * @returns {Object}
+   */
+  toJSON() {
+    return {
+      id: this._id,
+      content: this._content,
+      senderId: this._senderId,
+      recipientId: this._recipientId,
+      channelId: this._channelId,
+      timestamp: this._timestamp,
+      isRead: this._isRead
+    };
+  }
+
+  /**
+   * Creates a TextMessage from JSON
+   * @param {Object} json - JSON object
+   * @returns {TextMessage}
+   */
+  static fromJSON(json) {
+    return new TextMessage(json);
+  }
+}
+
+module.exports = TextMessage;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-audio_buffer.html">audio/buffer</a></li><li><a href="module-audio_buffer_FrameBuffer.html">audio/buffer/FrameBuffer</a></li><li><a href="module-audio_buffer_JitterBuffer.html">audio/buffer/JitterBuffer</a></li><li><a href="module-audio_codec.html">audio/codec</a></li><li><a href="module-audio_codec_LC3Codec.html">audio/codec/LC3Codec</a></li><li><a href="module-audio_codec_LC3Decoder.html">audio/codec/LC3Decoder</a></li><li><a href="module-audio_codec_LC3Encoder.html">audio/codec/LC3Encoder</a></li><li><a href="module-audio_session.html">audio/session</a></li><li><a href="module-audio_session_AudioSession.html">audio/session/AudioSession</a></li><li><a href="module-audio_session_VoiceMessage.html">audio/session/VoiceMessage</a></li><li><a href="module-audio_transport.html">audio/transport</a></li><li><a href="module-audio_transport_AudioFragmenter.html">audio/transport/AudioFragmenter</a></li><li><a href="module-audio_transport_AudioFramer.html">audio/transport/AudioFramer</a></li><li><a href="module-constants.html">constants</a></li><li><a href="module-constants_audio.html">constants/audio</a></li><li><a href="module-constants_ble.html">constants/ble</a></li><li><a href="module-constants_crypto.html">constants/crypto</a></li><li><a href="module-constants_errors.html">constants/errors</a></li><li><a href="module-constants_events.html">constants/events</a></li><li><a href="module-constants_protocol.html">constants/protocol</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="module-crypto_aead.html">crypto/aead</a></li><li><a href="module-crypto_chacha20.html">crypto/chacha20</a></li><li><a href="module-crypto_hkdf.html">crypto/hkdf</a></li><li><a href="module-crypto_hmac.html">crypto/hmac</a></li><li><a href="module-crypto_keys.html">crypto/keys</a></li><li><a href="module-crypto_keys_KeyManager.html">crypto/keys/KeyManager</a></li><li><a href="module-crypto_keys_KeyPair.html">crypto/keys/KeyPair</a></li><li><a href="module-crypto_keys_SecureStorage.html">crypto/keys/SecureStorage</a></li><li><a href="module-crypto_noise.html">crypto/noise</a></li><li><a href="module-crypto_noise_handshake.html">crypto/noise/handshake</a></li><li><a href="module-crypto_noise_session.html">crypto/noise/session</a></li><li><a href="module-crypto_noise_state.html">crypto/noise/state</a></li><li><a href="module-crypto_poly1305.html">crypto/poly1305</a></li><li><a href="module-crypto_sha256.html">crypto/sha256</a></li><li><a href="module-crypto_x25519.html">crypto/x25519</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-errors_AudioError.html">errors/AudioError</a></li><li><a href="module-errors_ConnectionError.html">errors/ConnectionError</a></li><li><a href="module-errors_CryptoError.html">errors/CryptoError</a></li><li><a href="module-errors_HandshakeError.html">errors/HandshakeError</a></li><li><a href="module-errors_MeshError.html">errors/MeshError</a></li><li><a href="module-errors_MessageError.html">errors/MessageError</a></li><li><a href="module-errors_ValidationError.html">errors/ValidationError</a></li><li><a href="module-hooks.html">hooks</a></li><li><a href="module-hooks_AppStateManager.html">hooks/AppStateManager</a></li><li><a href="module-hooks_useMesh.html">hooks/useMesh</a></li><li><a href="module-hooks_useMessages.html">hooks/useMessages</a></li><li><a href="module-hooks_usePeers.html">hooks/usePeers</a></li><li><a href="module-mesh.html">mesh</a></li><li><a href="module-mesh_dedup.html">mesh/dedup</a></li><li><a href="module-mesh_dedup_BloomFilter.html">mesh/dedup/BloomFilter</a></li><li><a href="module-mesh_dedup_DedupManager.html">mesh/dedup/DedupManager</a></li><li><a href="module-mesh_dedup_MessageCache.html">mesh/dedup/MessageCache</a></li><li><a href="module-mesh_fragment.html">mesh/fragment</a></li><li><a href="module-mesh_fragment_Assembler.html">mesh/fragment/Assembler</a></li><li><a href="module-mesh_fragment_Fragmenter.html">mesh/fragment/Fragmenter</a></li><li><a href="module-mesh_peer.html">mesh/peer</a></li><li><a href="module-mesh_peer_Peer.html">mesh/peer/Peer</a></li><li><a href="module-mesh_peer_PeerDiscovery.html">mesh/peer/PeerDiscovery</a></li><li><a href="module-mesh_peer_PeerManager.html">mesh/peer/PeerManager</a></li><li><a href="module-mesh_router.html">mesh/router</a></li><li><a href="module-mesh_router_MessageRouter.html">mesh/router/MessageRouter</a></li><li><a href="module-mesh_router_PathFinder.html">mesh/router/PathFinder</a></li><li><a href="module-mesh_router_RouteTable.html">mesh/router/RouteTable</a></li><li><a href="module-protocol.html">protocol</a></li><li><a href="module-protocol_crc32.html">protocol/crc32</a></li><li><a href="module-protocol_deserializer.html">protocol/deserializer</a></li><li><a href="module-protocol_header.html">protocol/header</a></li><li><a href="module-protocol_message.html">protocol/message</a></li><li><a href="module-protocol_serializer.html">protocol/serializer</a></li><li><a href="module-protocol_validator.html">protocol/validator</a></li><li><a href="module-rn-ble-mesh.html">rn-ble-mesh</a></li><li><a href="module-service.html">service</a></li><li><a href="module-service_HandshakeManager.html">service/HandshakeManager</a></li><li><a href="module-service_MeshService.html">service/MeshService</a></li><li><a href="module-service_SessionManager.html">service/SessionManager</a></li><li><a href="module-service_audio.html">service/audio</a></li><li><a href="module-service_audio_AudioManager.html">service/audio/AudioManager</a></li><li><a href="module-service_text.html">service/text</a></li><li><a href="module-service_text_TextManager.html">service/text/TextManager</a></li><li><a href="module-service_text_broadcast.html">service/text/broadcast</a></li><li><a href="module-service_text_broadcast_BroadcastManager.html">service/text/broadcast/BroadcastManager</a></li><li><a href="module-service_text_channel.html">service/text/channel</a></li><li><a href="module-service_text_channel_Channel.html">service/text/channel/Channel</a></li><li><a href="module-service_text_channel_ChannelManager.html">service/text/channel/ChannelManager</a></li><li><a href="module-service_text_message.html">service/text/message</a></li><li><a href="module-service_text_message_TextMessage.html">service/text/message/TextMessage</a></li><li><a href="module-service_text_message_TextSerializer.html">service/text/message/TextSerializer</a></li><li><a href="module-storage.html">storage</a></li><li><a href="module-storage_AsyncStorageAdapter.html">storage/AsyncStorageAdapter</a></li><li><a href="module-storage_MemoryStorage.html">storage/MemoryStorage</a></li><li><a href="module-storage_MessageStore.html">storage/MessageStore</a></li><li><a href="module-storage_Storage.html">storage/Storage</a></li><li><a href="module-transport.html">transport</a></li><li><a href="module-transport_BLEAdapter.html">transport/BLEAdapter</a></li><li><a href="module-transport_BLETransport.html">transport/BLETransport</a></li><li><a href="module-transport_MockTransport.html">transport/MockTransport</a></li><li><a href="module-transport_NodeBLEAdapter.html">transport/NodeBLEAdapter</a></li><li><a href="module-transport_RNBLEAdapter.html">transport/RNBLEAdapter</a></li><li><a href="module-transport_Transport.html">transport/Transport</a></li><li><a href="module-transport_adapters.html">transport/adapters</a></li><li><a href="module-transport_adapters_BLEAdapter.html">transport/adapters/BLEAdapter</a></li><li><a href="module-transport_adapters_NodeBLEAdapter.html">transport/adapters/NodeBLEAdapter</a></li><li><a href="module-transport_adapters_RNBLEAdapter.html">transport/adapters/RNBLEAdapter</a></li><li><a href="module-utils.html">utils</a></li><li><a href="module-utils_BoundedMap.html">utils/BoundedMap</a></li><li><a href="module-utils_EventEmitter.html">utils/EventEmitter</a></li><li><a href="module-utils_LRUCache.html">utils/LRUCache</a></li><li><a href="module-utils_RateLimiter.html">utils/RateLimiter</a></li><li><a href="module-utils_TimeoutManager.html">utils/TimeoutManager</a></li><li><a href="module-utils_bytes.html">utils/bytes</a></li><li><a href="module-utils_debug.html">utils/debug</a></li><li><a href="module-utils_encoding.html">utils/encoding</a></li><li><a href="module-utils_retry.html">utils/retry</a></li><li><a href="module-utils_time.html">utils/time</a></li><li><a href="module-utils_uuid.html">utils/uuid</a></li><li><a href="module-utils_validation.html">utils/validation</a></li><li><a href="utils_base64%250A%250AThis%2520implementation%2520avoids%2520string%2520concatenation%2520in%2520loops%2520which%2520is%2520O(n%25C2%25B2).%250AUses%2520array%2520building%2520which%2520is%2520O(n)%2520-%2520critical%2520for%2520React%2520Native%2520performance.module_.html">utils/base64
+
+This implementation avoids string concatenation in loops which is O(n²).
+Uses array building which is O(n) - critical for React Native performance.</a></li></ul><h3>Classes</h3><ul><li><a href="module-audio_buffer_FrameBuffer-FrameBuffer.html">FrameBuffer</a></li><li><a href="module-audio_buffer_JitterBuffer-JitterBuffer.html">JitterBuffer</a></li><li><a href="module-audio_codec_LC3Codec-LC3Codec.html">LC3Codec</a></li><li><a href="module-audio_codec_LC3Decoder-LC3Decoder.html">LC3Decoder</a></li><li><a href="module-audio_codec_LC3Encoder-LC3Encoder.html">LC3Encoder</a></li><li><a href="module-audio_session_AudioSession-AudioSession.html">AudioSession</a></li><li><a href="module-audio_session_VoiceMessage-VoiceMessage.html">VoiceMessage</a></li><li><a href="module-audio_session_VoiceMessage-VoiceMessageRecorder.html">VoiceMessageRecorder</a></li><li><a href="module-audio_transport_AudioFragmenter-AudioAssembler.html">AudioAssembler</a></li><li><a href="module-audio_transport_AudioFragmenter-AudioFragmenter.html">AudioFragmenter</a></li><li><a href="module-crypto_keys_KeyManager-KeyManager.html">KeyManager</a></li><li><a href="module-crypto_keys_SecureStorage-MemorySecureStorage.html">MemorySecureStorage</a></li><li><a href="module-crypto_keys_SecureStorage-SecureStorage.html">SecureStorage</a></li><li><a href="module-crypto_noise_handshake-NoiseHandshake.html">NoiseHandshake</a></li><li><a href="module-crypto_noise_session-NoiseSession.html">NoiseSession</a></li><li><a href="module-crypto_noise_state-SymmetricState.html">SymmetricState</a></li><li><a href="module-crypto_sha256-HashContext.html">HashContext</a></li><li><a href="module-errors_AudioError-AudioError.html">AudioError</a></li><li><a href="module-errors_ConnectionError-ConnectionError.html">ConnectionError</a></li><li><a href="module-errors_CryptoError-CryptoError.html">CryptoError</a></li><li><a href="module-errors_HandshakeError-HandshakeError.html">HandshakeError</a></li><li><a href="module-errors_MeshError-MeshError.html">MeshError</a></li><li><a href="module-errors_MessageError-MessageError.html">MessageError</a></li><li><a href="module-errors_ValidationError-ValidationError.html">ValidationError</a></li><li><a href="module-hooks_AppStateManager-AppStateManager.html">AppStateManager</a></li><li><a href="module-mesh_dedup_BloomFilter-BloomFilter.html">BloomFilter</a></li><li><a href="module-mesh_dedup_DedupManager-DedupManager.html">DedupManager</a></li><li><a href="module-mesh_dedup_MessageCache-CacheNode.html">CacheNode</a></li><li><a href="module-mesh_dedup_MessageCache-MessageCache.html">MessageCache</a></li><li><a href="module-mesh_fragment_Assembler-Assembler.html">Assembler</a></li><li><a href="module-mesh_fragment_Assembler-PendingFragmentSet.html">PendingFragmentSet</a></li><li><a href="module-mesh_peer_PeerDiscovery-PeerDiscovery.html">PeerDiscovery</a></li><li><a href="module-mesh_peer_PeerManager-PeerManager.html">PeerManager</a></li><li><a href="module-mesh_peer_Peer-Peer.html">Peer</a></li><li><a href="module-mesh_router_MessageRouter-MessageRouter.html">MessageRouter</a></li><li><a href="module-mesh_router_PathFinder-PathFinder.html">PathFinder</a></li><li><a href="module-mesh_router_RouteTable-RouteTable.html">RouteTable</a></li><li><a href="module-protocol_header-MessageHeader.html">MessageHeader</a></li><li><a href="module-protocol_message-Message.html">Message</a></li><li><a href="module-service_HandshakeManager-HandshakeManager.html">HandshakeManager</a></li><li><a href="module-service_MeshService-MeshService.html">MeshService</a></li><li><a href="module-service_SessionManager-SessionManager.html">SessionManager</a></li><li><a href="module-service_audio_AudioManager-AudioManager.html">AudioManager</a></li><li><a href="module-service_text_TextManager-TextManager.html">TextManager</a></li><li><a href="module-service_text_broadcast_BroadcastManager-BroadcastManager.html">BroadcastManager</a></li><li><a href="module-service_text_channel_ChannelManager-ChannelManager.html">ChannelManager</a></li><li><a href="module-service_text_channel_Channel-Channel.html">Channel</a></li><li><a href="module-service_text_message_TextMessage-TextMessage.html">TextMessage</a></li><li><a href="module-storage_AsyncStorageAdapter-AsyncStorageAdapter.html">AsyncStorageAdapter</a></li><li><a href="module-storage_MemoryStorage-MemoryStorage.html">MemoryStorage</a></li><li><a href="module-storage_MessageStore-MessageStore.html">MessageStore</a></li><li><a href="module-storage_Storage-Storage.html">Storage</a></li><li><a href="module-transport_BLEAdapter-BLEAdapter.html">BLEAdapter</a></li><li><a href="module-transport_BLETransport-BLETransport.html">BLETransport</a></li><li><a href="module-transport_MockTransport-MockTransport.html">MockTransport</a></li><li><a href="module-transport_NodeBLEAdapter-NodeBLEAdapter.html">NodeBLEAdapter</a></li><li><a href="module-transport_RNBLEAdapter-RNBLEAdapter.html">RNBLEAdapter</a></li><li><a href="module-transport_Transport-Transport.html">Transport</a></li><li><a href="module-transport_adapters_BLEAdapter-BLEAdapter.html">BLEAdapter</a></li><li><a href="module-transport_adapters_NodeBLEAdapter-NodeBLEAdapter.html">NodeBLEAdapter</a></li><li><a href="module-transport_adapters_RNBLEAdapter-RNBLEAdapter.html">RNBLEAdapter</a></li><li><a href="module-utils_BoundedMap-BoundedMap.html">BoundedMap</a></li><li><a href="module-utils_EventEmitter-EventEmitter.html">EventEmitter</a></li><li><a href="module-utils_LRUCache-LRUCache.html">LRUCache</a></li><li><a href="module-utils_RateLimiter-RateLimiter.html">RateLimiter</a></li><li><a href="module-utils_TimeoutManager-TimeoutManager.html">TimeoutManager</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -125,7 +125,7 @@ class BoundedMap {
 
   /**
    * Get all entries
-   * @returns {IterableIterator<[K, V]>} Iterator of [key, value] pairs
+   * @returns {Iterator} Iterator of [key, value] pairs
    */
   entries() {
     return this._map.entries();
@@ -141,7 +141,7 @@ class BoundedMap {
 
   /**
    * Make iterable
-   * @returns {IterableIterator<[K, V]>} Iterator
+   * @returns {Iterator} Iterator of [key, value] pairs
    */
   [Symbol.iterator]() {
     return this._map[Symbol.iterator]();

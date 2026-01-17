@@ -1,5 +1,30 @@
 # Changelog
 
+
+## [1.0.1] - 2026-01-17
+
+- Merge pull request #10 from suhailtajshaik/development (0380149)
+- Added release CI-CD (f83bdad)
+- Merge pull request #9 from suhailtajshaik/development (4cf7700)
+- Added release CI-CD (7134c50)
+- Added build fix (4501a88)
+- Merge pull request #8 from suhailtajshaik/development (7b258be)
+- Added build fix (f681f18)
+- Merge pull request #7 from suhailtajshaik/development (1ad634b)
+- Add GitHub Actions workflow for NPM publishing (9e77095)
+- ci: add GitHub Actions for automated releases (cb2612b)
+- Merge pull request #6 from suhailtajshaik/development (a8e9c5c)
+- docs: add Bitchat inspiration credit to README (3aeeb67)
+- Merge pull request #3 from suhailtajshaik/development (83584c0)
+- chore: remove GitHub CI workflows (b8a2241)
+- fix(ci): lower coverage thresholds to match current test coverage (1d2b9be)
+- Added eslint fixes (8adc54b)
+- Added Acknowledgments (de7cb7a)
+- Merge pull request #2 from suhailtajshaik/development (78a0a8f)
+- Code cleanup (c757c72)
+- Merge pull request #1 from suhailtajshaik/project-improvement-recommendations-2M3j3 (064a3a4)
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

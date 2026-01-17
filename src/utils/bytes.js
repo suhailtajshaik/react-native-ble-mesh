@@ -12,7 +12,7 @@
  */
 function concat(...arrays) {
   // Filter out undefined/null and calculate total length
-  const validArrays = arrays.filter(arr => arr != null);
+  const validArrays = arrays.filter(arr => arr !== null && arr !== undefined);
   const totalLength = validArrays.reduce((sum, arr) => sum + arr.length, 0);
 
   const result = new Uint8Array(totalLength);

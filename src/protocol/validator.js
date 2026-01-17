@@ -5,10 +5,9 @@
  * @module protocol/validator
  */
 
-const { MessageHeader, HEADER_SIZE } = require('./header');
-const { Message } = require('./message');
+const { HEADER_SIZE } = require('./header');
 const { crc32 } = require('./crc32');
-const { PROTOCOL_VERSION, MESSAGE_TYPE, MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
+const { PROTOCOL_VERSION, MESSAGE_TYPE, MESH_CONFIG } = require('../constants');
 
 /**
  * Set of valid message type values for fast lookup.

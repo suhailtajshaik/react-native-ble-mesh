@@ -52,7 +52,7 @@ class AppStateManager {
    * @returns {boolean} True if initialized, false if AppState not available
    */
   initialize() {
-    if (this._initialized) return true;
+    if (this._initialized) { return true; }
 
     // Try to get AppState from React Native
     try {
@@ -100,7 +100,7 @@ class AppStateManager {
    * @private
    */
   _onBackground() {
-    if (!this._mesh) return;
+    if (!this._mesh) { return; }
 
     try {
       // Switch to power saver mode
@@ -122,7 +122,7 @@ class AppStateManager {
    * @private
    */
   _onForeground() {
-    if (!this._mesh) return;
+    if (!this._mesh) { return; }
 
     try {
       // Restore normal power mode

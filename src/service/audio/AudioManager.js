@@ -11,7 +11,7 @@ const { MESSAGE_TYPE } = require('../../constants/protocol');
 const { EVENTS } = require('../../constants/events');
 const { AUDIO_QUALITY, AUDIO_SESSION_STATE } = require('../../constants/audio');
 const { LC3Codec } = require('./codec');
-const { VoiceMessage, VoiceMessageRecorder } = require('./session/VoiceMessage');
+const { VoiceMessageRecorder } = require('./session/VoiceMessage');
 const AudioSession = require('./session/AudioSession');
 const { AudioFragmenter, AudioAssembler } = require('./transport/AudioFragmenter');
 const { unpackFrame, createStreamFrame } = require('./transport/AudioFramer');
@@ -122,15 +122,15 @@ class AudioManager extends EventEmitter {
    */
   async destroy() {
     // End all sessions
-    for (const [peerId, session] of this._sessions) {
+    for (const [, session] of this._sessions) {
       await session.end();
     }
     this._sessions.clear();
 
     // Cancel pending requests
-    for (const [peerId, request] of this._pendingRequests) {
+    for (const [requestPeerId, request] of this._pendingRequests) {
       clearTimeout(request.timeout);
-      request.reject(AudioError.sessionFailed(peerId, { reason: 'Manager destroyed' }));
+      request.reject(AudioError.sessionFailed(requestPeerId, { reason: 'Manager destroyed' }));
     }
     this._pendingRequests.clear();
 
@@ -341,12 +341,15 @@ class AudioManager extends EventEmitter {
       case MESSAGE_TYPE.VOICE_MESSAGE_END:
         this._handleVoiceMessageFragment(peerId, payload);
         break;
+      default:
+        // Unknown message type - ignore
+        break;
     }
   }
 
   /** @private */
   _handleStreamRequest(peerId) {
-    if (this._sessions.has(peerId)) return;
+    if (this._sessions.has(peerId)) { return; }
 
     const session = new AudioSession({
       peerId,

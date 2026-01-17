@@ -199,7 +199,6 @@ class Assembler {
    */
   cleanup() {
     const expired = [];
-    const now = Date.now();
 
     for (const [messageId, pendingSet] of this._pending) {
       if (pendingSet.isExpired()) {

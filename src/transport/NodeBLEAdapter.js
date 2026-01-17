@@ -330,8 +330,7 @@ class NodeBLEAdapter extends BLEAdapter {
   _connectPeripheral(peripheral) {
     return new Promise((resolve, reject) => {
       peripheral.connect((error) => {
-        if (error) reject(error);
-        else resolve();
+        if (error) { reject(error); } else { resolve(); }
       });
     });
   }
@@ -357,8 +356,7 @@ class NodeBLEAdapter extends BLEAdapter {
   _discoverServices(peripheral) {
     return new Promise((resolve, reject) => {
       peripheral.discoverAllServicesAndCharacteristics((error) => {
-        if (error) reject(error);
-        else resolve();
+        if (error) { reject(error); } else { resolve(); }
       });
     });
   }
@@ -393,8 +391,7 @@ class NodeBLEAdapter extends BLEAdapter {
   _writeCharacteristic(characteristic, data) {
     return new Promise((resolve, reject) => {
       characteristic.write(data, false, (error) => {
-        if (error) reject(error);
-        else resolve();
+        if (error) { reject(error); } else { resolve(); }
       });
     });
   }
@@ -408,8 +405,7 @@ class NodeBLEAdapter extends BLEAdapter {
   _subscribeCharacteristic(characteristic) {
     return new Promise((resolve, reject) => {
       characteristic.subscribe((error) => {
-        if (error) reject(error);
-        else resolve();
+        if (error) { reject(error); } else { resolve(); }
       });
     });
   }

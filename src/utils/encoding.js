@@ -147,8 +147,8 @@ function base64ToBytes(base64) {
     const d = BASE64_LOOKUP[base64.charCodeAt(i + 3)];
 
     bytes[j++] = (a << 2) | (b >> 4);
-    if (j < outputLength) bytes[j++] = ((b & 0x0f) << 4) | (c >> 2);
-    if (j < outputLength) bytes[j++] = ((c & 0x03) << 6) | d;
+    if (j < outputLength) { bytes[j++] = ((b & 0x0f) << 4) | (c >> 2); }
+    if (j < outputLength) { bytes[j++] = ((c & 0x03) << 6) | d; }
   }
 
   return bytes;

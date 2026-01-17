@@ -124,7 +124,7 @@ class Transport extends EventEmitter {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async send(peerId, data) {
+  async send(_peerId, _data) {
     throw new Error('Transport.send() must be implemented by subclass');
   }
 
@@ -135,7 +135,7 @@ class Transport extends EventEmitter {
    * @returns {Promise<string[]>} Array of peer IDs that received the broadcast
    * @throws {Error} If not implemented by subclass
    */
-  async broadcast(data) {
+  async broadcast(_data) {
     throw new Error('Transport.broadcast() must be implemented by subclass');
   }
 

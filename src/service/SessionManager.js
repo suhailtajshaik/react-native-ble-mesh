@@ -38,7 +38,7 @@ class SessionManager {
 
   encryptFor(peerId, plaintext) {
     const entry = this._sessions.get(peerId);
-    if (!entry) throw CryptoError.encryptionFailed({ reason: 'Session not found', peerId });
+    if (!entry) { throw CryptoError.encryptionFailed({ reason: 'Session not found', peerId }); }
     try {
       const ciphertext = entry.session.encrypt(plaintext);
       entry.lastUsedAt = Date.now();
@@ -51,7 +51,7 @@ class SessionManager {
 
   decryptFrom(peerId, ciphertext) {
     const entry = this._sessions.get(peerId);
-    if (!entry) throw CryptoError.decryptionFailed({ reason: 'Session not found', peerId });
+    if (!entry) { throw CryptoError.decryptionFailed({ reason: 'Session not found', peerId }); }
     try {
       const plaintext = entry.session.decrypt(ciphertext);
       if (plaintext) {
@@ -66,7 +66,7 @@ class SessionManager {
 
   exportSession(peerId) {
     const entry = this._sessions.get(peerId);
-    if (!entry || typeof entry.session.export !== 'function') return null;
+    if (!entry || typeof entry.session.export !== 'function') { return null; }
     return {
       peerId, sessionData: entry.session.export(),
       createdAt: entry.createdAt, lastUsedAt: entry.lastUsedAt, messageCount: entry.messageCount
@@ -74,7 +74,7 @@ class SessionManager {
   }
 
   importSession(peerId, state) {
-    if (!state || !state.sessionData) throw new Error('Invalid session state');
+    if (!state || !state.sessionData) { throw new Error('Invalid session state'); }
     this._sessions.set(peerId, {
       session: state.sessionData,
       createdAt: state.createdAt || Date.now(),

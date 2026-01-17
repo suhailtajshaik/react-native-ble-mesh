@@ -7,7 +7,6 @@
  */
 
 const { hash } = require('../sha256');
-const { expand } = require('../hkdf');
 const { encrypt, decrypt } = require('../aead');
 const { concat } = require('../../utils/bytes');
 
@@ -113,14 +112,7 @@ class SymmetricState {
    * @param {Uint8Array} inputKeyMaterial - Key material to mix in (e.g., DH result)
    */
   mixKey(inputKeyMaterial) {
-    // HKDF with ck as salt, ikm as input, empty info, 64 bytes output
-    const output = expand(
-      hash(concat(this._ck, inputKeyMaterial)), // PRK = HMAC(ck, ikm)
-      new Uint8Array(0), // empty info
-      64
-    );
-
-    // Actually use proper HKDF: extract then expand
+    // Use proper HKDF: extract then expand
     const tempKey = hash(concat(this._ck, inputKeyMaterial));
     const derived = this._hkdfDeriveKeys(tempKey);
 

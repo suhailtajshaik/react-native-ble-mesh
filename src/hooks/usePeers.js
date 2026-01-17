@@ -55,7 +55,7 @@ function usePeers(mesh) {
 
   // Subscribe to peer events
   useEffect(() => {
-    if (!mesh) return;
+    if (!mesh) { return; }
 
     const handlePeerEvent = () => refreshPeers();
 

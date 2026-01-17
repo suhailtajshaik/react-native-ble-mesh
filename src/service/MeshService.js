@@ -55,7 +55,7 @@ class MeshService extends EventEmitter {
 
   async start(transport) {
     this._validateState([SERVICE_STATE.READY, SERVICE_STATE.SUSPENDED]);
-    if (!transport) throw new ValidationError('Transport is required', ERROR_CODE.E802);
+    if (!transport) { throw new ValidationError('Transport is required', ERROR_CODE.E802); }
     this._transport = transport;
     this._setupTransportListeners();
     await this._transport.start();
@@ -63,8 +63,8 @@ class MeshService extends EventEmitter {
   }
 
   async stop() {
-    if (this._state !== SERVICE_STATE.ACTIVE) return;
-    if (this._transport) await this._transport.stop();
+    if (this._state !== SERVICE_STATE.ACTIVE) { return; }
+    if (this._transport) { await this._transport.stop(); }
     this._setState(SERVICE_STATE.SUSPENDED);
   }
 
@@ -72,8 +72,8 @@ class MeshService extends EventEmitter {
     await this.stop();
     this._sessionManager?.clear();
     this._channelManager?.clear();
-    if (this._textManager) await this._textManager.destroy();
-    if (this._audioManager) await this._audioManager.destroy();
+    if (this._textManager) { await this._textManager.destroy(); }
+    if (this._audioManager) { await this._audioManager.destroy(); }
     this._transport = null;
     this._setState(SERVICE_STATE.DESTROYED);
     this.emit(EVENTS.DESTROYED);
@@ -127,7 +127,7 @@ class MeshService extends EventEmitter {
     if (this._textManager) {
       return this._textManager.sendPrivateMessage(peerId, content);
     }
-    if (!this._sessionManager.hasSession(peerId)) await this.initiateHandshake(peerId);
+    if (!this._sessionManager.hasSession(peerId)) { await this.initiateHandshake(peerId); }
     const messageId = this._generateMessageId();
     const plaintext = new TextEncoder().encode(content);
     const ciphertext = this._sessionManager.encryptFor(peerId, plaintext);
@@ -213,7 +213,7 @@ class MeshService extends EventEmitter {
   }
 
   _setupTextEventForwarding() {
-    if (!this._textManager) return;
+    if (!this._textManager) { return; }
     const textEvents = [
       EVENTS.PRIVATE_MESSAGE_RECEIVED, EVENTS.PRIVATE_MESSAGE_SENT,
       EVENTS.BROADCAST_SENT, EVENTS.BROADCAST_RECEIVED,
@@ -224,7 +224,7 @@ class MeshService extends EventEmitter {
   }
 
   _setupAudioEventForwarding() {
-    if (!this._audioManager) return;
+    if (!this._audioManager) { return; }
     const audioEvents = [
       EVENTS.AUDIO_STREAM_REQUEST, EVENTS.AUDIO_STREAM_STARTED, EVENTS.AUDIO_STREAM_ENDED,
       EVENTS.VOICE_MESSAGE_RECEIVED, EVENTS.VOICE_MESSAGE_SENT, EVENTS.VOICE_MESSAGE_PROGRESS

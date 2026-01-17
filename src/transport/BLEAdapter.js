@@ -78,7 +78,7 @@ class BLEAdapter {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async startScan(serviceUUIDs, callback) {
+  async startScan(_serviceUUIDs, _callback) {
     throw new Error('BLEAdapter.startScan() must be implemented by subclass');
   }
 
@@ -98,7 +98,7 @@ class BLEAdapter {
    * @returns {Promise<Object>} Connected device info
    * @throws {Error} If not implemented by subclass
    */
-  async connect(deviceId) {
+  async connect(_deviceId) {
     throw new Error('BLEAdapter.connect() must be implemented by subclass');
   }
 
@@ -109,7 +109,7 @@ class BLEAdapter {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async disconnect(deviceId) {
+  async disconnect(_deviceId) {
     throw new Error('BLEAdapter.disconnect() must be implemented by subclass');
   }
 
@@ -123,7 +123,7 @@ class BLEAdapter {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async write(deviceId, serviceUUID, charUUID, data) {
+  async write(_deviceId, _serviceUUID, _charUUID, _data) {
     throw new Error('BLEAdapter.write() must be implemented by subclass');
   }
 
@@ -137,7 +137,7 @@ class BLEAdapter {
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async subscribe(deviceId, serviceUUID, charUUID, callback) {
+  async subscribe(_deviceId, _serviceUUID, _charUUID, _callback) {
     throw new Error('BLEAdapter.subscribe() must be implemented by subclass');
   }
 

@@ -6,7 +6,7 @@
  */
 
 const { crc32 } = require('./crc32');
-const { PROTOCOL_VERSION, MESSAGE_TYPE, MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
+const { PROTOCOL_VERSION, MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
 const { MessageError } = require('../errors');
 
 /**

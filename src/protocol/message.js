@@ -6,8 +6,7 @@
  */
 
 const { MessageHeader, HEADER_SIZE, generateUuid } = require('./header');
-const { crc32 } = require('./crc32');
-const { MESSAGE_TYPE, MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
+const { MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
 const { MessageError } = require('../errors');
 
 /**

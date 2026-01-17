@@ -6,7 +6,7 @@
  */
 
 const EventEmitter = require('events');
-const { MESH_CONFIG, MESSAGE_TYPE } = require('../../constants');
+const { MESH_CONFIG } = require('../../constants');
 const { ValidationError } = require('../../errors');
 
 /**

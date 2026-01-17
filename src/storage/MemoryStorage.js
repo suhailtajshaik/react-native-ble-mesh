@@ -134,7 +134,7 @@ class MemoryStorage extends Storage {
     if (this._options.prefix) {
       // Only clear keys with our prefix
       for (const key of this._store.keys()) {
-        if (key.startsWith(this._options.prefix + ':')) {
+        if (key.startsWith(`${this._options.prefix}:`)) {
           this._store.delete(key);
         }
       }
@@ -149,7 +149,7 @@ class MemoryStorage extends Storage {
    */
   async keys() {
     const result = [];
-    const prefix = this._options.prefix ? this._options.prefix + ':' : '';
+    const prefix = this._options.prefix ? `${this._options.prefix}:` : '';
 
     for (const key of this._store.keys()) {
       if (!prefix || key.startsWith(prefix)) {

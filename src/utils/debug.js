@@ -25,7 +25,7 @@ const activeNamespaces = new Set();
 
 // Parse debug patterns
 function parseDebugPatterns(patterns) {
-  if (!patterns) return;
+  if (!patterns) { return; }
   const parts = patterns.split(',').map(p => p.trim());
   for (const part of parts) {
     if (part.startsWith('-')) {
@@ -72,7 +72,7 @@ function isEnabled(namespace) {
  */
 function createDebugger(namespace) {
   const logger = (...args) => {
-    if (!isEnabled(namespace)) return;
+    if (!isEnabled(namespace)) { return; }
 
     const timestamp = new Date().toISOString();
     const prefix = `[${timestamp}] ${namespace}`;

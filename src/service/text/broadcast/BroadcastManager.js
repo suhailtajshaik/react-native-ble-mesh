@@ -6,7 +6,6 @@
  */
 
 const EventEmitter = require('events');
-const { generateUUID } = require('../../../utils');
 const TextMessage = require('../message/TextMessage');
 
 /**
@@ -196,7 +195,7 @@ class BroadcastManager extends EventEmitter {
    */
   _isDuplicate(messageId) {
     const seenAt = this._seenMessageIds.get(messageId);
-    if (!seenAt) return false;
+    if (!seenAt) { return false; }
 
     // Check if within dedup window
     const age = Date.now() - seenAt;

@@ -6,7 +6,7 @@
  */
 
 const EventEmitter = require('events');
-const { MESSAGE_TYPE, MESH_CONFIG, EVENTS } = require('../../constants');
+const { MESSAGE_TYPE, EVENTS } = require('../../constants');
 const { ValidationError } = require('../../errors');
 
 /**
@@ -186,7 +186,7 @@ class PeerDiscovery extends EventEmitter {
    * @returns {Object|null} Response payload or null
    * @private
    */
-  _handleRequest(payload, sourcePeerId) {
+  _handleRequest(payload, _sourcePeerId) {
     this._stats.requestsReceived++;
 
     // Check if request is for us or broadcast
@@ -233,8 +233,8 @@ class PeerDiscovery extends EventEmitter {
    * @param {Object} info - New info
    */
   updateLocalInfo(info) {
-    if (info.displayName !== undefined) this.displayName = info.displayName;
-    if (info.publicKey !== undefined) this.publicKey = info.publicKey;
+    if (info.displayName !== undefined) { this.displayName = info.displayName; }
+    if (info.publicKey !== undefined) { this.publicKey = info.publicKey; }
     if (info.capabilities !== undefined) {
       Object.assign(this.capabilities, info.capabilities);
     }

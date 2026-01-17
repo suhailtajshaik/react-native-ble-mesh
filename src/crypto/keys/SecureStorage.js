@@ -26,7 +26,7 @@ class SecureStorage {
    * @returns {Promise<void>}
    * @abstract
    */
-  async set(key, value) {
+  async set(_key, _value) {
     throw new Error('SecureStorage.set() must be implemented');
   }
 
@@ -36,7 +36,7 @@ class SecureStorage {
    * @returns {Promise<string|null>} Stored value or null if not found
    * @abstract
    */
-  async get(key) {
+  async get(_key) {
     throw new Error('SecureStorage.get() must be implemented');
   }
 
@@ -46,7 +46,7 @@ class SecureStorage {
    * @returns {Promise<void>}
    * @abstract
    */
-  async delete(key) {
+  async delete(_key) {
     throw new Error('SecureStorage.delete() must be implemented');
   }
 

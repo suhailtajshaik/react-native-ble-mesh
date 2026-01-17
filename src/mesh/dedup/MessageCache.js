@@ -73,19 +73,19 @@ class MessageCache {
    * @private
    */
   _moveToHead(node) {
-    if (node === this._head) return;
+    if (node === this._head) { return; }
 
     // Remove from current position
-    if (node.prev) node.prev.next = node.next;
-    if (node.next) node.next.prev = node.prev;
-    if (node === this._tail) this._tail = node.prev;
+    if (node.prev) { node.prev.next = node.next; }
+    if (node.next) { node.next.prev = node.prev; }
+    if (node === this._tail) { this._tail = node.prev; }
 
     // Move to head
     node.prev = null;
     node.next = this._head;
-    if (this._head) this._head.prev = node;
+    if (this._head) { this._head.prev = node; }
     this._head = node;
-    if (!this._tail) this._tail = node;
+    if (!this._tail) { this._tail = node; }
   }
 
   /**
@@ -94,7 +94,7 @@ class MessageCache {
    * @private
    */
   _removeTail() {
-    if (!this._tail) return null;
+    if (!this._tail) { return null; }
 
     const key = this._tail.key;
     this._map.delete(key);
@@ -104,7 +104,7 @@ class MessageCache {
       this._tail = null;
     } else {
       this._tail = this._tail.prev;
-      if (this._tail) this._tail.next = null;
+      if (this._tail) { this._tail.next = null; }
     }
 
     return key;
@@ -134,9 +134,9 @@ class MessageCache {
 
     // Add to head
     node.next = this._head;
-    if (this._head) this._head.prev = node;
+    if (this._head) { this._head.prev = node; }
     this._head = node;
-    if (!this._tail) this._tail = node;
+    if (!this._tail) { this._tail = node; }
 
     // Evict if over capacity
     if (this._map.size > this.maxSize) {
@@ -172,13 +172,13 @@ class MessageCache {
    */
   delete(messageId) {
     const node = this._map.get(messageId);
-    if (!node) return false;
+    if (!node) { return false; }
 
     // Update linked list
-    if (node.prev) node.prev.next = node.next;
-    if (node.next) node.next.prev = node.prev;
-    if (node === this._head) this._head = node.next;
-    if (node === this._tail) this._tail = node.prev;
+    if (node.prev) { node.prev.next = node.next; }
+    if (node.next) { node.next.prev = node.prev; }
+    if (node === this._head) { this._head = node.next; }
+    if (node === this._tail) { this._tail = node.prev; }
 
     this._map.delete(messageId);
     return true;

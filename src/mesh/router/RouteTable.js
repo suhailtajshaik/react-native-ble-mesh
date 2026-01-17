@@ -5,7 +5,7 @@
  * @module mesh/router/RouteTable
  */
 
-const { MESH_CONFIG, EVENTS } = require('../../constants');
+const { MESH_CONFIG } = require('../../constants');
 const { ValidationError } = require('../../errors');
 
 /**
@@ -128,7 +128,7 @@ class RouteTable {
    */
   getRoute(destination) {
     const route = this._routes.get(destination);
-    if (!route) return undefined;
+    if (!route) { return undefined; }
 
     // Check if expired
     if (Date.now() > route.expiresAt) {
@@ -197,7 +197,7 @@ class RouteTable {
     const now = Date.now();
     const routes = [];
 
-    for (const [destination, route] of this._routes) {
+    for (const [, route] of this._routes) {
       if (now <= route.expiresAt) {
         routes.push({ ...route });
       }

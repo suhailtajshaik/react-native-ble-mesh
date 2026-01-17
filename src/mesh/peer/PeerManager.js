@@ -75,11 +75,11 @@ class PeerManager extends EventEmitter {
       this.emit(EVENTS.PEER_DISCOVERED, peer);
     } else {
       // Update existing peer
-      if (info.name) peer.name = info.name;
-      if (typeof info.rssi === 'number') peer.rssi = info.rssi;
-      if (typeof info.hopCount === 'number') peer.hopCount = info.hopCount;
-      if (info.publicKey) peer.publicKey = info.publicKey;
-      if (info.metadata) Object.assign(peer.metadata, info.metadata);
+      if (info.name) { peer.name = info.name; }
+      if (typeof info.rssi === 'number') { peer.rssi = info.rssi; }
+      if (typeof info.hopCount === 'number') { peer.hopCount = info.hopCount; }
+      if (info.publicKey) { peer.publicKey = info.publicKey; }
+      if (info.metadata) { Object.assign(peer.metadata, info.metadata); }
       peer.updateLastSeen();
       this.emit(EVENTS.PEER_UPDATED, peer);
     }
@@ -136,7 +136,7 @@ class PeerManager extends EventEmitter {
    */
   updateConnectionState(id, state) {
     const peer = this._peers.get(id);
-    if (!peer) return undefined;
+    if (!peer) { return undefined; }
 
     const previousState = peer.connectionState;
     peer.setConnectionState(state);
@@ -158,7 +158,7 @@ class PeerManager extends EventEmitter {
    */
   markSecured(id) {
     const peer = this._peers.get(id);
-    if (!peer) return undefined;
+    if (!peer) { return undefined; }
 
     peer.markSecured();
     this.emit(EVENTS.PEER_SECURED, peer);
@@ -172,7 +172,7 @@ class PeerManager extends EventEmitter {
    */
   removePeer(id) {
     const peer = this._peers.get(id);
-    if (!peer) return false;
+    if (!peer) { return false; }
 
     this._peers.delete(id);
     this.emit(EVENTS.PEER_LOST, peer);

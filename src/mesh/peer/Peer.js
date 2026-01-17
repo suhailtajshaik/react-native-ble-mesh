@@ -231,10 +231,10 @@ class Peer {
       hopCount: data.hopCount,
       metadata: data.metadata || {}
     });
-    if (data.lastSeen) peer.lastSeen = data.lastSeen;
-    if (data.discoveredAt) peer.discoveredAt = data.discoveredAt;
-    if (data.connectionState) peer.connectionState = data.connectionState;
-    if (data.hasSecureSession) peer.hasSecureSession = data.hasSecureSession;
+    if (data.lastSeen) { peer.lastSeen = data.lastSeen; }
+    if (data.discoveredAt) { peer.discoveredAt = data.discoveredAt; }
+    if (data.connectionState) { peer.connectionState = data.connectionState; }
+    if (data.hasSecureSession) { peer.hasSecureSession = data.hasSecureSession; }
     return peer;
   }
 }

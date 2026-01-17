@@ -60,8 +60,7 @@ class TextMessage {
   static fromSerialized(data) {
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
 
-    // Read header
-    const version = data[0];
+    // Read header - version is at data[0] (reserved for future use)
     const flags = data[1];
     const timestamp = Number(view.getBigUint64(2, false));
     const contentLength = view.getUint16(10, false);
@@ -192,15 +191,15 @@ class TextMessage {
 
     // Calculate flags
     let flags = 0;
-    if (this._senderId) flags |= 0x01;
-    if (this._recipientId) flags |= 0x02;
-    if (this._channelId) flags |= 0x04;
-    if (this._isRead) flags |= 0x08;
+    if (this._senderId) { flags |= 0x01; }
+    if (this._recipientId) { flags |= 0x02; }
+    if (this._channelId) { flags |= 0x04; }
+    if (this._isRead) { flags |= 0x08; }
 
     // Calculate size
     let size = 12 + 1 + idBytes.length + contentBytes.length; // header + id length + id + content
-    if (this._senderId) size += 36;
-    if (this._recipientId) size += 36;
+    if (this._senderId) { size += 36; }
+    if (this._recipientId) { size += 36; }
     if (this._channelId) {
       const channelIdBytes = new TextEncoder().encode(this._channelId);
       size += 1 + channelIdBytes.length;

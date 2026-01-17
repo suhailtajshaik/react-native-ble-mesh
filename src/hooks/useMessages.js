@@ -53,7 +53,7 @@ function useMessages(mesh, options = {}) {
 
   // Add message to state (with dedup)
   const addMessage = useCallback((msg) => {
-    if (messageIdRef.current.has(msg.id)) return;
+    if (messageIdRef.current.has(msg.id)) { return; }
     messageIdRef.current.add(msg.id);
 
     setMessages(prev => {
@@ -70,7 +70,7 @@ function useMessages(mesh, options = {}) {
 
   // Subscribe to message events
   useEffect(() => {
-    if (!mesh) return;
+    if (!mesh) { return; }
 
     const handleBroadcast = (data) => {
       addMessage({
@@ -119,7 +119,7 @@ function useMessages(mesh, options = {}) {
 
   // Send broadcast message
   const sendBroadcast = useCallback((content) => {
-    if (!mesh) throw new Error('Mesh not initialized');
+    if (!mesh) { throw new Error('Mesh not initialized'); }
     setError(null);
 
     try {
@@ -141,7 +141,7 @@ function useMessages(mesh, options = {}) {
 
   // Send private message
   const sendPrivate = useCallback(async (peerId, content) => {
-    if (!mesh) throw new Error('Mesh not initialized');
+    if (!mesh) { throw new Error('Mesh not initialized'); }
     setError(null);
     setSending(true);
 
@@ -167,7 +167,7 @@ function useMessages(mesh, options = {}) {
 
   // Send channel message
   const sendToChannel = useCallback((channelId, content) => {
-    if (!mesh) throw new Error('Mesh not initialized');
+    if (!mesh) { throw new Error('Mesh not initialized'); }
     setError(null);
 
     try {

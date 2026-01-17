@@ -63,6 +63,7 @@ class VoiceMessage {
    * @returns {VoiceMessageRecorder}
    */
   static startRecording(options) {
+    // eslint-disable-next-line no-use-before-define
     return new VoiceMessageRecorder(options);
   }
 
@@ -275,7 +276,7 @@ class VoiceMessageRecorder extends EventEmitter {
    * @returns {Promise<void>}
    */
   async pushSamples(samples) {
-    if (this._cancelled) return;
+    if (this._cancelled) { return; }
 
     const frames = await this._encoder.pushSamples(samples);
 

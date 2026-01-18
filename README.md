@@ -1,68 +1,113 @@
 # react-native-ble-mesh
 
-> Inspired by [Bitchat](https://github.com/permissionlesstech/bitchat) - this is the React Native version.
+## Send messages without the internet. Like magic! ✨
 
-A **production-ready BLE Mesh Network library** for React Native with Noise Protocol security. This library enables peer-to-peer communication over Bluetooth Low Energy with end-to-end encryption, multi-hop routing, and offline-first capabilities.
+[![npm version](https://img.shields.io/npm/v/react-native-ble-mesh.svg?style=flat-square)](https://www.npmjs.com/package/react-native-ble-mesh)
+[![npm downloads](https://img.shields.io/npm/dm/react-native-ble-mesh.svg?style=flat-square)](https://www.npmjs.com/package/react-native-ble-mesh)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey.svg?style=flat-square)](https://reactnative.dev/)
 
-[![npm version](https://img.shields.io/npm/v/react-native-ble-mesh.svg)](https://www.npmjs.com/package/react-native-ble-mesh)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+---
 
-## Features
+## What is this?
 
-- **End-to-End Encryption** - Noise Protocol XX handshake with ChaCha20-Poly1305 AEAD
-- **Digital Signatures** - Ed25519 signatures for message authentication and identity verification
-- **Multi-Hop Routing** - Messages can traverse multiple peers to reach their destination
-- **Offline-First** - Works without internet connectivity using BLE
-- **Forward Secrecy** - Automatic session rekeying for enhanced security
-- **Replay Protection** - Sliding window algorithm prevents replay attacks
-- **Traffic Analysis Resistance** - PKCS#7 padding to fixed block sizes
-- **LZ4 Compression** - Efficient bandwidth usage for larger messages
-- **Power Management** - Multiple power modes for battery optimization
-- **Trust Management** - Peer verification, favorites, and blocking
-- **Message Reliability** - Automatic retry with exponential backoff
+Imagine you're at a concert, camping trip, or during a power outage - **no WiFi, no cell service**. How do you text your friends?
 
-## Use Cases
+**This library lets phones talk to each other using Bluetooth!** Messages hop from phone to phone until they reach your friend - even if they're far away.
 
-- Offline messaging apps (like Bridgefy, Briar)
-- Disaster communication networks
-- Privacy-focused P2P chat
-- IoT mesh networks
-- Gaming multiplayer over BLE
+```
+     You                    Friend's                  Your
+    Phone  ----Bluetooth---> Friend's  ----Bluetooth---> Friend
+                             Phone                      (300m away!)
+```
+
+**Think of it like a game of telephone, but for text messages!**
+
+---
+
+## See It In Action
+
+```javascript
+import { MeshNetwork } from 'react-native-ble-mesh';
+
+// 1. Create your mesh network
+const mesh = new MeshNetwork({ nickname: 'Alex' });
+
+// 2. Start it up!
+await mesh.start();
+
+// 3. Send a message to everyone nearby
+await mesh.broadcast('Hello everyone! 👋');
+
+// 4. Listen for messages
+mesh.on('messageReceived', (msg) => {
+  console.log(`${msg.from} says: ${msg.text}`);
+});
+```
+
+**That's it! Four lines of code and you're chatting without internet!**
+
+---
+
+## Why Use This?
+
+| Problem | Our Solution |
+|---------|--------------|
+| No WiFi or cell service | Works with just Bluetooth! |
+| Friend is too far away | Messages hop through other phones |
+| Worried about privacy? | All messages are encrypted |
+| Phone battery dying? | Smart power saving built-in |
+| Need to delete everything fast? | One-tap emergency wipe |
+
+---
+
+## Cool Features
+
+### 📡 Messages That Hop
+Your message can jump through **up to 7 phones** to reach someone far away. If Alice can't reach Dave directly, the message goes: Alice → Bob → Carol → Dave!
+
+### 🔒 Secret Messages
+Private messages are scrambled (encrypted) so only your friend can read them. Even if someone else's phone passes along the message, they can't peek!
+
+### 📬 Offline Delivery
+Friend's phone turned off? No problem! Your message waits and delivers when they come back online.
+
+### 🔋 Battery Friendly
+Choose how much battery to use:
+- **High Power** = Faster messages, more battery
+- **Balanced** = Good speed, normal battery (default)
+- **Low Power** = Slower messages, saves battery
+
+### 🚨 Panic Button
+Triple-tap to instantly delete all messages and data. Everything gone in less than 0.2 seconds!
+
+### 💬 Group Channels
+Create chat rooms like `#camping-trip` or `#concert-squad`. Only people who join can see the messages!
+
+---
 
 ## Installation
 
+### Step 1: Install the package
+
 ```bash
-npm install react-native-ble-mesh react-native-get-random-values react-native-ble-plx
-cd ios && pod install
+npm install react-native-ble-mesh react-native-ble-plx react-native-get-random-values
 ```
 
-### Required Setup
+### Step 2: iOS Setup
 
-**IMPORTANT:** You must import `react-native-get-random-values` at the very top of your entry file (index.js or App.js) **before any other imports**:
-
-```javascript
-// index.js or App.js - This MUST be the first import!
-import 'react-native-get-random-values';
-
-// Now you can import other modules
-import { AppRegistry } from 'react-native';
-import App from './App';
-import { name as appName } from './app.json';
-
-AppRegistry.registerComponent(appName, () => App);
+```bash
+cd ios && pod install && cd ..
 ```
 
-This polyfill provides the Web Crypto API (`crypto.getRandomValues`) which is required for cryptographic operations in the mesh network.
-
-### iOS Setup
-
-Add Bluetooth permissions to your `Info.plist`:
+Add these lines to your `ios/YourApp/Info.plist`:
 
 ```xml
 <key>NSBluetoothAlwaysUsageDescription</key>
-<string>This app uses Bluetooth to communicate with nearby devices</string>
+<string>Chat with nearby friends using Bluetooth</string>
 <key>NSBluetoothPeripheralUsageDescription</key>
-<string>This app uses Bluetooth to communicate with nearby devices</string>
+<string>Chat with nearby friends using Bluetooth</string>
 <key>UIBackgroundModes</key>
 <array>
   <string>bluetooth-central</string>
@@ -70,9 +115,9 @@ Add Bluetooth permissions to your `Info.plist`:
 </array>
 ```
 
-### Android Setup
+### Step 3: Android Setup
 
-Add Bluetooth permissions to your `AndroidManifest.xml`:
+Add these lines to `android/app/src/main/AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -83,655 +128,335 @@ Add Bluetooth permissions to your `AndroidManifest.xml`:
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 ```
 
-## Quick Start
-
-### Basic Setup
+### Step 4: Add this to the TOP of your app
 
 ```javascript
-const { MeshService, BLETransport } = require('react-native-ble-mesh');
+// This MUST be the very first line in index.js or App.js
+import 'react-native-get-random-values';
 
-// Create and initialize the mesh service
-const mesh = new MeshService();
+// Now add your other imports
+import { AppRegistry } from 'react-native';
+// ...
+```
 
-async function start() {
-  // Initialize with optional configuration
-  await mesh.initialize({
-    displayName: 'Alice',
-    storage: null, // Use in-memory storage
-  });
+---
 
-  // Create transport layer
-  const transport = new BLETransport();
+## Quick Start Examples
 
-  // Start the mesh service
-  await mesh.start(transport);
+### Example 1: Simple Chat
 
-  console.log('Mesh network started!');
-  console.log('My fingerprint:', mesh.getFingerprint());
+```javascript
+import { MeshNetwork } from 'react-native-ble-mesh';
+
+// Create and start
+const mesh = new MeshNetwork({ nickname: 'YourName' });
+await mesh.start();
+
+// Send message to everyone
+await mesh.broadcast('Hi everyone!');
+
+// Send private message to one person
+await mesh.sendDirect('friend-id-here', 'Hey, just for you!');
+
+// Receive messages
+mesh.on('messageReceived', ({ from, text }) => {
+  console.log(`${from}: ${text}`);
+});
+
+// When done
+await mesh.stop();
+```
+
+### Example 2: Group Channels
+
+```javascript
+// Join a channel (like a chat room)
+await mesh.joinChannel('#road-trip');
+
+// Send message to everyone in the channel
+await mesh.sendToChannel('#road-trip', 'Are we there yet?');
+
+// Leave when done
+await mesh.leaveChannel('#road-trip');
+```
+
+### Example 3: Save Battery
+
+```javascript
+const mesh = new MeshNetwork({
+  nickname: 'PowerSaver',
+  batteryMode: 'low',  // Uses less battery
+});
+
+// Or let it decide automatically based on battery level
+const mesh = new MeshNetwork({
+  nickname: 'Smart',
+  batteryMode: 'auto',  // Adjusts automatically!
+});
+```
+
+### Example 4: Emergency Delete
+
+```javascript
+// Enable panic mode
+mesh.enablePanicMode({
+  trigger: 'triple_tap',  // Triple tap to wipe
+});
+
+// Or wipe everything immediately
+await mesh.wipeAllData();
+// All messages, keys, and data = GONE! 💨
+```
+
+### Example 5: Check Network Health
+
+```javascript
+const health = mesh.getNetworkHealth();
+
+console.log(`Connected to ${health.activeNodes} people`);
+console.log(`Network status: ${health.overallHealth}`); // 'good', 'fair', or 'poor'
+```
+
+---
+
+## Using React Hooks
+
+If you're using React, we have easy hooks!
+
+```javascript
+import { useMesh, useMessages, usePeers } from 'react-native-ble-mesh/hooks';
+
+function ChatScreen() {
+  const { mesh, isConnected, start, stop } = useMesh({ nickname: 'Alex' });
+  const { messages, sendBroadcast } = useMessages(mesh);
+  const { peers } = usePeers(mesh);
+
+  return (
+    <View>
+      <Text>Connected to {peers.length} people</Text>
+
+      {messages.map(msg => (
+        <Text key={msg.id}>{msg.from}: {msg.text}</Text>
+      ))}
+
+      <Button title="Say Hi!" onPress={() => sendBroadcast('Hello!')} />
+    </View>
+  );
 }
-
-start();
 ```
 
-### Discovering Peers
+---
 
-```javascript
-// Listen for peer discovery events
-mesh.on('peer-discovered', (peer) => {
-  console.log('Discovered peer:', peer.id);
-  console.log('Display name:', peer.getDisplayName());
-});
+## All The Things You Can Do
 
-mesh.on('peer-connected', (peer) => {
-  console.log('Connected to peer:', peer.id);
-});
+### Starting & Stopping
 
-mesh.on('peer-secured', (peer) => {
-  console.log('Secure session established with:', peer.id);
-});
-```
+| Method | What It Does |
+|--------|--------------|
+| `mesh.start()` | Turn on the mesh network |
+| `mesh.stop()` | Turn it off (can restart later) |
+| `mesh.destroy()` | Completely shut down (can't restart) |
 
 ### Sending Messages
 
-```javascript
-// Send a broadcast message to all nearby peers
-const broadcastId = mesh.sendBroadcast('Hello, mesh network!');
+| Method | What It Does |
+|--------|--------------|
+| `mesh.broadcast('Hi!')` | Send to everyone nearby |
+| `mesh.sendDirect(id, 'Hey')` | Send private message to one person |
+| `mesh.sendToChannel('#fun', 'Yo')` | Send to a group channel |
 
-// Send a private encrypted message to a specific peer
-const peerId = 'abc123...';
-try {
-  const messageId = await mesh.sendPrivateMessage(peerId, 'Hello, this is private!');
-  console.log('Message sent:', messageId);
-} catch (error) {
-  console.error('Failed to send:', error.message);
-}
+### Channels (Group Chats)
 
-// Send a message to a channel
-const channelMessageId = mesh.sendChannelMessage('general', 'Hello channel!');
-```
+| Method | What It Does |
+|--------|--------------|
+| `mesh.joinChannel('#name')` | Join a channel |
+| `mesh.leaveChannel('#name')` | Leave a channel |
+| `mesh.getChannels()` | See what channels you're in |
 
-### Receiving Messages
+### People Management
 
-```javascript
-// Listen for incoming messages
-mesh.on('message', (message) => {
-  console.log('Received message:', message.content);
-  console.log('From:', message.senderId);
-  console.log('Type:', message.type);
-});
+| Method | What It Does |
+|--------|--------------|
+| `mesh.getPeers()` | See everyone nearby |
+| `mesh.blockPeer(id)` | Block someone |
+| `mesh.unblockPeer(id)` | Unblock someone |
 
-// Listen for private messages specifically
-mesh.on('private-message', (message) => {
-  console.log('Private message from', message.senderId);
-  console.log('Content:', message.content);
-});
+### Your Identity
 
-// Listen for channel messages
-mesh.on('channel-message', (message) => {
-  console.log('Channel:', message.channelId);
-  console.log('Content:', message.content);
-});
-```
+| Method | What It Does |
+|--------|--------------|
+| `mesh.getIdentity()` | Get your info |
+| `mesh.setNickname('New Name')` | Change your display name |
 
-### Handling Acknowledgments and Read Receipts
+### Safety Features
 
-```javascript
-// Listen for message delivery confirmations
-mesh.on('message-delivered', ({ messageId, peerId, timestamp }) => {
-  console.log(`Message ${messageId} delivered to ${peerId}`);
-});
+| Method | What It Does |
+|--------|--------------|
+| `mesh.enablePanicMode()` | Enable emergency wipe |
+| `mesh.wipeAllData()` | Delete everything NOW |
 
-// Listen for read receipts
-mesh.on('read-receipt', ({ messageIds, fromPeerId, timestamp }) => {
-  console.log(`Peer ${fromPeerId} read messages:`, messageIds);
-});
+### Network Info
 
-// Send read receipts for messages you've read
-mesh.sendReadReceipt(['msg-id-1', 'msg-id-2']);
+| Method | What It Does |
+|--------|--------------|
+| `mesh.getStatus()` | Get current status |
+| `mesh.getNetworkHealth()` | Check how good the network is |
+| `mesh.getBatteryMode()` | See current battery mode |
+| `mesh.setBatteryMode('low')` | Change battery mode |
 
-// Mark a single message as read
-mesh.markMessageRead('msg-id-1');
-```
+---
 
-## API Reference
+## Events (When Things Happen)
 
-### MeshService
-
-The main orchestrator for the mesh network.
-
-#### Lifecycle Methods
+Listen for these events:
 
 ```javascript
-// Initialize the service
-await mesh.initialize(options);
+// Someone sent a message
+mesh.on('messageReceived', ({ from, text }) => { });
 
-// Start with a transport
-await mesh.start(transport);
+// Found a new person nearby
+mesh.on('peerDiscovered', ({ peerId }) => { });
 
-// Stop the service
-await mesh.stop();
+// Connected to someone
+mesh.on('peerConnected', ({ peerId, displayName }) => { });
 
-// Clean up resources
-await mesh.destroy();
+// Someone left
+mesh.on('peerDisconnected', ({ peerId }) => { });
+
+// Joined a channel
+mesh.on('channelJoined', ({ channel }) => { });
+
+// Network quality changed
+mesh.on('networkHealthChanged', ({ status }) => { });
+
+// Something went wrong
+mesh.on('error', ({ code, message }) => { });
 ```
 
-#### Identity Management
+---
 
-```javascript
-// Get your identity information
-const identity = mesh.getIdentity();
-// Returns: { publicKey, signingPublicKey, displayName, fingerprint }
+## How Secure Is It?
 
-// Set your display name
-mesh.setDisplayName('Alice');
+**Very secure!** Here's what protects your messages:
 
-// Get your fingerprint for out-of-band verification
-const fingerprint = mesh.getFingerprint();
+| Feature | What It Means |
+|---------|---------------|
+| **Noise Protocol** | Military-grade handshake to verify who you're talking to |
+| **ChaCha20 Encryption** | Your messages are scrambled so only the recipient can read them |
+| **Forward Secrecy** | Even if someone steals your keys later, old messages stay secret |
+| **No Permanent IDs** | You don't have a permanent identity that can be tracked |
 
-// Export identity for backup
-const exported = mesh.exportIdentity();
+---
 
-// Import identity from backup
-mesh.importIdentity(exported);
+## Frequently Asked Questions
 
-// Announce identity to network
-mesh.announceIdentity();
-```
+### How far can messages travel?
+With one hop: about 30 meters (100 feet). With 7 hops through other phones: up to 300+ meters!
 
-#### Peer Management
+### Does it work if Bluetooth is off?
+No, Bluetooth must be on. But you don't need WiFi or cell service!
 
-```javascript
-// Get all known peers
-const peers = mesh.getPeers();
+### Can someone read my private messages?
+No! Private messages are encrypted. Only you and your friend have the keys.
 
-// Get a specific peer
-const peer = mesh.getPeer(peerId);
+### How many people can be in the network?
+The library supports 50+ connected peers at once.
 
-// Initiate secure handshake with a peer
-await mesh.initiateHandshake(peerId);
+### Does it drain my battery?
+It uses some battery (Bluetooth is on), but you can use "low power" mode to minimize drain.
 
-// Block a peer
-mesh.blockPeer(peerId);
+### Does it work in the background?
+On iOS, it works with some limitations. On Android, it works fully in the background.
 
-// Unblock a peer
-mesh.unblockPeer(peerId);
-```
+---
 
-#### Trust Management
+## Use Cases
 
-```javascript
-// Verify a peer using their fingerprint
-mesh.verifyPeer(peerId, fingerprint);
+- **Concerts & Festivals** - Text friends when cell towers are overloaded
+- **Camping & Hiking** - Stay connected in the wilderness
+- **Emergencies** - Communicate during power outages or disasters
+- **Protests & Events** - When networks are restricted
+- **Gaming** - Local multiplayer without internet
+- **Schools** - Classroom activities without WiFi
 
-// Remove verification
-mesh.unverifyPeer(peerId);
-
-// Add to favorites
-mesh.addFavorite(peerId);
-
-// Remove from favorites
-mesh.removeFavorite(peerId);
-
-// Get verified peers
-const verified = mesh.getVerifiedPeers();
-
-// Get favorite peers
-const favorites = mesh.getFavoritePeers();
-```
-
-#### Power Management
-
-```javascript
-// Available power modes: PERFORMANCE, BALANCED, POWER_SAVER, ULTRA_POWER_SAVER
-mesh.setPowerMode('BALANCED');
-
-// Get current power mode
-const mode = mesh.getPowerMode();
-
-// Enable automatic power adjustment based on battery level
-mesh.setAutoPowerAdjust(true);
-```
-
-#### Status and Statistics
-
-```javascript
-// Get service status
-const status = mesh.getStatus();
-
-// Get current state
-const state = mesh.getState();
-
-// Get detailed statistics
-const stats = mesh.getStats();
-```
-
-### Events
-
-| Event | Description | Payload |
-|-------|-------------|---------|
-| `peer-discovered` | New peer found | `{ peer }` |
-| `peer-connected` | Connected to peer | `{ peer }` |
-| `peer-disconnected` | Disconnected from peer | `{ peer }` |
-| `peer-secured` | Secure session established | `{ peer }` |
-| `message` | Any message received | `{ message }` |
-| `private-message` | Private message received | `{ message }` |
-| `channel-message` | Channel message received | `{ message }` |
-| `message-delivered` | Message delivery confirmed | `{ messageId, peerId, timestamp }` |
-| `message-failed` | Message delivery failed | `{ messageId, peerId, error }` |
-| `read-receipt` | Read receipt received | `{ messageIds, fromPeerId, timestamp }` |
-| `identity-announced` | Peer announced identity | `{ peerId, fingerprint, nickname }` |
-| `peer-verified` | Peer verification changed | `{ peerId, fingerprint }` |
-| `peer-compromised` | Fingerprint mismatch detected | `{ peerId, expected, actual }` |
-
-## Configuration
-
-### Initialization Options
-
-```javascript
-await mesh.initialize({
-  // Display name for this node
-  displayName: 'My Device',
-
-  // Storage adapter (null for in-memory)
-  storage: null,
-
-  // Custom key manager (optional)
-  keyManager: null,
-
-  // Enable compression for messages > 64 bytes
-  compressionEnabled: true,
-
-  // Compression threshold in bytes
-  compressionThreshold: 64,
-});
-```
-
-### Power Modes
-
-| Mode | Scan Interval | Window | Use Case |
-|------|---------------|--------|----------|
-| `PERFORMANCE` | 1s | 800ms | Active foreground use |
-| `BALANCED` | 5s | 2s | Default mode |
-| `POWER_SAVER` | 30s | 5s | Background operation |
-| `ULTRA_POWER_SAVER` | 60s | 5s | Minimal battery drain |
-
-### Message Options
-
-```javascript
-// Send with options
-await mesh.sendPrivateMessage(peerId, content, {
-  // Request delivery acknowledgment
-  requiresAck: true,
-
-  // Enable compression
-  compress: true,
-
-  // Maximum hop count (1-15)
-  maxHops: 7,
-
-  // Priority level
-  priority: 'high', // 'normal' | 'high'
-});
-```
-
-## Security Features
-
-### Cryptographic Primitives
-
-- **Key Exchange**: X25519 (Curve25519 ECDH)
-- **Signatures**: Ed25519
-- **Encryption**: ChaCha20-Poly1305 AEAD
-- **Hashing**: SHA-256, SHA-512
-- **Key Derivation**: HKDF
-
-### Noise Protocol XX Handshake
-
-The library implements the Noise XX handshake pattern:
-
-```
--> e
-<- e, ee, s, es
--> s, se
-```
-
-This provides:
-- Mutual authentication
-- Forward secrecy
-- Identity hiding
-
-### Session Security
-
-- **Automatic Rekeying**: Sessions rekey every hour or after 10,000 messages
-- **Replay Protection**: Sliding window algorithm with configurable window size
-- **Nonce Management**: Automatic nonce tracking prevents reuse
-
-### Identity Verification
-
-Verify peer identities out-of-band using fingerprints:
-
-```javascript
-// Get your fingerprint to share
-const myFingerprint = mesh.getFingerprint();
-// Format: "A1B2 C3D4 E5F6 G7H8 I9J0 K1L2 M3N4 O5P6"
-
-// Verify a peer after out-of-band confirmation
-mesh.verifyPeer(peerId, theirFingerprint);
-
-// Check if a peer is verified
-const peer = mesh.getPeer(peerId);
-console.log('Verified:', peer.verificationStatus === 'verified');
-```
-
-## Protocol Details
-
-### Message Header Format
-
-The library uses an optimized 24-32 byte header:
-
-| Field | Size | Description |
-|-------|------|-------------|
-| version | 1 | Protocol version |
-| type | 1 | Message type |
-| flags | 1 | Feature flags |
-| ttl | 1 | Hop count + max hops |
-| timestamp | 8 | Unix timestamp (ms) |
-| payloadLength | 2 | Payload size |
-| fragmentIndex | 1 | Fragment index |
-| fragmentTotal | 1 | Total fragments |
-| senderId | 8 | Truncated peer ID |
-| recipientId | 8 | (Optional) Recipient ID |
-
-### Message Types
-
-| Category | Types |
-|----------|-------|
-| Data | TEXT, TEXT_ACK, BINARY, BINARY_ACK |
-| Handshake | HANDSHAKE_INIT, HANDSHAKE_RESPONSE, HANDSHAKE_FINAL |
-| Discovery | PEER_ANNOUNCE, PEER_REQUEST, PEER_RESPONSE, IDENTITY_ANNOUNCE |
-| Channels | CHANNEL_JOIN, CHANNEL_LEAVE, CHANNEL_MESSAGE |
-| Private | PRIVATE_MESSAGE, PRIVATE_ACK, READ_RECEIPT |
-| Control | HEARTBEAT, PING, PONG |
-| Fragments | FRAGMENT_START, FRAGMENT_CONTINUE, FRAGMENT_END |
-
-## Error Handling
-
-The library provides detailed error classes:
-
-```javascript
-const {
-  MeshError,
-  CryptoError,
-  ConnectionError,
-  HandshakeError,
-  MessageError,
-  FragmentError,
-  TrustError,
-  RetryError
-} = require('react-native-ble-mesh/errors');
-
-mesh.on('error', (error) => {
-  if (error instanceof CryptoError) {
-    console.error('Crypto error:', error.code, error.message);
-  } else if (error instanceof ConnectionError) {
-    console.error('Connection error:', error.code, error.message);
-  } else if (error instanceof TrustError) {
-    console.error('Trust error:', error.code, error.message);
-  }
-
-  // All errors have these properties
-  console.log('Error code:', error.code);
-  console.log('Category:', error.category);
-  console.log('Recoverable:', error.recoverable);
-  console.log('Details:', error.details);
-});
-```
-
-### Error Codes
-
-| Category | Codes |
-|----------|-------|
-| Crypto | E_CRYPTO_001 - E_CRYPTO_006 |
-| Connection | E_CONN_001 - E_CONN_003 |
-| Handshake | E_HAND_001 - E_HAND_003 |
-| Message | E_MSG_001 - E_MSG_004 |
-| Fragment | E_FRAG_001 - E_FRAG_004 |
-| Trust | E_TRUST_001 - E_TRUST_004 |
-| Retry | E_RETRY_001 - E_RETRY_003 |
-
-## Platform Support
-
-### React Native
-
-```javascript
-const { MeshService, BLETransport } = require('react-native-ble-mesh');
-const { RNBLEAdapter } = require('react-native-ble-mesh/adapters');
-
-const transport = new BLETransport({
-  adapter: new RNBLEAdapter(),
-});
-```
-
-**Required permissions (iOS):**
-- NSBluetoothAlwaysUsageDescription
-- NSBluetoothPeripheralUsageDescription
-
-**Required permissions (Android):**
-- BLUETOOTH
-- BLUETOOTH_ADMIN
-- BLUETOOTH_SCAN
-- BLUETOOTH_ADVERTISE
-- BLUETOOTH_CONNECT
-- ACCESS_FINE_LOCATION
-
-### Node.js
-
-```javascript
-const { MeshService, BLETransport } = require('react-native-ble-mesh');
-const { NodeBLEAdapter } = require('react-native-ble-mesh/adapters');
-
-const transport = new BLETransport({
-  adapter: new NodeBLEAdapter(),
-});
-```
-
-## Examples
-
-### Basic Chat Application
-
-```javascript
-const { MeshService, BLETransport, MemoryStorage } = require('react-native-ble-mesh');
-
-class ChatApp {
-  constructor() {
-    this.mesh = new MeshService();
-    this.messages = [];
-  }
-
-  async start(displayName) {
-    await this.mesh.initialize({
-      displayName,
-      storage: new MemoryStorage(),
-    });
-
-    const transport = new BLETransport();
-    await this.mesh.start(transport);
-
-    this.setupEventHandlers();
-    console.log('Chat started! Your fingerprint:', this.mesh.getFingerprint());
-  }
-
-  setupEventHandlers() {
-    this.mesh.on('peer-discovered', (peer) => {
-      console.log(`[+] Discovered: ${peer.getDisplayName()}`);
-    });
-
-    this.mesh.on('private-message', (message) => {
-      this.messages.push(message);
-      console.log(`[${message.senderId.slice(0, 8)}]: ${message.content}`);
-    });
-
-    this.mesh.on('message-delivered', ({ messageId }) => {
-      console.log(`[OK] Delivered: ${messageId.slice(0, 8)}`);
-    });
-  }
-
-  async sendMessage(peerId, content) {
-    return await this.mesh.sendPrivateMessage(peerId, content, {
-      requiresAck: true,
-    });
-  }
-
-  getPeers() {
-    return this.mesh.getPeers();
-  }
-
-  verifyPeer(peerId, fingerprint) {
-    this.mesh.verifyPeer(peerId, fingerprint);
-  }
-
-  async stop() {
-    await this.mesh.stop();
-    await this.mesh.destroy();
-  }
-}
-
-// Usage
-const chat = new ChatApp();
-await chat.start('Alice');
-
-// List discovered peers
-const peers = chat.getPeers();
-peers.forEach(p => console.log(p.id, p.getDisplayName()));
-
-// Send a message
-await chat.sendMessage(peers[0].id, 'Hello!');
-```
-
-### Multi-Hop Messaging
-
-```javascript
-// Messages automatically route through multiple hops
-const messageId = await mesh.sendPrivateMessage(distantPeerId, 'Hello distant peer!', {
-  maxHops: 10, // Allow up to 10 hops
-  requiresAck: true,
-});
-
-// Track routing statistics
-const stats = mesh.getStats();
-console.log('Messages relayed:', stats.messagesRelayed);
-console.log('Average hop count:', stats.averageHopCount);
-```
-
-### Secure File Transfer
-
-```javascript
-const fs = require('fs');
-const path = require('path');
-
-async function sendFile(mesh, peerId, filePath) {
-  const fileData = fs.readFileSync(filePath);
-  const fileName = path.basename(filePath);
-
-  // The library automatically handles:
-  // - Compression for large payloads
-  // - Fragmentation for BLE MTU limits
-  // - Encryption with peer's session key
-  // - Automatic retry on failure
-
-  const messageId = await mesh.sendPrivateMessage(peerId, {
-    type: 'file',
-    name: fileName,
-    data: fileData.toString('base64'),
-    size: fileData.length,
-  }, {
-    compress: true,
-    requiresAck: true,
-  });
-
-  console.log('File transfer initiated:', messageId);
-}
-```
-
-## Testing
-
-Run the test suite:
-
-```bash
-npm test
-```
-
-Run with coverage:
-
-```bash
-npm run test:coverage
-```
-
-Run specific test files:
-
-```bash
-npm test -- __tests__/crypto/sha256.test.js
-npm test -- __tests__/integration/handshake.test.js
-```
+---
 
 ## Project Structure
 
 ```
 react-native-ble-mesh/
 ├── src/
-│   ├── index.js                # Main exports
-│   ├── constants/              # Protocol, BLE, crypto constants
-│   ├── errors/                 # Custom error classes
-│   ├── crypto/                 # Cryptographic implementations
-│   │   ├── noise/              # Noise Protocol (handshake, session)
-│   │   └── keys/               # Key management
-│   ├── protocol/               # Message serialization/deserialization
-│   ├── mesh/                   # Mesh networking logic
-│   │   ├── router/             # Message routing
-│   │   ├── dedup/              # Duplicate detection
-│   │   ├── fragment/           # Message fragmentation
-│   │   └── peer/               # Peer management
-│   ├── transport/              # BLE transport layer
-│   ├── storage/                # Persistence adapters
-│   ├── utils/                  # Utility functions
-│   └── service/                # High-level service orchestration
-├── __tests__/                  # Test files
-├── docs/                       # Documentation
-├── examples/                   # Example applications
-└── package.json
+│   ├── index.js          # Main entry point
+│   ├── MeshNetwork.js    # High-level API
+│   ├── crypto/           # Encryption stuff
+│   ├── mesh/             # Routing & networking
+│   ├── transport/        # Bluetooth layer
+│   └── hooks/            # React hooks
+├── docs/                 # Documentation
+└── __tests__/            # Tests
 ```
+
+---
+
+## More Documentation
+
+- [Full API Reference](docs/API.md) - Every method explained
+- [React Native Guide](docs/REACT_NATIVE.md) - Platform-specific setup
+- [Security Details](docs/SECURITY.md) - How encryption works
+- [Protocol Spec](docs/PROTOCOL.md) - Technical wire format
+- [AI/Agent Instructions](docs/prompt-instructions.md) - For AI assistants
+
+---
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage report
+npm run test:coverage
+```
+
+---
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Run tests and linting (`npm run validate`)
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+We love contributions! Here's how:
 
-### Code Style
+1. Fork this repository
+2. Create a branch: `git checkout -b my-feature`
+3. Make your changes
+4. Run tests: `npm test`
+5. Push and create a Pull Request
 
-- Maximum 200 lines per file
-- JSDoc comments on all public APIs
-- ESLint with strict rules
-- 100% test coverage on crypto modules
-- >80% coverage on other modules
+---
 
-## Documentation
+## Credits
 
-- [API Reference](docs/API.md) - Complete API documentation
-- [Architecture](docs/ARCHITECTURE.md) - System design and module structure
-- [Security](docs/SECURITY.md) - Threat model and security properties
-- [Protocol](docs/PROTOCOL.md) - Wire format and message types
+Inspired by [BitChat](https://github.com/nicegram/nicegram-bitchat) - the original decentralized mesh chat.
+
+Built with:
+- [react-native-ble-plx](https://github.com/Polidea/react-native-ble-plx) - Bluetooth Low Energy
+- [Noise Protocol](https://noiseprotocol.org/) - Secure handshakes
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - do whatever you want with it! See [LICENSE](LICENSE) for details.
 
-## Acknowledgments
+---
 
-This project is inspired by [bitchat](https://github.com/permissionlesstech/bitchat).
+## Get Help
 
-- [Noise Protocol Framework](https://noiseprotocol.org/) - Cryptographic handshake pattern
-- [react-native-ble-plx](https://github.com/Polidea/react-native-ble-plx) - React Native BLE library
-- [Noble](https://github.com/abandonware/noble) - Node.js BLE library
+- **Issues**: [GitHub Issues](https://github.com/suhailtajshaik/react-native-ble-mesh/issues)
+- **Questions**: Open a Discussion on GitHub
+
+---
+
+<p align="center">
+  <b>Made with ❤️ for a more connected (yet private) world</b>
+  <br><br>
+  If this library helps you, give it a ⭐ on GitHub!
+</p>

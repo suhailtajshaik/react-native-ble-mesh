@@ -224,19 +224,36 @@ console.log(`Network status: ${health.overallHealth}`); // 'good', 'fair', or 'p
 If you're using React, we have easy hooks!
 
 ```javascript
+import React, { useEffect } from 'react';
+import { View, Text, Button } from 'react-native';
 import { useMesh, useMessages, usePeers } from 'react-native-ble-mesh/hooks';
+import { BLETransport } from 'react-native-ble-mesh';
 
 function ChatScreen() {
-  const { mesh, isConnected, start, stop } = useMesh({ nickname: 'Alex' });
+  // Manage mesh lifecycle
+  const { mesh, state, initialize, destroy } = useMesh({ displayName: 'Alex' });
+
+  // Message handling (pass mesh instance)
   const { messages, sendBroadcast } = useMessages(mesh);
-  const { peers } = usePeers(mesh);
+
+  // Peer tracking (pass mesh instance)
+  const { peers, connectedCount } = usePeers(mesh);
+
+  // Start mesh on mount
+  useEffect(() => {
+    const transport = new BLETransport();
+    initialize(transport);
+    return () => destroy();
+  }, []);
+
+  if (state !== 'active') return <Text>Starting mesh...</Text>;
 
   return (
     <View>
-      <Text>Connected to {peers.length} people</Text>
+      <Text>Connected to {connectedCount} people</Text>
 
       {messages.map(msg => (
-        <Text key={msg.id}>{msg.from}: {msg.text}</Text>
+        <Text key={msg.id}>{msg.senderId}: {msg.content}</Text>
       ))}
 
       <Button title="Say Hi!" onPress={() => sendBroadcast('Hello!')} />
@@ -244,6 +261,8 @@ function ChatScreen() {
   );
 }
 ```
+
+> **Note:** The hooks (`useMesh`, `useMessages`, `usePeers`) work with the lower-level `MeshService`. For simpler usage, use the `MeshNetwork` class directly as shown in the Quick Start examples above.
 
 ---
 
@@ -311,26 +330,49 @@ function ChatScreen() {
 Listen for these events:
 
 ```javascript
-// Someone sent a message
-mesh.on('messageReceived', ({ from, text }) => { });
+// Network started/stopped
+mesh.on('started', () => { });
+mesh.on('stopped', () => { });
+
+// Someone sent a message (any type)
+mesh.on('messageReceived', ({ from, text, timestamp, type }) => { });
+
+// Private message received
+mesh.on('directMessage', ({ from, text, timestamp }) => { });
+
+// Channel message received
+mesh.on('channelMessage', ({ channel, from, text, timestamp }) => { });
+
+// Message was delivered successfully
+mesh.on('messageDelivered', ({ messageId, peerId }) => { });
 
 // Found a new person nearby
-mesh.on('peerDiscovered', ({ peerId }) => { });
+mesh.on('peerDiscovered', (peer) => { });
 
 // Connected to someone
-mesh.on('peerConnected', ({ peerId, displayName }) => { });
+mesh.on('peerConnected', (peer) => { });
 
 // Someone left
-mesh.on('peerDisconnected', ({ peerId }) => { });
+mesh.on('peerDisconnected', (peer) => { });
 
-// Joined a channel
+// Channel events
 mesh.on('channelJoined', ({ channel }) => { });
+mesh.on('channelLeft', ({ channel }) => { });
 
 // Network quality changed
-mesh.on('networkHealthChanged', ({ status }) => { });
+mesh.on('networkHealthChanged', (healthInfo) => { });
+
+// Message cached for offline peer
+mesh.on('messageCached', ({ peerId, text }) => { });
+
+// Cached messages delivered when peer came online
+mesh.on('cachedMessagesDelivered', ({ peerId, delivered }) => { });
+
+// Data was wiped (panic mode)
+mesh.on('dataWiped', (result) => { });
 
 // Something went wrong
-mesh.on('error', ({ code, message }) => { });
+mesh.on('error', (error) => { });
 ```
 
 ---

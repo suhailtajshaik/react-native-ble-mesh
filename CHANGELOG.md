@@ -12,12 +12,16 @@
 - Enhanced badges (npm downloads, TypeScript, platform support)
 - Step-by-step installation guide with numbered steps
 - Multiple practical examples (chat, channels, battery, panic mode)
-- React hooks usage example
 - Complete API reference in easy-to-scan tables
 - Security explained in plain terms
 - FAQ section for common questions
 - Use cases list for different scenarios
 - Added AI/Agent instructions documentation
+
+### Fixed
+- React hooks example now matches actual useMesh/useMessages/usePeers API
+- Events section now lists all actual events emitted by MeshNetwork
+- Corrected event payload structures to match implementation
 
 ---
 

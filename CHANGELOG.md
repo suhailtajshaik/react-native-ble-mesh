@@ -1,6 +1,26 @@
 # Changelog
 
 
+## [1.1.1] - 2026-01-18
+
+### Changed
+- Complete README rewrite for maximum clarity and discoverability
+- Simple language understandable by beginners
+- Visual diagram showing message hopping concept
+- Quick start reduced to 4 lines of code
+- Added problem/solution value proposition table
+- Enhanced badges (npm downloads, TypeScript, platform support)
+- Step-by-step installation guide with numbered steps
+- Multiple practical examples (chat, channels, battery, panic mode)
+- React hooks usage example
+- Complete API reference in easy-to-scan tables
+- Security explained in plain terms
+- FAQ section for common questions
+- Use cases list for different scenarios
+- Added AI/Agent instructions documentation
+
+---
+
 ## [1.1.0] - 2026-01-18
 
 ### Added
@@ -238,6 +258,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.1.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.1
 [1.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.0
 [1.0.4]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.4
 [1.0.3]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.3

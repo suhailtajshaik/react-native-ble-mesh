@@ -1,7 +1,7 @@
 {
   "name": "react-native-ble-mesh",
-  "version": "1.0.2",
-  "description": "Production-ready React Native BLE Mesh Network with Noise Protocol security",
+  "version": "1.1.0",
+  "description": "React Native Bluetooth Low Energy (BLE) mesh networking library with end-to-end encryption, offline messaging, peer-to-peer communication, and Noise Protocol security for iOS and Android",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "exports": {
@@ -39,18 +39,36 @@
   },
   "keywords": [
     "react-native",
+    "react-native-ble",
+    "react-native-bluetooth",
     "bluetooth",
+    "bluetooth-low-energy",
     "ble",
-    "mesh",
+    "ble-mesh",
+    "mesh-network",
+    "mesh-networking",
     "p2p",
     "peer-to-peer",
-    "noise-protocol",
-    "encryption",
+    "offline",
     "offline-first",
-    "x25519",
-    "chacha20-poly1305"
+    "offline-messaging",
+    "encryption",
+    "end-to-end-encryption",
+    "e2e-encryption",
+    "noise-protocol",
+    "secure-messaging",
+    "ios",
+    "android",
+    "mobile",
+    "wireless",
+    "decentralized",
+    "chat",
+    "messaging"
   ],
-  "author": "Suhail Taj Shaik",
+  "author": {
+    "name": "Suhail Taj Shaik",
+    "url": "https://github.com/suhailtajshaik"
+  },
   "license": "MIT",
   "devDependencies": {
     "eslint": "^8.57.0",

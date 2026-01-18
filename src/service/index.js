@@ -8,6 +8,8 @@
 const MeshService = require('./MeshService');
 const SessionManager = require('./SessionManager');
 const HandshakeManager = require('./HandshakeManager');
+const { EmergencyManager, PANIC_TRIGGER } = require('./EmergencyManager');
+const { BatteryOptimizer, BATTERY_MODE, BATTERY_THRESHOLDS } = require('./BatteryOptimizer');
 
 // Audio module
 const audio = require('./audio');
@@ -19,6 +21,13 @@ module.exports = {
   MeshService,
   SessionManager,
   HandshakeManager,
+  EmergencyManager,
+  BatteryOptimizer,
+
+  // Constants
+  PANIC_TRIGGER,
+  BATTERY_MODE,
+  BATTERY_THRESHOLDS,
 
   // Audio exports
   AudioManager: audio.AudioManager,
@@ -37,3 +46,4 @@ module.exports = {
   audio,
   text
 };
+

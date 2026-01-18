@@ -1,6 +1,99 @@
 # Changelog
 
 
+## [1.1.0] - 2026-01-18
+
+### Added
+
+#### High-Level MeshNetwork API
+- **MeshNetwork class**: Unified high-level API for BitChat-compatible mesh networking
+- Simplified initialization with sensible defaults
+- Event-driven architecture with typed events
+- Full lifecycle management (start, stop, restart, destroy)
+- Static property exports for constants (BatteryMode, PanicTrigger, HealthStatus)
+
+#### Store & Forward Messaging
+- **StoreAndForwardManager**: Automatic message caching for offline peers
+- Configurable retention period (default 24 hours)
+- Per-recipient message limits with automatic cleanup
+- Automatic delivery when peers reconnect
+- Events: `messageCached`, `messageDelivered`, `messageDeliveryFailed`
+
+#### Network Health Monitoring
+- **NetworkMonitor**: Real-time network health tracking
+- Latency measurement with configurable probes
+- Packet loss rate calculation
+- Health status classification (GOOD/FAIR/POOR)
+- Per-peer health tracking
+- Events: `healthChanged`, `peerHealthChanged`
+
+#### Battery Optimization
+- **BatteryOptimizer**: Adaptive power management
+- Battery modes: HIGH_PERFORMANCE, BALANCED, LOW_POWER, AUTO
+- Automatic mode adjustment based on battery level
+- Configurable thresholds for mode transitions
+- Events: `modeChanged`, `recommendationChanged`
+
+#### Emergency Manager / Panic Mode
+- **EmergencyManager**: Rapid data wipe capability (<200ms target)
+- Multiple panic triggers: TRIPLE_TAP, SHAKE, MANUAL
+- Configurable data clearers with priority ordering
+- Performance tracking with wipe time benchmarks
+- Events: `panicEnabled`, `panicTriggered`, `dataWiped`
+
+#### LZ4 Compression
+- **MessageCompressor**: Pure JavaScript LZ4 implementation
+- Automatic compression for payloads above threshold
+- 40-60% bandwidth reduction for text messages
+- Compression statistics tracking
+- Knuth's multiplicative hash (2654435761) for optimal distribution
+
+#### TypeScript Enhancements
+- Comprehensive type definitions for all new modules
+- Interfaces: `StoreAndForwardStats`, `NetworkMonitorStats`, `NodeHealth`, `BatteryOptimizerStats`, `EmergencyManagerStats`, `WipeResult`, `CompressionStats`, `MeshNetworkStatus`
+- Full JSDoc documentation
+
+### Changed
+- Input validation now uses typed errors (`ValidationError`, `MeshError`) consistently
+- Fixed average wipe time calculation to use proper running average formula
+- Enhanced compression with proper final literals block handling
+
+### Fixed
+- LZ4 compression final token handling for data ending with unmatched literals
+- Average wipe time calculation bug (was averaging incorrectly)
+- Missing input validation in `broadcast()` and `sendDirect()` methods
+
+### Testing
+- Integration tests for full MeshNetwork lifecycle
+- Performance benchmarks for panic wipe time (<200ms verification)
+- Comprehensive unit tests for MessageCompressor
+- Store and Forward delivery/caching tests
+- Network Monitor health tracking tests
+
+---
+
+## [1.0.4] - 2026-01-18
+
+### Changed
+- Improved npm search visibility with enhanced keywords
+- Updated package description
+
+---
+
+## [1.0.3] - 2026-01-18
+
+### Changed
+- Package configuration updates
+
+---
+
+## [1.0.2] - 2026-01-18
+
+### Changed
+- Minor fixes and improvements
+
+---
+
 ## [1.0.1] - 2026-01-17
 
 - Merge pull request #10 from suhailtajshaik/development (0380149)
@@ -127,13 +220,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Roadmap
 
-### [1.1.0] - Planned
-- File transfer support
-- Message queuing for offline peers
-- Improved route optimization
-- Compression support
-
 ### [1.2.0] - Planned
+- File transfer support
+- Improved route optimization
+
+### [1.3.0] - Planned
 - Group key agreement
 - Post-quantum key exchange option
 - Message persistence with IndexedDB
@@ -147,5 +238,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[1.0.0]: https://github.com/anthropic/rn-ble-mesh/releases/tag/v1.0.0
-[0.1.0]: https://github.com/anthropic/rn-ble-mesh/releases/tag/v0.1.0
+[1.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.0
+[1.0.4]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.4
+[1.0.3]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.3
+[1.0.2]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.2
+[1.0.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.1
+[1.0.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.0
+[0.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v0.1.0

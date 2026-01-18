@@ -15,6 +15,7 @@ const LRUCache = require('./LRUCache');
 const RateLimiter = require('./RateLimiter');
 const retry = require('./retry');
 const base64 = require('./base64');
+const compression = require('./compression');
 
 module.exports = {
   // Byte manipulation
@@ -63,6 +64,11 @@ module.exports = {
   validateFunction: validation.validateFunction,
   validateObject: validation.validateObject,
 
+  // Compression
+  MessageCompressor: compression.MessageCompressor,
+  compress: compression.compress,
+  decompress: compression.decompress,
+
   // Classes
   EventEmitter,
   LRUCache,
@@ -78,5 +84,7 @@ module.exports = {
   uuid,
   time,
   validation,
-  base64
+  base64,
+  compression
 };
+

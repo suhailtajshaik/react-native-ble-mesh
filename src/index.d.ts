@@ -89,6 +89,28 @@ export const POWER_MODE: {
   ULTRA_POWER_SAVER: PowerModeConfig;
 };
 
+// PRD-specified battery modes
+export const BATTERY_MODE: {
+  HIGH_PERFORMANCE: 'high';
+  BALANCED: 'balanced';
+  LOW_POWER: 'low';
+  AUTO: 'auto';
+};
+
+export const PANIC_TRIGGER: {
+  TRIPLE_TAP: 'triple_tap';
+  SHAKE: 'shake';
+  MANUAL: 'manual';
+  VOLUME_COMBO: 'volume_combo';
+};
+
+export const HEALTH_STATUS: {
+  GOOD: 'good';
+  FAIR: 'fair';
+  POOR: 'poor';
+  UNKNOWN: 'unknown';
+};
+
 // ============================================================================
 // Types and Interfaces
 // ============================================================================
@@ -109,6 +131,28 @@ export interface MeshServiceConfig {
   compressionThreshold?: number;
 }
 
+export interface MeshNetworkConfig {
+  nickname?: string;
+  batteryMode?: 'high' | 'balanced' | 'low' | 'auto';
+  encryption?: {
+    level?: string;
+    rotateKeysAfter?: number;
+  };
+  routing?: {
+    maxHops?: number;
+    bloomFilterSize?: number;
+  };
+  compression?: {
+    enabled?: boolean;
+    threshold?: number;
+  };
+  storeAndForward?: {
+    enabled?: boolean;
+    retentionHours?: number;
+    maxCachedMessages?: number;
+  };
+}
+
 export interface Identity {
   publicKey: Uint8Array;
   displayName: string;
@@ -123,6 +167,25 @@ export interface MeshStatus {
   securedPeerCount: number;
   channelCount: number;
   sessionCount: number;
+}
+
+export interface NetworkHealth {
+  activeNodes: number;
+  totalKnownNodes: number;
+  averageLatencyMs: number;
+  packetLossRate: number;
+  overallHealth: 'good' | 'fair' | 'poor';
+  lastUpdated: number;
+}
+
+export interface MeshNetworkStatus {
+  state: 'stopped' | 'running';
+  identity: Identity;
+  peers: number;
+  connectedPeers: number;
+  channels: number;
+  health: NetworkHealth;
+  batteryMode: string;
 }
 
 export interface PeerOptions {
@@ -187,13 +250,85 @@ export class MeshError extends Error {
   static fromJSON(json: Record<string, unknown>): MeshError;
 }
 
-export class CryptoError extends MeshError {}
-export class ConnectionError extends MeshError {}
-export class HandshakeError extends MeshError {}
-export class MessageError extends MeshError {}
+export class CryptoError extends MeshError { }
+export class ConnectionError extends MeshError { }
+export class HandshakeError extends MeshError { }
+export class MessageError extends MeshError { }
 export class ValidationError extends MeshError {
   static invalidArgument(name: string, value: unknown, details?: Record<string, unknown>): ValidationError;
   static invalidType(name: string, value: unknown, expectedType: string): ValidationError;
+}
+
+// ============================================================================
+// PRD-Specified High-Level API
+// ============================================================================
+
+/**
+ * MeshNetwork - High-level API for BitChat-compatible mesh networking.
+ * PRD-specified primary entry point.
+ */
+export class MeshNetwork extends EventEmitter {
+  static BatteryMode: typeof BATTERY_MODE;
+  static PanicTrigger: typeof PANIC_TRIGGER;
+  static HealthStatus: typeof HEALTH_STATUS;
+
+  constructor(config?: MeshNetworkConfig);
+
+  // Lifecycle
+  start(transport?: Transport): Promise<void>;
+  stop(): Promise<void>;
+  destroy(): Promise<void>;
+
+  // Messaging
+  broadcast(text: string): Promise<string>;
+  sendDirect(peerId: string, text: string): Promise<string>;
+
+  // Channels
+  joinChannel(channelName: string, password?: string): Promise<void>;
+  leaveChannel(channelName: string): Promise<void>;
+  sendToChannel(channelName: string, text: string): Promise<string>;
+  getChannels(): Channel[];
+
+  // Peers
+  getPeers(): Peer[];
+  getConnectedPeers(): Peer[];
+  getSecuredPeers(): Peer[];
+  blockPeer(peerId: string): void;
+  unblockPeer(peerId: string): void;
+
+  // Network Health
+  getNetworkHealth(): NetworkHealth;
+  getPeerHealth(peerId: string): NodeHealth | null;
+
+  // Battery Management
+  setBatteryMode(mode: 'high' | 'balanced' | 'low' | 'auto'): Promise<void>;
+  getBatteryMode(): string;
+  updateBatteryLevel(level: number, charging?: boolean): void;
+
+  // Security
+  enablePanicMode(options?: { trigger?: string; onWipe?: (result: WipeResult) => void }): void;
+  disablePanicMode(): void;
+  registerPanicTap(): void;
+  wipeAllData(): Promise<WipeResult>;
+
+  // Status
+  getStatus(): MeshNetworkStatus;
+  getIdentity(): Identity;
+  setNickname(nickname: string): void;
+
+  // Events
+  on(event: 'started', listener: () => void): this;
+  on(event: 'stopped', listener: () => void): this;
+  on(event: 'peerDiscovered', listener: (peer: Peer) => void): this;
+  on(event: 'peerConnected', listener: (peer: Peer) => void): this;
+  on(event: 'peerDisconnected', listener: (peer: Peer) => void): this;
+  on(event: 'messageReceived', listener: (message: { from: string; text: string; timestamp: number }) => void): this;
+  on(event: 'directMessage', listener: (message: { from: string; text: string; timestamp: number }) => void): this;
+  on(event: 'channelMessage', listener: (message: { channel: string; from: string; text: string; timestamp: number }) => void): this;
+  on(event: 'networkHealthChanged', listener: (info: { previous: string; current: string }) => void): this;
+  on(event: 'dataWiped', listener: (result: WipeResult) => void): this;
+  on(event: 'error', listener: (error: MeshError) => void): this;
+  on(event: string, listener: (...args: unknown[]) => void): this;
 }
 
 // ============================================================================
@@ -287,6 +422,247 @@ export class MeshService extends EventEmitter {
   on(event: 'error', listener: (error: MeshError) => void): this;
   on(event: string, listener: (...args: unknown[]) => void): this;
 }
+
+// ============================================================================
+// PRD-Specified Features - Stats Interfaces
+// ============================================================================
+
+/**
+ * Store and Forward statistics
+ */
+export interface StoreAndForwardStats {
+  messagesCached: number;
+  messagesDelivered: number;
+  messagesExpired: number;
+  messagesDropped: number;
+  deliveryAttempts: number;
+  deliveryFailures: number;
+  totalCached: number;
+  totalSizeBytes: number;
+  recipientCount: number;
+  cacheUtilization: number;
+}
+
+/**
+ * Network Monitor statistics
+ */
+export interface NetworkMonitorStats {
+  totalMessagesSent: number;
+  totalMessagesDelivered: number;
+  totalMessagesFailed: number;
+  totalMessagesReceived: number;
+  knownNodes: number;
+  pendingMessages: number;
+  averageLatency: number;
+}
+
+/**
+ * Individual node health information
+ */
+export interface NodeHealth {
+  peerId: string;
+  lastSeen: number;
+  latency: number;
+  messagesReceived: number;
+  messagesSent: number;
+  messagesDelivered?: number;
+  messagesFailed?: number;
+  packetLoss: number;
+  isActive: boolean;
+  discoveredAt?: number;
+  disconnectedAt?: number;
+}
+
+/**
+ * Battery Optimizer statistics
+ */
+export interface BatteryOptimizerStats {
+  modeChanges: number;
+  autoAdjustments: number;
+  lastModeChange: number | null;
+  currentMode: string;
+  batteryLevel: number;
+  isCharging: boolean;
+}
+
+/**
+ * Battery power profile configuration
+ */
+export interface BatteryProfile {
+  name: string;
+  scanIntervalMs: number;
+  scanWindowMs: number;
+  advertisingIntervalMs: number;
+  connectionIntervalMs: number;
+  connectionLatency: number;
+  supervisionTimeoutMs: number;
+}
+
+/**
+ * Emergency Manager statistics
+ */
+export interface EmergencyManagerStats {
+  wipesTriggered: number;
+  averageWipeTimeMs: number;
+  lastWipeTime: number | null;
+}
+
+/**
+ * Panic wipe result
+ */
+export interface WipeResult {
+  trigger: string;
+  startTime: number;
+  endTime: number;
+  elapsedMs: number;
+  metTarget: boolean;
+  clearerResults: Array<{ index: number; success: boolean; error?: string }>;
+  errors: Array<{ index: number; error: string }>;
+}
+
+/**
+ * Compression statistics
+ */
+export interface CompressionStats {
+  compressionAttempts: number;
+  successfulCompressions: number;
+  decompressions: number;
+  bytesIn: number;
+  bytesOut: number;
+  averageCompressionRatio: number;
+  compressionRate: number;
+}
+
+// ============================================================================
+// PRD-Specified Features
+// ============================================================================
+
+/**
+ * Store and Forward Manager for offline peer message delivery
+ */
+export class StoreAndForwardManager extends EventEmitter {
+  constructor(options?: {
+    maxMessagesPerRecipient?: number;
+    maxTotalMessages?: number;
+    maxCacheSizeBytes?: number;
+    retentionMs?: number;
+    cleanupIntervalMs?: number;
+  });
+
+  cacheForOfflinePeer(recipientId: string, encryptedPayload: Uint8Array, options?: { messageId?: string; ttlMs?: number }): Promise<string>;
+  deliverCachedMessages(recipientId: string, sendFn: (payload: Uint8Array) => Promise<void>): Promise<{ delivered: number; failed: number }>;
+  hasCachedMessages(recipientId: string): boolean;
+  getCachedCount(recipientId: string): number;
+  getRecipientsWithCache(): string[];
+  clearRecipientCache(recipientId: string): number;
+  pruneExpiredMessages(): Promise<number>;
+  getStats(): StoreAndForwardStats;
+  clear(): void;
+  destroy(): void;
+}
+
+/**
+ * Network Health Monitor
+ */
+export class NetworkMonitor extends EventEmitter {
+  constructor(options?: {
+    latencySampleSize?: number;
+    nodeTimeoutMs?: number;
+    healthCheckIntervalMs?: number;
+  });
+
+  trackMessageSent(peerId: string, messageId: string): void;
+  trackMessageDelivered(messageId: string, latencyMs?: number): void;
+  trackMessageFailed(messageId: string): void;
+  trackMessageReceived(peerId: string): void;
+  trackPeerDiscovered(peerId: string): void;
+  trackPeerDisconnected(peerId: string): void;
+  generateHealthReport(): NetworkHealth;
+  getNodeHealth(peerId: string): NodeHealth | null;
+  getAllNodeHealth(): NodeHealth[];
+  getLastHealthReport(): NetworkHealth | null;
+  getStats(): NetworkMonitorStats;
+  reset(): void;
+  destroy(): void;
+
+  on(event: 'health-changed', listener: (info: { previous: string; current: string; report: NetworkHealth }) => void): this;
+  on(event: 'health-report', listener: (report: NetworkHealth) => void): this;
+}
+
+/**
+ * Battery Optimizer with adaptive power modes
+ */
+export class BatteryOptimizer extends EventEmitter {
+  constructor(options?: {
+    initialMode?: 'high' | 'balanced' | 'low' | 'auto';
+    autoAdjust?: boolean;
+    batteryCheckIntervalMs?: number;
+    activityAdjust?: boolean;
+  });
+
+  setTransport(transport: Transport): void;
+  setMode(mode: 'high' | 'balanced' | 'low' | 'auto'): Promise<void>;
+  getMode(): string;
+  getCurrentProfile(): BatteryProfile;
+  getProfiles(): Record<string, BatteryProfile>;
+  updateBatteryLevel(level: number, isCharging?: boolean): Promise<void>;
+  setAutoAdjust(enabled: boolean): void;
+  isAutoAdjustEnabled(): boolean;
+  recordActivity(): void;
+  getBatteryLevel(): number;
+  isCharging(): boolean;
+  getStats(): BatteryOptimizerStats;
+  destroy(): void;
+
+  on(event: 'mode-changed', listener: (info: { previous: string; current: string; profile: BatteryProfile }) => void): this;
+  on(event: 'auto-adjusted', listener: (info: { batteryLevel: number; profile: BatteryProfile }) => void): this;
+  on(event: 'battery-updated', listener: (info: { level: number; isCharging: boolean }) => void): this;
+}
+
+/**
+ * Emergency Manager for panic mode / data wipe
+ */
+export class EmergencyManager extends EventEmitter {
+  constructor(options?: {
+    trigger?: 'triple_tap' | 'shake' | 'manual' | 'volume_combo';
+    tapWindowMs?: number;
+    tapCount?: number;
+    requireConfirmation?: boolean;
+  });
+
+  enablePanicMode(options?: { onWipe?: (result: WipeResult) => void; trigger?: string }): void;
+  disablePanicMode(): void;
+  isEnabled(): boolean;
+  registerClearer(clearer: () => Promise<void>): void;
+  registerTap(): void;
+  registerAccelerometer(data: { x: number; y: number; z: number }): void;
+  triggerManualWipe(): Promise<WipeResult>;
+  wipeAllData(): Promise<WipeResult>;
+  getStats(): EmergencyManagerStats;
+  destroy(): void;
+
+  on(event: 'panic-mode-enabled', listener: (info: { trigger: string }) => void): this;
+  on(event: 'panic-mode-disabled', listener: () => void): this;
+  on(event: 'panic-wipe-started', listener: (info: { trigger: string; timestamp: number }) => void): this;
+  on(event: 'panic-wipe-completed', listener: (result: WipeResult) => void): this;
+}
+
+/**
+ * Message Compressor with LZ4 algorithm.
+ * Uses Knuth's multiplicative hash (constant 2654435761) for optimal distribution.
+ */
+export class MessageCompressor {
+  constructor(options?: { threshold?: number });
+
+  compress(payload: Uint8Array): { data: Uint8Array; compressed: boolean };
+  decompress(payload: Uint8Array, wasCompressed: boolean): Uint8Array;
+  getCompressionRatio(original: Uint8Array, compressed: Uint8Array): number;
+  getStats(): CompressionStats;
+  resetStats(): void;
+}
+
+export function compress(payload: Uint8Array): { data: Uint8Array; compressed: boolean };
+export function decompress(payload: Uint8Array, wasCompressed: boolean): Uint8Array;
 
 // ============================================================================
 // Transport Layer
@@ -502,6 +878,11 @@ export namespace utils {
 // ============================================================================
 
 /**
+ * Create a new MeshNetwork instance (PRD-specified high-level API)
+ */
+export function createMeshNetwork(config?: MeshNetworkConfig): MeshNetwork;
+
+/**
  * Create a new MeshService instance
  */
 export function createMeshService(config?: MeshServiceConfig): MeshService;
@@ -520,3 +901,4 @@ export function createNodeMesh(options?: {
 export function createTestMesh(options?: {
   displayName?: string;
 }): Promise<{ mesh: MeshService; transport: MockTransport }>;
+

@@ -2,12 +2,24 @@
  * @fileoverview BLE Mesh Network Library
  * @module rn-ble-mesh
  * @description Production-ready BLE Mesh Network with Noise Protocol security
+ * 
+ * This is the definitive React Native library for BitChat-compatible 
+ * decentralized mesh networking.
  */
 
 'use strict';
 
+// High-Level API (PRD-specified)
+const { MeshNetwork, BATTERY_MODE, PANIC_TRIGGER, HEALTH_STATUS } = require('./MeshNetwork');
+
 // Core service
-const { MeshService } = require('./service');
+const {
+  MeshService,
+  EmergencyManager,
+  BatteryOptimizer,
+  SessionManager,
+  HandshakeManager,
+} = require('./service');
 
 // Constants
 const constants = require('./constants');
@@ -21,7 +33,7 @@ const crypto = require('./crypto');
 // Protocol
 const protocol = require('./protocol');
 
-// Mesh
+// Mesh (including new StoreAndForward and NetworkMonitor)
 const mesh = require('./mesh');
 
 // Transport
@@ -30,7 +42,7 @@ const transport = require('./transport');
 // Storage
 const storage = require('./storage');
 
-// Utils
+// Utils (including MessageCompressor)
 const utils = require('./utils');
 
 // Audio (from service module)
@@ -41,6 +53,17 @@ const text = require('./service/text');
 
 // React Native hooks
 const hooks = require('./hooks');
+
+/**
+ * Create a new MeshNetwork instance (PRD-specified high-level API)
+ * @param {Object} [config] - Configuration options
+ * @param {string} [config.nickname] - Display name
+ * @param {string} [config.batteryMode] - Battery mode
+ * @returns {MeshNetwork}
+ */
+function createMeshNetwork(config) {
+  return new MeshNetwork(config);
+}
 
 /**
  * Create a new MeshService instance
@@ -108,7 +131,36 @@ const { AudioManager, LC3Codec, VoiceMessage, AudioSession } = audio;
 const { TextManager, TextMessage, Channel, ChannelManager, BroadcastManager } = text;
 const { useMesh, usePeers, useMessages, AppStateManager } = hooks;
 
+// New PRD-specified components
+const { StoreAndForwardManager } = mesh;
+const { NetworkMonitor } = mesh;
+const { MessageCompressor, compress, decompress } = utils;
+
 module.exports = {
+  // High-Level API (PRD-specified)
+  MeshNetwork,
+  createMeshNetwork,
+
+  // Battery and Power Management
+  BATTERY_MODE,
+  BatteryOptimizer,
+
+  // Security Features
+  PANIC_TRIGGER,
+  EmergencyManager,
+
+  // Network Health
+  HEALTH_STATUS,
+  NetworkMonitor,
+
+  // Store and Forward
+  StoreAndForwardManager,
+
+  // Compression
+  MessageCompressor,
+  compress,
+  decompress,
+
   // Main factory functions
   createMeshService,
   createNodeMesh,
@@ -180,3 +232,4 @@ module.exports = {
   // Hooks module
   hooks
 };
+

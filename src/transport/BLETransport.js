@@ -191,9 +191,13 @@ class BLETransport extends Transport {
     }
 
     try {
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Connection timeout')), this._connectTimeoutMs);
+      });
       const device = await Promise.race([
-        this._adapter.connect(peerId),
-        this._createTimeout(this._connectTimeoutMs, 'Connection timeout')
+        this._adapter.connect(peerId).then(d => { clearTimeout(timeoutId); return d; }),
+        timeoutPromise
       ]);
 
       // Subscribe to notifications

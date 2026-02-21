@@ -27,8 +27,8 @@ const constants = require('./constants');
 // Errors
 const errors = require('./errors');
 
-// Crypto
-const crypto = require('./crypto');
+// Crypto — removed: use established libraries like tweetnacl or libsodium-wrappers
+const crypto = null;
 
 // Protocol
 const protocol = require('./protocol');
@@ -186,8 +186,8 @@ module.exports = {
   // Errors
   ...errors,
 
-  // Crypto primitives and Noise Protocol
-  crypto,
+  // Crypto removed — use tweetnacl or libsodium-wrappers directly
+  // crypto,
 
   // Protocol serialization
   protocol,

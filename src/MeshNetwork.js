@@ -21,6 +21,7 @@ const { EmergencyManager, PANIC_TRIGGER } = require('./service/EmergencyManager'
 const { MessageCompressor } = require('./utils/compression');
 const { EVENTS } = require('./constants');
 const { ValidationError, MeshError } = require('./errors');
+const { SERVICE_STATE } = require('./constants');
 
 /**
  * Default MeshNetwork configuration
@@ -189,10 +190,12 @@ class MeshNetwork extends EventEmitter {
         // Create transport if not provided
         this._transport = transport || new BLETransport();
 
-        // Initialize the service
-        await this._service.initialize({
-            storage: new MemoryStorage(),
-        });
+        // Initialize the service (only on first start)
+        if (this._service._state === SERVICE_STATE.UNINITIALIZED) {
+            await this._service.initialize({
+                storage: new MemoryStorage(),
+            });
+        }
 
         // Connect battery optimizer to transport
         this._batteryOptimizer.setTransport(this._transport);

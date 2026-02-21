@@ -20,7 +20,8 @@ class MeshError extends Error {
    * @param {Object|null} [details=null] - Additional error context
    */
   constructor(message, code = 'E900', details = null) {
-    super(message);
+    const className = new.target ? new.target.name : 'MeshError';
+    super(`${className}: ${message}`);
 
     /**
      * Error name

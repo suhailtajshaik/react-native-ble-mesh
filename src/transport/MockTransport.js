@@ -50,7 +50,7 @@ class MockTransport extends Transport {
      * @type {string|null}
      * @private
      */
-    this._localPeerId = options.localPeerId || null;
+    this._localPeerId = options.localPeerId || `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   /**

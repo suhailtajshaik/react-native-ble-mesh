@@ -27,8 +27,8 @@ const constants = require('./constants');
 // Errors
 const errors = require('./errors');
 
-// Crypto — removed: use established libraries like tweetnacl or libsodium-wrappers
-const crypto = null;
+// Crypto — pluggable provider system (tweetnacl / quick-crypto / expo-crypto)
+const crypto = require('./crypto');
 
 // Protocol
 const protocol = require('./protocol');
@@ -50,6 +50,10 @@ const audio = require('./service/audio');
 
 // Text (from service module)
 const text = require('./service/text');
+
+// File transfer
+const file = require('./service/file');
+const { FileManager, FileChunker, FileAssembler, FileMessage, FILE_MESSAGE_TYPE, FILE_TRANSFER_STATE } = file;
 
 // React Native hooks
 const hooks = require('./hooks');
@@ -133,7 +137,7 @@ const { useMesh, usePeers, useMessages, AppStateManager } = hooks;
 
 // New PRD-specified components
 const { StoreAndForwardManager } = mesh;
-const { NetworkMonitor } = mesh;
+const { NetworkMonitor, ConnectionQuality, QUALITY_LEVEL } = mesh;
 const { MessageCompressor, compress, decompress } = utils;
 
 module.exports = {
@@ -155,6 +159,10 @@ module.exports = {
 
   // Store and Forward
   StoreAndForwardManager,
+
+  // Connection Quality
+  ConnectionQuality,
+  QUALITY_LEVEL,
 
   // Compression
   MessageCompressor,
@@ -186,8 +194,8 @@ module.exports = {
   // Errors
   ...errors,
 
-  // Crypto removed — use tweetnacl or libsodium-wrappers directly
-  // crypto,
+  // Crypto provider system
+  crypto,
 
   // Protocol serialization
   protocol,
@@ -228,6 +236,15 @@ module.exports = {
   usePeers,
   useMessages,
   AppStateManager,
+
+  // File transfer
+  FileManager,
+  FileChunker,
+  FileAssembler,
+  FileMessage,
+  FILE_MESSAGE_TYPE,
+  FILE_TRANSFER_STATE,
+  file,
 
   // Hooks module
   hooks

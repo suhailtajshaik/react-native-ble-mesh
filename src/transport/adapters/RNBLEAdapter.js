@@ -41,6 +41,13 @@ class RNBLEAdapter extends BLEAdapter {
     this._BleManager = options.BleManager || null;
 
     /**
+     * iOS state restoration identifier
+     * @type {string|null}
+     * @private
+     */
+    this._restoreIdentifier = options.restoreIdentifier || null;
+
+    /**
      * Connected devices map
      * @type {Map<string, Object>}
      * @private
@@ -91,7 +98,19 @@ class RNBLEAdapter extends BLEAdapter {
       }
     }
 
-    this._manager = new this._BleManager();
+    const managerOptions = {};
+    if (this._restoreIdentifier) {
+      managerOptions.restoreStateIdentifier = this._restoreIdentifier;
+      managerOptions.restoreStateFunction = (restoredState) => {
+        // Re-populate devices from restored state
+        if (restoredState && restoredState.connectedPeripherals) {
+          for (const peripheral of restoredState.connectedPeripherals) {
+            this._devices.set(peripheral.id, peripheral);
+          }
+        }
+      };
+    }
+    this._manager = new this._BleManager(managerOptions);
 
     // Subscribe to state changes
     this._stateSubscription = this._manager.onStateChange((state) => {

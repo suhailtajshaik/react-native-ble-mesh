@@ -1,6 +1,70 @@
 # Changelog
 
 
+## [2.0.0] - 2026-02-22
+
+### ⚠️ Breaking Changes
+
+#### Crypto Module Removed
+The entire `src/crypto/` module has been removed. This includes:
+- X25519 key exchange (pure JavaScript BigInt implementation)
+- ChaCha20-Poly1305 AEAD encryption/decryption
+- SHA-256 hashing
+- HMAC-SHA256 message authentication
+- HKDF key derivation
+- Poly1305 MAC
+- Noise Protocol XX handshake (handshake, session, state)
+- Key management (KeyManager, KeyPair, SecureStorage)
+
+**Why:** The pure JavaScript BigInt crypto was a major performance bottleneck on mobile devices. X25519 key exchange took ~100ms+ per operation (vs ~1ms with native). This caused battery drain, UI thread blocking on Hermes/JSC, and made the library impractical for real-world mesh networks with frequent peer connections.
+
+**Migration:** Replace with established, battle-tested libraries:
+- [`tweetnacl`](https://npmjs.com/package/tweetnacl) — Lightweight, audited, pure JS (recommended for most cases)
+- [`libsodium-wrappers`](https://npmjs.com/package/libsodium-wrappers) — Full NaCl API, WASM-accelerated
+- [`react-native-quick-crypto`](https://npmjs.com/package/react-native-quick-crypto) — Native speed, drop-in Node.js crypto replacement for React Native
+
+The `./crypto` package export has been removed. Crypto constants (`CRYPTO_CONFIG`, `NOISE_PROTOCOL_NAME`, `NOISE_HANDSHAKE_STATE`) are still available for protocol compatibility.
+
+### Bug Fixes
+
+- **MeshNetwork restart crash** — Calling `start()` after `stop()` threw "Service already initialized". The service tried to re-initialize on every start. Now correctly skips initialization if already initialized, allowing proper stop/start cycling.
+- **MockTransport missing peer ID** — Creating a `MockTransport()` without `localPeerId` caused "localPeerId required" errors when linking two transports. Now auto-generates a unique ID if none provided.
+- **BLE connection timer leak** — `BLETransport.connectToPeer()` created a timeout timer that was never cleared on successful connection, leaking memory over time. Now properly clears the timer on success.
+- **Error message clarity** — All error classes (`MeshError`, `ValidationError`, `ConnectionError`, `CryptoError`, `HandshakeError`) now prefix messages with the error class name (e.g., `"ValidationError: Invalid type"` instead of just `"Invalid type"`). Makes error identification in catch blocks and logs much easier.
+
+### Testing
+
+All **344 tests passing, 0 failures**.
+
+#### New Test Suites (7 added)
+- **`__tests__/transport/BLETransport.test.js`** — Start/stop lifecycle, scanning, peer connection/disconnection, broadcast, timeout handling, power mode switching
+- **`__tests__/transport/MockTransport.test.js`** — Auto-ID generation, linking, bidirectional message passing, peer simulation, message logging
+- **`__tests__/mesh/MeshNetwork.unit.test.js`** — Constructor defaults, config merging (deep merge), validation (message text, peer ID), channel name normalization, lifecycle (start/stop/restart/destroy), status reporting
+- **`__tests__/service/MeshService.test.js`** — Initialize/start/stop/destroy lifecycle, transport requirement, identity management, peer queries, broadcast messaging
+- **`__tests__/service/BatteryOptimizer.test.js`** — Mode switching (HIGH_PERFORMANCE/BALANCED/LOW_POWER/AUTO), battery level updates, transport integration, destroy cleanup
+- **`__tests__/platform/ios.test.js`** — BLE background mode, battery optimizer for iOS power management, MTU 185 fragmentation (BLE 4.2+), store-and-forward state restoration
+- **`__tests__/platform/android.test.js`** — BLE permission denial handling, MTU 23 (BLE 4.0) and 512 (BLE 5.0) fragmentation, Doze mode with low-power settings, BLE bonding reconnection, LRU cache memory limits, BloomFilter false positive rate verification
+
+#### Previously Failing Tests Fixed (10 → 0)
+- Integration test: MeshNetwork restart after stop
+- Integration test: MockTransport linking without explicit peer IDs
+- Integration test: Message text validation error matching
+- Integration test: Peer ID validation error matching
+- Compression tests: ValidationError message matching (4 tests)
+- StoreAndForward tests: ValidationError for invalid inputs (2 tests)
+
+### Removed
+- `src/crypto/` — All pure JS cryptographic implementations (see Breaking Changes)
+- `__tests__/crypto/` — All crypto unit tests (aead, hkdf, hmac, noise, sha256, x25519)
+- `__tests__/integration/handshake.test.js` — Noise Protocol handshake integration test
+- `./crypto` export from `package.json` exports map
+
+### Changed
+- `jest.config.js` — Removed `jest-junit` reporter dependency (was causing test runner failures)
+- Error base class now includes class name in message for all subclasses
+
+---
+
 ## [1.1.1] - 2026-01-18
 
 ### Changed
@@ -262,6 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.0.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.0.0
 [1.1.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.1
 [1.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.0
 [1.0.4]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.4

@@ -1,6 +1,87 @@
 # Changelog
 
 
+## [2.1.0] - 2026-02-22
+
+### New Features
+
+#### Wi-Fi Direct Transport
+- **`WiFiDirectTransport`** — High-bandwidth transport (~250Mbps, ~200m range) via `react-native-wifi-p2p`
+- **`MultiTransport`** — Aggregates BLE + Wi-Fi Direct behind a single interface
+  - Auto-selects BLE for small messages (<1KB), Wi-Fi Direct for large payloads
+  - Automatic fallback if preferred transport fails
+  - Strategies: `auto`, `ble-only`, `wifi-only`, `redundant`
+- Peer dependency: `react-native-wifi-p2p` (optional — only needed for Wi-Fi Direct)
+
+#### Expo Support
+- **Expo config plugin** (`app.plugin.js`) — automatically configures BLE permissions
+  - iOS: `NSBluetoothAlwaysUsageDescription`, `UIBackgroundModes` (bluetooth-central, bluetooth-peripheral)
+  - Android: `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE`, `ACCESS_FINE_LOCATION`
+  - Usage: `["react-native-ble-mesh", { "bluetoothAlwaysPermission": "..." }]` in app.json plugins
+- Supports Expo SDK 53+ with config plugins / dev client
+
+#### File & Image Sharing
+- **`FileManager`** — Full file transfer orchestration over the mesh
+  - Chunking with configurable size (default 4KB) and max file size (default 10MB)
+  - Progress events: `fileSendProgress`, `fileReceiveProgress`, `fileReceived`
+  - Concurrent transfer management (max 5 simultaneous)
+  - Transfer timeouts (default 5 minutes) with automatic cancellation
+  - `mesh.sendFile(peerId, { data, name, mimeType })` high-level API
+- **`FileChunker`** — Splits files into mesh-compatible chunks
+- **`FileAssembler`** — Reassembles received chunks with out-of-order support
+- **`FileMessage`** — Transfer metadata with offer/chunk/complete protocol
+
+#### Native Crypto Integration
+- **Pluggable crypto provider system** replacing the removed pure JS crypto
+- **`CryptoProvider`** — Abstract interface for all crypto operations (key gen, key exchange, AEAD, hashing, random bytes)
+- Built-in providers:
+  - **`TweetNaClProvider`** — Uses `tweetnacl` (lightweight, audited, works everywhere)
+  - **`QuickCryptoProvider`** — Uses `react-native-quick-crypto` (native JSI speed)
+  - **`ExpoCryptoProvider`** — Uses `expo-crypto` + `tweetnacl` for Expo projects
+- **`AutoCrypto.detectProvider()`** — Automatically picks the best available provider at runtime
+  - Priority: quick-crypto → expo-crypto → tweetnacl
+- Usage: `new MeshNetwork({ crypto: 'auto' })` or pass a provider instance
+- All providers are optional peer dependencies
+
+#### Connection Quality Indicator
+- **`ConnectionQuality`** — Real-time per-peer connection quality tracking
+  - Quality levels: `EXCELLENT`, `GOOD`, `FAIR`, `POOR`, `DISCONNECTED`
+  - Metrics: RSSI, latency, packet loss, throughput, active transport
+  - Weighted scoring: RSSI (30%) + latency (30%) + packet loss (25%) + throughput (15%)
+  - Configurable thresholds, sample sizes, and update intervals
+  - Automatic peer timeout detection
+- `mesh.getConnectionQuality(peerId)` and `mesh.getAllConnectionQuality()`
+- Event: `connectionQualityChanged` when a peer's quality level changes
+
+#### iOS Background BLE
+- **State restoration support** added to `RNBLEAdapter` via `restoreIdentifier` option
+  - Allows iOS to re-launch the app and restore BLE connections after termination
+  - Automatically re-populates device map from restored state
+- **Comprehensive guide**: `docs/IOS-BACKGROUND-BLE.md` covering:
+  - Background mode setup (Expo + bare RN)
+  - iOS limitations: scanning throttling (~1/5min), advertising restrictions, connection interval changes
+  - Workarounds for each limitation
+  - State restoration configuration
+  - Known iOS bugs (post-reboot, 24h scanning stop, post-update disconnection)
+  - Testing recommendations
+  - Recommended mesh configuration for iOS
+
+### Testing
+- **432 tests passing, 0 failures** (88 new tests added)
+- New test suites:
+  - `ConnectionQuality.test.js` — Quality calculation, RSSI/latency/packet loss recording, timeouts, events
+  - `CryptoProvider.test.js` — Abstract interface, TweetNaCl mock provider, auto-detection
+  - `FileManager.test.js` — Chunking, assembly, send/receive flow, progress, cancellation
+  - `configPlugin.test.js` — iOS/Android permission injection, deduplication
+  - `WiFiDirectTransport.test.js` — Lifecycle, discovery, connection, send/broadcast
+  - `MultiTransport.test.js` — Auto strategy, fallback, peer merging, broadcast
+
+### Documentation
+- `docs/SPEC-v2.1.md` — Full feature specification with API designs
+- `docs/IOS-BACKGROUND-BLE.md` — iOS background BLE guide with workarounds
+
+---
+
 ## [2.0.0] - 2026-02-22
 
 ### ⚠️ Breaking Changes
@@ -326,6 +407,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[2.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.1.0
 [2.0.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.0.0
 [1.1.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.1
 [1.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.0

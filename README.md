@@ -72,7 +72,7 @@ mesh.on('messageReceived', (msg) => {
 ### 📡 Messages That Hop
 Your message can jump through **up to 7 phones** to reach someone far away. If Alice can't reach Dave directly, the message goes: Alice → Bob → Carol → Dave!
 
-### 📸 Send Photos & Files (NEW!)
+### 📸 Send Photos & Files
 Send pictures, documents, or any file up to 10MB. The library chops it into tiny pieces, sends them through the mesh, and puts them back together on the other side. You get a progress bar too!
 
 ```javascript
@@ -95,7 +95,7 @@ mesh.on('fileReceived', ({ from, file }) => {
 });
 ```
 
-### 📶 Connection Quality (NEW!)
+### 📶 Connection Quality
 See how good your connection is to each person — like signal bars on your phone!
 
 ```javascript
@@ -112,7 +112,7 @@ mesh.on('connectionQualityChanged', ({ peerId, level }) => {
 });
 ```
 
-### 📡 Wi-Fi Direct for Big Files (NEW!)
+### 📡 Wi-Fi Direct for Big Files
 Bluetooth is great for messages, but slow for big files. Wi-Fi Direct is **250x faster**! The library automatically picks the best one:
 
 - **Small message?** → Sends via Bluetooth (reliable, low power)
@@ -134,7 +134,7 @@ await mesh.start(transport);
 // That's it! The library handles everything.
 ```
 
-### 🔒 Secret Messages — Now Even Stronger (NEW!)
+### 🔒 Secret Messages
 Pick the encryption that works best for your app. The library auto-detects the fastest option:
 
 | Option | Speed | Works On |
@@ -393,7 +393,7 @@ function ChatScreen() {
 | `mesh.sendDirect(id, 'Hey')` | Private message to one person |
 | `mesh.sendToChannel('#fun', 'Yo')` | Send to a group |
 
-### Sending Files (NEW!)
+### Sending Files
 
 | Method | What It Does |
 |--------|--------------|
@@ -401,7 +401,7 @@ function ChatScreen() {
 | `mesh.getActiveTransfers()` | See files being sent/received |
 | `mesh.cancelTransfer(id)` | Cancel a file transfer |
 
-### Connection Quality (NEW!)
+### Connection Quality
 
 | Method | What It Does |
 |--------|--------------|
@@ -452,7 +452,7 @@ mesh.on('directMessage', ({ from, text }) => { });
 mesh.on('channelMessage', ({ channel, from, text }) => { });
 mesh.on('messageDelivered', ({ messageId }) => { });
 
-// Files (NEW!)
+// Files
 mesh.on('fileReceived', ({ from, file }) => { });
 mesh.on('fileSendProgress', ({ name, percent }) => { });
 mesh.on('fileReceiveProgress', ({ name, percent }) => { });
@@ -463,7 +463,7 @@ mesh.on('peerDiscovered', (peer) => { });
 mesh.on('peerConnected', (peer) => { });
 mesh.on('peerDisconnected', (peer) => { });
 
-// Connection Quality (NEW!)
+// Connection Quality
 mesh.on('connectionQualityChanged', ({ peerId, level, score }) => { });
 
 // Network

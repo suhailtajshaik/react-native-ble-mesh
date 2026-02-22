@@ -7,14 +7,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey.svg?style=flat-square)](https://reactnative.dev/)
+[![Tests](https://img.shields.io/badge/Tests-432%20passing-brightgreen.svg?style=flat-square)]()
 
 ---
 
 ## What is this?
 
-Imagine you're at a concert, camping trip, or during a power outage - **no WiFi, no cell service**. How do you text your friends?
+Imagine you're at a concert, camping trip, or during a power outage — **no WiFi, no cell service**. How do you text your friends?
 
-**This library lets phones talk to each other using Bluetooth!** Messages hop from phone to phone until they reach your friend - even if they're far away.
+**This library lets phones talk to each other using Bluetooth!** Messages hop from phone to phone until they reach your friend — even if they're far away.
 
 ```
      You                    Friend's                  Your
@@ -22,7 +23,7 @@ Imagine you're at a concert, camping trip, or during a power outage - **no WiFi,
                              Phone                      (300m away!)
 ```
 
-**Think of it like a game of telephone, but for text messages!**
+**Think of it like a game of telephone, but for text messages and photos!**
 
 ---
 
@@ -56,9 +57,13 @@ mesh.on('messageReceived', (msg) => {
 |---------|--------------|
 | No WiFi or cell service | Works with just Bluetooth! |
 | Friend is too far away | Messages hop through other phones |
-| Worried about privacy? | All messages are encrypted |
+| Need to send photos? | Send files & images up to 10MB! |
+| Worried about privacy? | Encrypted with battle-tested crypto |
 | Phone battery dying? | Smart power saving built-in |
 | Need to delete everything fast? | One-tap emergency wipe |
+| Using Expo? | Works out of the box! |
+| Need faster transfers? | Wi-Fi Direct for big files |
+| How's my connection? | Real-time signal quality indicator |
 
 ---
 
@@ -67,8 +72,84 @@ mesh.on('messageReceived', (msg) => {
 ### 📡 Messages That Hop
 Your message can jump through **up to 7 phones** to reach someone far away. If Alice can't reach Dave directly, the message goes: Alice → Bob → Carol → Dave!
 
-### 🔒 Secret Messages
-Private messages are scrambled (encrypted) so only your friend can read them. Even if someone else's phone passes along the message, they can't peek!
+### 📸 Send Photos & Files (NEW!)
+Send pictures, documents, or any file up to 10MB. The library chops it into tiny pieces, sends them through the mesh, and puts them back together on the other side. You get a progress bar too!
+
+```javascript
+// Send a photo to a friend
+await mesh.sendFile('friend-id', {
+  data: photoBytes,          // The file as bytes
+  name: 'vacation.jpg',      // File name
+  mimeType: 'image/jpeg',    // What kind of file
+});
+
+// Watch the progress
+mesh.on('fileSendProgress', ({ name, percent }) => {
+  console.log(`Sending ${name}: ${percent}%`);
+});
+
+// Receive files from others
+mesh.on('fileReceived', ({ from, file }) => {
+  console.log(`Got ${file.name} from ${from}!`);
+  // file.data has the bytes, file.mimeType tells you the type
+});
+```
+
+### 📶 Connection Quality (NEW!)
+See how good your connection is to each person — like signal bars on your phone!
+
+```javascript
+const quality = mesh.getConnectionQuality('friend-id');
+// quality.level = 'excellent' | 'good' | 'fair' | 'poor'
+// quality.rssi = -55 (signal strength)
+// quality.latencyMs = 45 (how fast, in milliseconds)
+
+// Get alerted when connection changes
+mesh.on('connectionQualityChanged', ({ peerId, level }) => {
+  if (level === 'poor') {
+    console.log('Connection getting weak! Move closer.');
+  }
+});
+```
+
+### 📡 Wi-Fi Direct for Big Files (NEW!)
+Bluetooth is great for messages, but slow for big files. Wi-Fi Direct is **250x faster**! The library automatically picks the best one:
+
+- **Small message?** → Sends via Bluetooth (reliable, low power)
+- **Big photo?** → Sends via Wi-Fi Direct (super fast)
+- **Wi-Fi Direct not available?** → Falls back to Bluetooth automatically
+
+```javascript
+import { MultiTransport } from 'react-native-ble-mesh';
+
+// Use both Bluetooth AND Wi-Fi Direct together
+const transport = new MultiTransport({
+  bleTransport: myBleTransport,
+  wifiTransport: myWifiTransport,
+  strategy: 'auto',  // Let the library decide
+});
+
+const mesh = new MeshNetwork({ nickname: 'Alex' });
+await mesh.start(transport);
+// That's it! The library handles everything.
+```
+
+### 🔒 Secret Messages — Now Even Stronger (NEW!)
+Pick the encryption that works best for your app. The library auto-detects the fastest option:
+
+| Option | Speed | Works On |
+|--------|-------|----------|
+| `react-native-quick-crypto` | ⚡ Blazing fast | React Native |
+| `expo-crypto` + `tweetnacl` | 🚀 Fast | Expo apps |
+| `tweetnacl` | ✅ Good | Everywhere |
+
+```javascript
+// The library picks the best one automatically!
+const mesh = new MeshNetwork({
+  nickname: 'Alex',
+  crypto: 'auto',  // Auto-detect fastest available
+});
+```
 
 ### 📬 Offline Delivery
 Friend's phone turned off? No problem! Your message waits and delivers when they come back online.
@@ -78,6 +159,7 @@ Choose how much battery to use:
 - **High Power** = Faster messages, more battery
 - **Balanced** = Good speed, normal battery (default)
 - **Low Power** = Slower messages, saves battery
+- **Auto** = Let the phone decide based on battery level!
 
 ### 🚨 Panic Button
 Triple-tap to instantly delete all messages and data. Everything gone in less than 0.2 seconds!
@@ -89,20 +171,46 @@ Create chat rooms like `#camping-trip` or `#concert-squad`. Only people who join
 
 ## Installation
 
-### Step 1: Install the package
+### Option A: Expo Projects (Easiest!) 🎯
+
+```bash
+npx expo install react-native-ble-mesh react-native-ble-plx react-native-get-random-values
+```
+
+Add the plugin to your `app.json`:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      ["react-native-ble-mesh", {
+        "bluetoothAlwaysPermission": "Chat with nearby friends using Bluetooth"
+      }]
+    ]
+  }
+}
+```
+
+**That's it! The plugin handles all the permissions for you.** ✅
+
+Then build your dev client:
+```bash
+npx expo prebuild
+npx expo run:ios   # or run:android
+```
+
+### Option B: Bare React Native
 
 ```bash
 npm install react-native-ble-mesh react-native-ble-plx react-native-get-random-values
 ```
 
-### Step 2: iOS Setup
-
+**iOS Setup:**
 ```bash
 cd ios && pod install && cd ..
 ```
 
-Add these lines to your `ios/YourApp/Info.plist`:
-
+Add to `ios/YourApp/Info.plist`:
 ```xml
 <key>NSBluetoothAlwaysUsageDescription</key>
 <string>Chat with nearby friends using Bluetooth</string>
@@ -115,28 +223,31 @@ Add these lines to your `ios/YourApp/Info.plist`:
 </array>
 ```
 
-### Step 3: Android Setup
-
-Add these lines to `android/app/src/main/AndroidManifest.xml`:
-
+**Android Setup:** Add to `android/app/src/main/AndroidManifest.xml`:
 ```xml
-<uses-permission android:name="android.permission.BLUETOOTH" />
-<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 ```
 
-### Step 4: Add this to the TOP of your app
+### Final Step (Both Options)
+
+Add this as the **very first line** in your app:
 
 ```javascript
-// This MUST be the very first line in index.js or App.js
 import 'react-native-get-random-values';
+```
 
-// Now add your other imports
-import { AppRegistry } from 'react-native';
-// ...
+### Optional: Extra Speed & Features
+
+```bash
+# Want encryption? Pick one:
+npm install tweetnacl                     # Works everywhere
+npm install react-native-quick-crypto     # Fastest (native)
+
+# Want Wi-Fi Direct for big file transfers?
+npm install react-native-wifi-p2p
 ```
 
 ---
@@ -148,7 +259,6 @@ import { AppRegistry } from 'react-native';
 ```javascript
 import { MeshNetwork } from 'react-native-ble-mesh';
 
-// Create and start
 const mesh = new MeshNetwork({ nickname: 'YourName' });
 await mesh.start();
 
@@ -156,93 +266,96 @@ await mesh.start();
 await mesh.broadcast('Hi everyone!');
 
 // Send private message to one person
-await mesh.sendDirect('friend-id-here', 'Hey, just for you!');
+await mesh.sendDirect('friend-id', 'Hey, just for you!');
 
 // Receive messages
 mesh.on('messageReceived', ({ from, text }) => {
   console.log(`${from}: ${text}`);
 });
 
-// When done
 await mesh.stop();
 ```
 
-### Example 2: Group Channels
+### Example 2: Send a Photo
 
 ```javascript
-// Join a channel (like a chat room)
+// Send a photo
+await mesh.sendFile('friend-id', {
+  data: imageBytes,
+  name: 'selfie.jpg',
+  mimeType: 'image/jpeg',
+});
+
+// Track sending progress
+mesh.on('fileSendProgress', ({ percent }) => {
+  console.log(`${percent}% sent`);
+});
+
+// Receive photos
+mesh.on('fileReceived', ({ from, file }) => {
+  console.log(`Got ${file.name} (${file.size} bytes) from ${from}`);
+  // file.data = the photo bytes
+  // file.mimeType = 'image/jpeg'
+});
+```
+
+### Example 3: Group Channels
+
+```javascript
 await mesh.joinChannel('#road-trip');
-
-// Send message to everyone in the channel
 await mesh.sendToChannel('#road-trip', 'Are we there yet?');
-
-// Leave when done
 await mesh.leaveChannel('#road-trip');
 ```
 
-### Example 3: Save Battery
+### Example 4: Check Connection Quality
 
 ```javascript
-const mesh = new MeshNetwork({
-  nickname: 'PowerSaver',
-  batteryMode: 'low',  // Uses less battery
-});
+// How's my connection to a friend?
+const quality = mesh.getConnectionQuality('friend-id');
+console.log(`Signal: ${quality.level}`);  // excellent, good, fair, poor
+console.log(`Speed: ${quality.latencyMs}ms`);
 
-// Or let it decide automatically based on battery level
+// Check everyone at once
+const all = mesh.getAllConnectionQuality();
+all.forEach(q => {
+  console.log(`${q.peerId}: ${q.level} (${q.transport})`);
+});
+```
+
+### Example 5: Save Battery
+
+```javascript
 const mesh = new MeshNetwork({
   nickname: 'Smart',
-  batteryMode: 'auto',  // Adjusts automatically!
+  batteryMode: 'auto',  // Adjusts based on your battery level!
 });
 ```
 
-### Example 4: Emergency Delete
+### Example 6: Emergency Delete
 
 ```javascript
-// Enable panic mode
-mesh.enablePanicMode({
-  trigger: 'triple_tap',  // Triple tap to wipe
-});
+mesh.enablePanicMode({ trigger: 'triple_tap' });
 
-// Or wipe everything immediately
+// Or wipe everything right now
 await mesh.wipeAllData();
 // All messages, keys, and data = GONE! 💨
-```
-
-### Example 5: Check Network Health
-
-```javascript
-const health = mesh.getNetworkHealth();
-
-console.log(`Connected to ${health.activeNodes} people`);
-console.log(`Network status: ${health.overallHealth}`); // 'good', 'fair', or 'poor'
 ```
 
 ---
 
 ## Using React Hooks
 
-If you're using React, we have easy hooks!
-
 ```javascript
-import React, { useEffect } from 'react';
-import { View, Text, Button } from 'react-native';
 import { useMesh, useMessages, usePeers } from 'react-native-ble-mesh/hooks';
 import { BLETransport } from 'react-native-ble-mesh';
 
 function ChatScreen() {
-  // Manage mesh lifecycle
   const { mesh, state, initialize, destroy } = useMesh({ displayName: 'Alex' });
-
-  // Message handling (pass mesh instance)
   const { messages, sendBroadcast } = useMessages(mesh);
-
-  // Peer tracking (pass mesh instance)
   const { peers, connectedCount } = usePeers(mesh);
 
-  // Start mesh on mount
   useEffect(() => {
-    const transport = new BLETransport();
-    initialize(transport);
+    initialize(new BLETransport());
     return () => destroy();
   }, []);
 
@@ -251,22 +364,18 @@ function ChatScreen() {
   return (
     <View>
       <Text>Connected to {connectedCount} people</Text>
-
       {messages.map(msg => (
         <Text key={msg.id}>{msg.senderId}: {msg.content}</Text>
       ))}
-
       <Button title="Say Hi!" onPress={() => sendBroadcast('Hello!')} />
     </View>
   );
 }
 ```
 
-> **Note:** The hooks (`useMesh`, `useMessages`, `usePeers`) work with the lower-level `MeshService`. For simpler usage, use the `MeshNetwork` class directly as shown in the Quick Start examples above.
-
 ---
 
-## All The Things You Can Do
+## Everything You Can Do
 
 ### Starting & Stopping
 
@@ -274,40 +383,49 @@ function ChatScreen() {
 |--------|--------------|
 | `mesh.start()` | Turn on the mesh network |
 | `mesh.stop()` | Turn it off (can restart later) |
-| `mesh.destroy()` | Completely shut down (can't restart) |
+| `mesh.destroy()` | Completely shut down |
 
 ### Sending Messages
 
 | Method | What It Does |
 |--------|--------------|
 | `mesh.broadcast('Hi!')` | Send to everyone nearby |
-| `mesh.sendDirect(id, 'Hey')` | Send private message to one person |
-| `mesh.sendToChannel('#fun', 'Yo')` | Send to a group channel |
+| `mesh.sendDirect(id, 'Hey')` | Private message to one person |
+| `mesh.sendToChannel('#fun', 'Yo')` | Send to a group |
+
+### Sending Files (NEW!)
+
+| Method | What It Does |
+|--------|--------------|
+| `mesh.sendFile(id, { data, name, mimeType })` | Send a file to someone |
+| `mesh.getActiveTransfers()` | See files being sent/received |
+| `mesh.cancelTransfer(id)` | Cancel a file transfer |
+
+### Connection Quality (NEW!)
+
+| Method | What It Does |
+|--------|--------------|
+| `mesh.getConnectionQuality(id)` | Signal quality for one person |
+| `mesh.getAllConnectionQuality()` | Signal quality for everyone |
 
 ### Channels (Group Chats)
 
 | Method | What It Does |
 |--------|--------------|
-| `mesh.joinChannel('#name')` | Join a channel |
-| `mesh.leaveChannel('#name')` | Leave a channel |
-| `mesh.getChannels()` | See what channels you're in |
+| `mesh.joinChannel('#name')` | Join a group |
+| `mesh.leaveChannel('#name')` | Leave a group |
+| `mesh.getChannels()` | See your groups |
 
-### People Management
+### People
 
 | Method | What It Does |
 |--------|--------------|
 | `mesh.getPeers()` | See everyone nearby |
+| `mesh.getConnectedPeers()` | See who's connected |
 | `mesh.blockPeer(id)` | Block someone |
 | `mesh.unblockPeer(id)` | Unblock someone |
 
-### Your Identity
-
-| Method | What It Does |
-|--------|--------------|
-| `mesh.getIdentity()` | Get your info |
-| `mesh.setNickname('New Name')` | Change your display name |
-
-### Safety Features
+### Safety
 
 | Method | What It Does |
 |--------|--------------|
@@ -318,61 +436,48 @@ function ChatScreen() {
 
 | Method | What It Does |
 |--------|--------------|
-| `mesh.getStatus()` | Get current status |
-| `mesh.getNetworkHealth()` | Check how good the network is |
-| `mesh.getBatteryMode()` | See current battery mode |
+| `mesh.getStatus()` | Current status |
+| `mesh.getNetworkHealth()` | How good is the network? |
+| `mesh.getBatteryMode()` | Current battery mode |
 | `mesh.setBatteryMode('low')` | Change battery mode |
 
 ---
 
 ## Events (When Things Happen)
 
-Listen for these events:
-
 ```javascript
-// Network started/stopped
-mesh.on('started', () => { });
-mesh.on('stopped', () => { });
+// Messages
+mesh.on('messageReceived', ({ from, text, type }) => { });
+mesh.on('directMessage', ({ from, text }) => { });
+mesh.on('channelMessage', ({ channel, from, text }) => { });
+mesh.on('messageDelivered', ({ messageId }) => { });
 
-// Someone sent a message (any type)
-mesh.on('messageReceived', ({ from, text, timestamp, type }) => { });
+// Files (NEW!)
+mesh.on('fileReceived', ({ from, file }) => { });
+mesh.on('fileSendProgress', ({ name, percent }) => { });
+mesh.on('fileReceiveProgress', ({ name, percent }) => { });
+mesh.on('fileTransferFailed', ({ transferId, reason }) => { });
 
-// Private message received
-mesh.on('directMessage', ({ from, text, timestamp }) => { });
-
-// Channel message received
-mesh.on('channelMessage', ({ channel, from, text, timestamp }) => { });
-
-// Message was delivered successfully
-mesh.on('messageDelivered', ({ messageId, peerId }) => { });
-
-// Found a new person nearby
+// People
 mesh.on('peerDiscovered', (peer) => { });
-
-// Connected to someone
 mesh.on('peerConnected', (peer) => { });
-
-// Someone left
 mesh.on('peerDisconnected', (peer) => { });
 
-// Channel events
-mesh.on('channelJoined', ({ channel }) => { });
-mesh.on('channelLeft', ({ channel }) => { });
+// Connection Quality (NEW!)
+mesh.on('connectionQualityChanged', ({ peerId, level, score }) => { });
 
-// Network quality changed
-mesh.on('networkHealthChanged', (healthInfo) => { });
+// Network
+mesh.on('started', () => { });
+mesh.on('stopped', () => { });
+mesh.on('networkHealthChanged', (info) => { });
+mesh.on('error', (error) => { });
 
-// Message cached for offline peer
+// Offline delivery
 mesh.on('messageCached', ({ peerId, text }) => { });
-
-// Cached messages delivered when peer came online
 mesh.on('cachedMessagesDelivered', ({ peerId, delivered }) => { });
 
-// Data was wiped (panic mode)
+// Safety
 mesh.on('dataWiped', (result) => { });
-
-// Something went wrong
-mesh.on('error', (error) => { });
 ```
 
 ---
@@ -381,45 +486,60 @@ mesh.on('error', (error) => { });
 
 **Very secure!** Here's what protects your messages:
 
-| Feature | What It Means |
-|---------|---------------|
-| **Noise Protocol** | Military-grade handshake to verify who you're talking to |
-| **ChaCha20 Encryption** | Your messages are scrambled so only the recipient can read them |
+| Feature | What It Means (in Simple Words) |
+|---------|-------------------------------|
+| **Pluggable Encryption** | Choose the strongest lock for your messages |
+| **Key Exchange** | Phones secretly agree on a password that nobody else knows |
 | **Forward Secrecy** | Even if someone steals your keys later, old messages stay secret |
-| **No Permanent IDs** | You don't have a permanent identity that can be tracked |
+| **No Permanent IDs** | You can't be tracked — you're just "a phone" |
+| **Panic Wipe** | One tap and everything disappears forever |
+
+---
+
+## iOS Background Mode
+
+Want the mesh to keep working when the app is in the background? We've got you covered.
+
+**Short version:** Add `bluetooth-central` and `bluetooth-peripheral` to your background modes (the Expo plugin does this automatically).
+
+**Detailed version:** See our [iOS Background BLE Guide](docs/IOS-BACKGROUND-BLE.md) — covers all the limitations, workarounds, and known bugs.
 
 ---
 
 ## Frequently Asked Questions
 
-### How far can messages travel?
-With one hop: about 30 meters (100 feet). With 7 hops through other phones: up to 300+ meters!
+**How far can messages travel?**
+One hop: ~30 meters (100 feet). With 7 hops through other phones: 300+ meters!
 
-### Does it work if Bluetooth is off?
+**Does it work if Bluetooth is off?**
 No, Bluetooth must be on. But you don't need WiFi or cell service!
 
-### Can someone read my private messages?
-No! Private messages are encrypted. Only you and your friend have the keys.
+**Can someone read my private messages?**
+Nope! They're encrypted. Only you and your friend have the keys.
 
-### How many people can be in the network?
-The library supports 50+ connected peers at once.
+**How big of a file can I send?**
+Up to 10MB by default (configurable). Big files automatically use Wi-Fi Direct if available.
 
-### Does it drain my battery?
-It uses some battery (Bluetooth is on), but you can use "low power" mode to minimize drain.
+**Does it work with Expo?**
+Yes! Just add the plugin to `app.json` and build a dev client.
 
-### Does it work in the background?
-On iOS, it works with some limitations. On Android, it works fully in the background.
+**Does it drain my battery?**
+It uses some battery (Bluetooth is on), but use `batteryMode: 'auto'` and the library manages it for you.
+
+**Does it work in the background?**
+On iOS, it works with some limitations (scanning is slower). On Android, it works fully. See [iOS Background BLE Guide](docs/IOS-BACKGROUND-BLE.md).
 
 ---
 
 ## Use Cases
 
-- **Concerts & Festivals** - Text friends when cell towers are overloaded
-- **Camping & Hiking** - Stay connected in the wilderness
-- **Emergencies** - Communicate during power outages or disasters
-- **Protests & Events** - When networks are restricted
-- **Gaming** - Local multiplayer without internet
-- **Schools** - Classroom activities without WiFi
+- 🎵 **Concerts & Festivals** — Text friends when cell towers are overloaded
+- ⛺ **Camping & Hiking** — Stay connected in the wilderness
+- 🆘 **Emergencies** — Communicate during power outages or disasters
+- ✊ **Protests & Events** — When networks are restricted
+- 🎮 **Gaming** — Local multiplayer without internet
+- 🏫 **Schools** — Classroom activities without WiFi
+- 📸 **Photo Sharing** — Share pictures at events without data
 
 ---
 
@@ -428,36 +548,39 @@ On iOS, it works with some limitations. On Android, it works fully in the backgr
 ```
 react-native-ble-mesh/
 ├── src/
-│   ├── index.js          # Main entry point
-│   ├── MeshNetwork.js    # High-level API
-│   ├── crypto/           # Encryption stuff
-│   ├── mesh/             # Routing & networking
-│   ├── transport/        # Bluetooth layer
-│   └── hooks/            # React hooks
-├── docs/                 # Documentation
-└── __tests__/            # Tests
+│   ├── index.js              # Main entry point
+│   ├── MeshNetwork.js        # High-level API (start here!)
+│   ├── crypto/               # Pluggable encryption providers
+│   ├── mesh/                 # Routing, dedup, connection quality
+│   ├── transport/            # BLE + Wi-Fi Direct + MultiTransport
+│   ├── service/              # Messaging, files, audio, battery, panic
+│   ├── expo/                 # Expo config plugin
+│   └── hooks/                # React hooks
+├── docs/                     # Guides & specs
+├── app.plugin.js             # Expo plugin entry
+└── __tests__/                # 432 tests, 0 failures ✅
 ```
 
 ---
 
 ## More Documentation
 
-- [Full API Reference](docs/API.md) - Every method explained
-- [React Native Guide](docs/REACT_NATIVE.md) - Platform-specific setup
-- [Security Details](docs/SECURITY.md) - How encryption works
-- [Protocol Spec](docs/PROTOCOL.md) - Technical wire format
-- [AI/Agent Instructions](docs/prompt-instructions.md) - For AI assistants
+- [Full API Reference](docs/API.md) — Every method explained
+- [React Native Guide](docs/REACT_NATIVE.md) — Platform-specific setup
+- [iOS Background BLE](docs/IOS-BACKGROUND-BLE.md) — Background mode guide
+- [Security Details](docs/SECURITY.md) — How encryption works
+- [Protocol Spec](docs/PROTOCOL.md) — Technical wire format
+- [Optimization Notes](docs/OPTIMIZATION.md) — Performance details
+- [v2.1 Feature Spec](docs/SPEC-v2.1.md) — Architecture decisions
+- [AI/Agent Instructions](docs/prompt-instructions.md) — For AI assistants
 
 ---
 
 ## Testing
 
 ```bash
-# Run all tests
-npm test
-
-# Run with coverage report
-npm run test:coverage
+npm test             # Run all 432 tests
+npm run test:coverage  # With coverage report
 ```
 
 ---
@@ -476,24 +599,17 @@ We love contributions! Here's how:
 
 ## Credits
 
-Inspired by [BitChat](https://github.com/nicegram/nicegram-bitchat) - the original decentralized mesh chat.
+Inspired by [BitChat](https://github.com/nicegram/nicegram-bitchat) — the original decentralized mesh chat.
 
 Built with:
-- [react-native-ble-plx](https://github.com/Polidea/react-native-ble-plx) - Bluetooth Low Energy
-- [Noise Protocol](https://noiseprotocol.org/) - Secure handshakes
+- [react-native-ble-plx](https://github.com/Polidea/react-native-ble-plx) — Bluetooth Low Energy
+- [tweetnacl](https://tweetnacl.js.org/) — Encryption
 
 ---
 
 ## License
 
-MIT License - do whatever you want with it! See [LICENSE](LICENSE) for details.
-
----
-
-## Get Help
-
-- **Issues**: [GitHub Issues](https://github.com/suhailtajshaik/react-native-ble-mesh/issues)
-- **Questions**: Open a Discussion on GitHub
+MIT License — do whatever you want with it! See [LICENSE](LICENSE) for details.
 
 ---
 

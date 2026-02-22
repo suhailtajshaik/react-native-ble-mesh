@@ -24,17 +24,7 @@ module.exports = {
   verbose: true,
   testTimeout: 10000,
   setupFilesAfterEnv: ['<rootDir>/__tests__/helpers/setup.js'],
-  reporters: [
-    'default',
-    ['jest-junit', {
-      outputDirectory: '.',
-      outputName: 'junit.xml',
-      classNameTemplate: '{classname}',
-      titleTemplate: '{title}',
-      ancestorSeparator: ' > ',
-      usePathForSuiteName: true
-    }]
-  ],
+  reporters: ['default'],
   // CI-specific configuration
   ...(process.env.CI && {
     ci: true,

@@ -15,12 +15,14 @@ const { MeshService } = require('./service');
 const { BLETransport, MockTransport } = require('./transport');
 const { MemoryStorage } = require('./storage');
 const { StoreAndForwardManager } = require('./mesh/store');
-const { NetworkMonitor, HEALTH_STATUS } = require('./mesh/monitor');
+const { NetworkMonitor, HEALTH_STATUS, ConnectionQuality, QUALITY_LEVEL } = require('./mesh/monitor');
 const { BatteryOptimizer, BATTERY_MODE } = require('./service/BatteryOptimizer');
 const { EmergencyManager, PANIC_TRIGGER } = require('./service/EmergencyManager');
 const { MessageCompressor } = require('./utils/compression');
 const { EVENTS } = require('./constants');
 const { ValidationError, MeshError } = require('./errors');
+const { FileManager, FILE_MESSAGE_TYPE } = require('./service/file');
+const { SERVICE_STATE } = require('./constants');
 
 /**
  * Default MeshNetwork configuration
@@ -146,6 +148,24 @@ class MeshNetwork extends EventEmitter {
         this._emergencyManager = new EmergencyManager();
 
         /**
+         * File transfer manager
+         * @type {FileManager}
+         * @private
+         */
+        this._fileManager = new FileManager({
+            chunkSize: this._config.fileTransfer?.chunkSize,
+            maxFileSize: this._config.fileTransfer?.maxFileSize,
+            transferTimeoutMs: this._config.fileTransfer?.timeoutMs,
+        });
+
+        /**
+         * Connection quality tracker
+         * @type {ConnectionQuality}
+         * @private
+         */
+        this._connectionQuality = new ConnectionQuality(this._config.qualityConfig || {});
+
+        /**
          * Message compressor
          * @type {MessageCompressor}
          * @private
@@ -189,10 +209,12 @@ class MeshNetwork extends EventEmitter {
         // Create transport if not provided
         this._transport = transport || new BLETransport();
 
-        // Initialize the service
-        await this._service.initialize({
-            storage: new MemoryStorage(),
-        });
+        // Initialize the service (only on first start)
+        if (this._service._state === SERVICE_STATE.UNINITIALIZED) {
+            await this._service.initialize({
+                storage: new MemoryStorage(),
+            });
+        }
 
         // Connect battery optimizer to transport
         this._batteryOptimizer.setTransport(this._transport);
@@ -208,6 +230,19 @@ class MeshNetwork extends EventEmitter {
         if (this._storeForward) {
             this._setupStoreAndForward();
         }
+
+        // Setup file transfer events
+        this._fileManager.on('sendProgress', (info) => this.emit('fileSendProgress', info));
+        this._fileManager.on('receiveProgress', (info) => this.emit('fileReceiveProgress', info));
+        this._fileManager.on('fileReceived', (info) => this.emit('fileReceived', info));
+        this._fileManager.on('transferFailed', (info) => this.emit('fileTransferFailed', info));
+        this._fileManager.on('transferCancelled', (info) => this.emit('fileTransferCancelled', info));
+
+        // Start connection quality monitoring
+        this._connectionQuality.start();
+        this._connectionQuality.on('qualityChanged', (quality) => {
+            this.emit('connectionQualityChanged', quality);
+        });
 
         this._state = 'running';
         this.emit('started');
@@ -234,6 +269,9 @@ class MeshNetwork extends EventEmitter {
     async destroy() {
         await this.stop();
         await this._service.destroy();
+
+        this._connectionQuality.destroy();
+        this._fileManager.destroy();
 
         if (this._storeForward) {
             this._storeForward.destroy();
@@ -483,6 +521,87 @@ class MeshNetwork extends EventEmitter {
     }
 
     // ============================================================================
+    // File Sharing Methods
+    // ============================================================================
+
+    /**
+     * Sends a file to a specific peer.
+     * @param {string} peerId - Target peer ID
+     * @param {Object} fileInfo - File information
+     * @param {Uint8Array} fileInfo.data - File data
+     * @param {string} fileInfo.name - File name
+     * @param {string} [fileInfo.mimeType] - MIME type
+     * @returns {Object} Transfer info with id and event emitter
+     */
+    async sendFile(peerId, fileInfo) {
+        this._validateRunning();
+        this._validatePeerId(peerId);
+
+        if (!fileInfo || !fileInfo.data || !fileInfo.name) {
+            throw new ValidationError('File must have data and name', 'E800');
+        }
+
+        const transfer = this._fileManager.prepareSend(peerId, fileInfo);
+
+        // Send offer
+        const offerPayload = new TextEncoder().encode(JSON.stringify(transfer.offer));
+        await this._service._sendRaw(peerId, offerPayload);
+
+        // Send chunks sequentially
+        for (let i = 0; i < transfer.chunks.length; i++) {
+            const chunk = transfer.chunks[i];
+            const chunkMsg = {
+                type: FILE_MESSAGE_TYPE.CHUNK,
+                transferId: transfer.id,
+                index: chunk.index,
+                data: Array.from(chunk.data), // serialize for JSON transport
+            };
+            const payload = new TextEncoder().encode(JSON.stringify(chunkMsg));
+            await this._service._sendRaw(peerId, payload);
+            this._fileManager.markChunkSent(transfer.id, i);
+        }
+
+        return { id: transfer.id, name: fileInfo.name };
+    }
+
+    /**
+     * Gets active file transfers
+     * @returns {Object} { outgoing: [], incoming: [] }
+     */
+    getActiveTransfers() {
+        return this._fileManager.getActiveTransfers();
+    }
+
+    /**
+     * Cancels a file transfer
+     * @param {string} transferId - Transfer ID
+     */
+    cancelTransfer(transferId) {
+        this._fileManager.cancelTransfer(transferId);
+    }
+
+    // ============================================================================
+    // Connection Quality Methods
+    // ============================================================================
+
+    /**
+     * Gets connection quality for a specific peer.
+     * @param {string} peerId - Peer ID
+     * @returns {Object|null} Quality report
+     */
+    getConnectionQuality(peerId) {
+        return this._connectionQuality.getQuality(peerId);
+    }
+
+    /**
+     * Gets connection quality for all peers.
+     * @returns {Object[]} Array of quality reports
+     */
+    getAllConnectionQuality() {
+        return this._connectionQuality.getAllQuality();
+    }
+
+    // ============================================================================
     // Status Methods
     // ============================================================================
 
@@ -553,6 +672,9 @@ class MeshNetwork extends EventEmitter {
         });
 
         this._service.on('peer-connected', (peer) => {
+            if (peer.rssi) {
+                this._connectionQuality.recordRssi(peer.id, peer.rssi);
+            }
             this.emit('peerConnected', peer);
             // Deliver cached messages
             if (this._storeForward && this._storeForward.hasCachedMessages(peer.id)) {
@@ -562,6 +684,7 @@ class MeshNetwork extends EventEmitter {
 
         this._service.on('peer-disconnected', (peer) => {
             this._monitor.trackPeerDisconnected(peer.id);
+            this._connectionQuality.removePeer(peer.id);
             this.emit('peerDisconnected', peer);
         });
 

@@ -8,5 +8,5 @@
 const StoreAndForwardManager = require('./StoreAndForwardManager');
 
 module.exports = {
-    StoreAndForwardManager,
+  StoreAndForwardManager
 };

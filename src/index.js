@@ -2,8 +2,8 @@
  * @fileoverview BLE Mesh Network Library
  * @module rn-ble-mesh
  * @description Production-ready BLE Mesh Network with Noise Protocol security
- * 
- * This is the definitive React Native library for BitChat-compatible 
+ *
+ * This is the definitive React Native library for BitChat-compatible
  * decentralized mesh networking.
  */
 
@@ -16,9 +16,7 @@ const { MeshNetwork, BATTERY_MODE, PANIC_TRIGGER, HEALTH_STATUS } = require('./M
 const {
   MeshService,
   EmergencyManager,
-  BatteryOptimizer,
-  SessionManager,
-  HandshakeManager,
+  BatteryOptimizer
 } = require('./service');
 
 // Constants

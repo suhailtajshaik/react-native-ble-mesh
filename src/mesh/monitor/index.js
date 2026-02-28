@@ -9,10 +9,10 @@ const { NetworkMonitor, HEALTH_STATUS, DEFAULT_CONFIG } = require('./NetworkMoni
 const { ConnectionQuality, PeerQualityTracker, QUALITY_LEVEL } = require('./ConnectionQuality');
 
 module.exports = {
-    NetworkMonitor,
-    HEALTH_STATUS,
-    DEFAULT_CONFIG,
-    ConnectionQuality,
-    PeerQualityTracker,
-    QUALITY_LEVEL,
+  NetworkMonitor,
+  HEALTH_STATUS,
+  DEFAULT_CONFIG,
+  ConnectionQuality,
+  PeerQualityTracker,
+  QUALITY_LEVEL
 };

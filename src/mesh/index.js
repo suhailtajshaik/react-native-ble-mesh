@@ -18,5 +18,5 @@ module.exports = {
   ...peer,
   ...router,
   ...store,
-  ...monitor,
+  ...monitor
 };

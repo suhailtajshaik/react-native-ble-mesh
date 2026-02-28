@@ -11,5 +11,5 @@ module.exports = {
   FileAssembler,
   FileMessage,
   FILE_MESSAGE_TYPE,
-  FILE_TRANSFER_STATE,
+  FILE_TRANSFER_STATE
 };

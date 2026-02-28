@@ -3,7 +3,7 @@
 /**
  * @fileoverview Wi-Fi Direct transport for high-bandwidth mesh communication
  * @module transport/WiFiDirectTransport
- * 
+ *
  * Provides ~250Mbps throughput and ~200m range via Wi-Fi Direct (P2P).
  * Requires: react-native-wifi-p2p (optional peer dependency)
  */
@@ -19,13 +19,13 @@ const WIFI_DIRECT_STATE = Object.freeze({
   AVAILABLE: 'available',
   UNAVAILABLE: 'unavailable',
   DISCOVERING: 'discovering',
-  CONNECTED: 'connected',
+  CONNECTED: 'connected'
 });
 
 /**
  * Wi-Fi Direct transport implementation.
  * Uses react-native-wifi-p2p for peer discovery and data transfer.
- * 
+ *
  * @class WiFiDirectTransport
  * @extends Transport
  */
@@ -70,7 +70,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<void>}
    */
   async start() {
-    if (this.isRunning) return;
+    if (this.isRunning) { return; }
     this._setState(Transport.STATE.STARTING);
 
     try {
@@ -95,7 +95,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<void>}
    */
   async stop() {
-    if (this._state === Transport.STATE.STOPPED) return;
+    if (this._state === Transport.STATE.STOPPED) { return; }
     this._setState(Transport.STATE.STOPPING);
 
     try {
@@ -114,7 +114,7 @@ class WiFiDirectTransport extends Transport {
 
       // Cleanup subscriptions
       this._subscriptions.forEach(sub => {
-        if (sub && typeof sub.remove === 'function') sub.remove();
+        if (sub && typeof sub.remove === 'function') { sub.remove(); }
       });
       this._subscriptions = [];
 
@@ -129,7 +129,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<void>}
    */
   async startDiscovery() {
-    if (!this.isRunning || this._isDiscovering) return;
+    if (!this.isRunning || this._isDiscovering) { return; }
 
     const p2p = this._getWifiP2p();
     await p2p.discoverPeers();
@@ -142,7 +142,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<void>}
    */
   async stopDiscovery() {
-    if (!this._isDiscovering) return;
+    if (!this._isDiscovering) { return; }
 
     const p2p = this._getWifiP2p();
     try {
@@ -183,7 +183,7 @@ class WiFiDirectTransport extends Transport {
         peerId,
         connectedAt: Date.now(),
         isGroupOwner: this._isGroupOwner,
-        groupOwnerAddress: connectionInfo.groupOwnerAddress,
+        groupOwnerAddress: connectionInfo.groupOwnerAddress
       });
 
       this.emit('peerConnected', { peerId, transport: 'wifi-direct' });
@@ -198,7 +198,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<void>}
    */
   async disconnectFromPeer(peerId) {
-    if (!this._peers.has(peerId)) return;
+    if (!this._peers.has(peerId)) { return; }
 
     const p2p = this._getWifiP2p();
     try {
@@ -218,7 +218,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<void>}
    */
   async send(peerId, data) {
-    if (!this.isRunning) throw new Error('Transport is not running');
+    if (!this.isRunning) { throw new Error('Transport is not running'); }
     if (!this._peers.has(peerId)) {
       throw ConnectionError.fromCode('E207', peerId);
     }
@@ -244,7 +244,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<string[]>}
    */
   async broadcast(data) {
-    if (!this.isRunning) throw new Error('Transport is not running');
+    if (!this.isRunning) { throw new Error('Transport is not running'); }
 
     const peerIds = this.getConnectedPeers();
     const results = await Promise.allSettled(
@@ -258,7 +258,7 @@ class WiFiDirectTransport extends Transport {
    * @returns {Promise<Object[]>}
    */
   async getAvailablePeers() {
-    if (!this.isRunning) return [];
+    if (!this.isRunning) { return []; }
     const p2p = this._getWifiP2p();
     try {
       return await p2p.getAvailablePeers();

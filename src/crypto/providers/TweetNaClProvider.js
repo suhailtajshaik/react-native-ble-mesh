@@ -3,7 +3,7 @@
 /**
  * @fileoverview TweetNaCl-based crypto provider
  * @module crypto/providers/TweetNaClProvider
- * 
+ *
  * Uses the `tweetnacl` library — lightweight, audited, works everywhere.
  * Install: npm install tweetnacl
  */
@@ -13,7 +13,7 @@ const CryptoProvider = require('../CryptoProvider');
 /**
  * Crypto provider using tweetnacl.
  * Provides X25519 key exchange, XSalsa20-Poly1305 AEAD, SHA-512 (for hashing).
- * 
+ *
  * @class TweetNaClProvider
  * @extends CryptoProvider
  */

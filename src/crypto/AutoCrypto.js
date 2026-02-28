@@ -3,7 +3,7 @@
 /**
  * @fileoverview Auto-detect best available crypto provider
  * @module crypto/AutoCrypto
- * 
+ *
  * Priority order:
  * 1. react-native-quick-crypto (native speed)
  * 2. expo-crypto + tweetnacl (Expo projects)
@@ -75,5 +75,5 @@ function createProvider(config) {
 
 module.exports = {
   detectProvider,
-  createProvider,
+  createProvider
 };

@@ -3,17 +3,16 @@
 /**
  * @fileoverview Multi-transport aggregator
  * @module transport/MultiTransport
- * 
+ *
  * Combines BLE + Wi-Fi Direct (and future transports) into a single interface.
  * Auto-selects the best transport for each message based on size and availability.
- * 
+ *
  * - BLE: discovery + small messages (<threshold)
  * - Wi-Fi Direct: large payloads (files, images)
  * - Automatic fallback if preferred transport fails
  */
 
 const Transport = require('./Transport');
-const EventEmitter = require('../utils/EventEmitter');
 
 /**
  * Transport selection strategies
@@ -27,13 +26,13 @@ const STRATEGY = Object.freeze({
   /** Auto-select based on payload size */
   AUTO: 'auto',
   /** Use both simultaneously for redundancy */
-  REDUNDANT: 'redundant',
+  REDUNDANT: 'redundant'
 });
 
 /**
  * Multi-transport aggregator.
  * Wraps multiple transports behind a single Transport interface.
- * 
+ *
  * @class MultiTransport
  * @extends Transport
  */
@@ -63,8 +62,8 @@ class MultiTransport extends Transport {
    */
   getAvailableTransports() {
     const transports = [];
-    if (this._bleTransport) transports.push('ble');
-    if (this._wifiTransport) transports.push('wifi-direct');
+    if (this._bleTransport) { transports.push('ble'); }
+    if (this._wifiTransport) { transports.push('wifi-direct'); }
     return transports;
   }
 
@@ -73,7 +72,7 @@ class MultiTransport extends Transport {
    * @returns {Promise<void>}
    */
   async start() {
-    if (this.isRunning) return;
+    if (this.isRunning) { return; }
     this._setState(Transport.STATE.STARTING);
 
     const startPromises = [];
@@ -115,12 +114,12 @@ class MultiTransport extends Transport {
    * @returns {Promise<void>}
    */
   async stop() {
-    if (this._state === Transport.STATE.STOPPED) return;
+    if (this._state === Transport.STATE.STOPPED) { return; }
     this._setState(Transport.STATE.STOPPING);
 
     const stopPromises = [];
-    if (this._bleTransport) stopPromises.push(this._bleTransport.stop().catch(() => {}));
-    if (this._wifiTransport) stopPromises.push(this._wifiTransport.stop().catch(() => {}));
+    if (this._bleTransport) { stopPromises.push(this._bleTransport.stop().catch(() => {})); }
+    if (this._wifiTransport) { stopPromises.push(this._wifiTransport.stop().catch(() => {})); }
 
     await Promise.allSettled(stopPromises);
     this._peers.clear();
@@ -135,7 +134,7 @@ class MultiTransport extends Transport {
    * @returns {Promise<void>}
    */
   async send(peerId, data) {
-    if (!this.isRunning) throw new Error('Transport is not running');
+    if (!this.isRunning) { throw new Error('Transport is not running'); }
 
     const transport = this._selectTransport(peerId, data.length);
 
@@ -158,7 +157,7 @@ class MultiTransport extends Transport {
    * @returns {Promise<string[]>}
    */
   async broadcast(data) {
-    if (!this.isRunning) throw new Error('Transport is not running');
+    if (!this.isRunning) { throw new Error('Transport is not running'); }
 
     const allPeerIds = new Set();
     const successPeerIds = [];
@@ -179,7 +178,7 @@ class MultiTransport extends Transport {
     );
 
     results.forEach(r => {
-      if (r.status === 'fulfilled') successPeerIds.push(r.value);
+      if (r.status === 'fulfilled') { successPeerIds.push(r.value); }
     });
 
     return successPeerIds;

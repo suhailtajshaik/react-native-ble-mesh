@@ -3,7 +3,7 @@
 /**
  * @fileoverview react-native-quick-crypto based provider
  * @module crypto/providers/QuickCryptoProvider
- * 
+ *
  * Uses native crypto via react-native-quick-crypto for maximum performance.
  * Install: npm install react-native-quick-crypto
  */
@@ -13,7 +13,7 @@ const CryptoProvider = require('../CryptoProvider');
 /**
  * Crypto provider using react-native-quick-crypto.
  * Provides native-speed crypto on React Native (JSI binding).
- * 
+ *
  * @class QuickCryptoProvider
  * @extends CryptoProvider
  */
@@ -46,7 +46,7 @@ class QuickCryptoProvider extends CryptoProvider {
     const { publicKey, privateKey } = crypto.generateKeyPairSync('x25519');
     return {
       publicKey: new Uint8Array(publicKey.export({ type: 'spki', format: 'der' }).slice(-32)),
-      secretKey: new Uint8Array(privateKey.export({ type: 'pkcs8', format: 'der' }).slice(-32)),
+      secretKey: new Uint8Array(privateKey.export({ type: 'pkcs8', format: 'der' }).slice(-32))
     };
   }
 
@@ -56,18 +56,18 @@ class QuickCryptoProvider extends CryptoProvider {
     const privKey = crypto.createPrivateKey({
       key: Buffer.concat([
         Buffer.from('302e020100300506032b656e04220420', 'hex'),
-        Buffer.from(secretKey),
+        Buffer.from(secretKey)
       ]),
       format: 'der',
-      type: 'pkcs8',
+      type: 'pkcs8'
     });
     const pubKey = crypto.createPublicKey({
       key: Buffer.concat([
         Buffer.from('302a300506032b656e032100', 'hex'),
-        Buffer.from(publicKey),
+        Buffer.from(publicKey)
       ]),
       format: 'der',
-      type: 'spki',
+      type: 'spki'
     });
     const shared = crypto.diffieHellman({ privateKey: privKey, publicKey: pubKey });
     return new Uint8Array(shared);
@@ -77,7 +77,7 @@ class QuickCryptoProvider extends CryptoProvider {
   encrypt(key, nonce, plaintext, ad) {
     const crypto = this._getCrypto();
     const cipher = crypto.createCipheriv('chacha20-poly1305', key, nonce, { authTagLength: 16 });
-    if (ad && ad.length > 0) cipher.setAAD(Buffer.from(ad));
+    if (ad && ad.length > 0) { cipher.setAAD(Buffer.from(ad)); }
     const encrypted = cipher.update(Buffer.from(plaintext));
     cipher.final();
     const tag = cipher.getAuthTag();
@@ -93,11 +93,11 @@ class QuickCryptoProvider extends CryptoProvider {
     const tagStart = ciphertext.length - 16;
     const encrypted = ciphertext.slice(0, tagStart);
     const tag = ciphertext.slice(tagStart);
-    
+
     try {
       const decipher = crypto.createDecipheriv('chacha20-poly1305', key, nonce, { authTagLength: 16 });
       decipher.setAuthTag(Buffer.from(tag));
-      if (ad && ad.length > 0) decipher.setAAD(Buffer.from(ad));
+      if (ad && ad.length > 0) { decipher.setAAD(Buffer.from(ad)); }
       const decrypted = decipher.update(Buffer.from(encrypted));
       decipher.final();
       return new Uint8Array(decrypted);

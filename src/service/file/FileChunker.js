@@ -51,7 +51,7 @@ class FileChunker {
         transferId,
         index: i,
         totalChunks,
-        data: data.slice(start, end),
+        data: data.slice(start, end)
       });
     }
 

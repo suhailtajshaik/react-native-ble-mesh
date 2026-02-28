@@ -118,6 +118,14 @@ class MeshService extends EventEmitter {
       return this._textManager.sendBroadcast(content);
     }
     const messageId = this._generateMessageId();
+    // Actually send through the transport
+    if (this._transport) {
+      const payload = new TextEncoder().encode(content);
+      const data = new Uint8Array(1 + payload.length);
+      data[0] = MESSAGE_TYPE.TEXT;
+      data.set(payload, 1);
+      this._transport.broadcast(data);
+    }
     this.emit(EVENTS.BROADCAST_SENT, { messageId, content });
     return messageId;
   }
@@ -233,9 +241,10 @@ class MeshService extends EventEmitter {
   }
 
   async _sendRaw(peerId, data) {
-    if (this._transport) {
-      await this._transport.send(peerId, data);
+    if (this._state === SERVICE_STATE.DESTROYED || !this._transport) {
+      return; // Silently ignore sends after destroy
     }
+    await this._transport.send(peerId, data);
   }
 
   getStatus() {
@@ -266,10 +275,49 @@ class MeshService extends EventEmitter {
   _generateMessageId() { return `msg_${Date.now()}_${++this._messageCounter}`; }
 
   _createKeyManager() {
+    const { createProvider } = require('../crypto/AutoCrypto');
+    let provider;
+    let keyPair;
+
+    try {
+      provider = createProvider('auto');
+      keyPair = provider.generateKeyPair();
+    } catch (e) {
+      // If no crypto provider is available, return a minimal fallback
+      // that generates random keys using basic randomBytes
+      const { randomBytes } = require('../utils/bytes');
+      keyPair = { publicKey: randomBytes(32), secretKey: randomBytes(32) };
+      return {
+        getStaticKeyPair: () => keyPair,
+        getPublicKey: () => keyPair.publicKey,
+        exportIdentity: () => ({ publicKey: Array.from(keyPair.publicKey) }),
+        importIdentity: (id) => {
+          if (id && id.publicKey) {
+            keyPair.publicKey = new Uint8Array(id.publicKey);
+          }
+          if (id && id.secretKey) {
+            keyPair.secretKey = new Uint8Array(id.secretKey);
+          }
+        }
+      };
+    }
+
     return {
-      getStaticKeyPair: () => ({ publicKey: new Uint8Array(32), secretKey: new Uint8Array(32) }),
-      getPublicKey: () => new Uint8Array(32),
-      exportIdentity: () => ({}), importIdentity: () => {}
+      getStaticKeyPair: () => keyPair,
+      getPublicKey: () => keyPair.publicKey,
+      provider,
+      exportIdentity: () => ({
+        publicKey: Array.from(keyPair.publicKey),
+        secretKey: Array.from(keyPair.secretKey)
+      }),
+      importIdentity: (id) => {
+        if (id && id.publicKey) {
+          keyPair.publicKey = new Uint8Array(id.publicKey);
+        }
+        if (id && id.secretKey) {
+          keyPair.secretKey = new Uint8Array(id.secretKey);
+        }
+      }
     };
   }
 
@@ -295,7 +343,25 @@ class MeshService extends EventEmitter {
       if (this._textManager) {
         this._textManager.handleIncomingMessage(peerId, type, payload);
       } else {
-        this._channelManager.handleChannelMessage({ channelId: '', senderId: peerId, content: payload });
+        // Try to parse channel ID from payload
+        let channelId = '';
+        let content = payload;
+        try {
+          const decoded = new TextDecoder().decode(payload);
+          const parsed = JSON.parse(decoded);
+          channelId = parsed.channelId || '';
+          content = parsed.content ? new TextEncoder().encode(parsed.content) : payload;
+        } catch (e) {
+          // If not JSON, try to extract channelId as length-prefixed string
+          if (payload.length > 1) {
+            const channelIdLen = payload[0];
+            if (channelIdLen > 0 && channelIdLen < payload.length) {
+              channelId = new TextDecoder().decode(payload.subarray(1, 1 + channelIdLen));
+              content = payload.subarray(1 + channelIdLen);
+            }
+          }
+        }
+        this._channelManager.handleChannelMessage({ channelId, senderId: peerId, content });
       }
     } else if (type >= MESSAGE_TYPE.VOICE_MESSAGE_START && type <= MESSAGE_TYPE.AUDIO_STREAM_END) {
       if (this._audioManager) {

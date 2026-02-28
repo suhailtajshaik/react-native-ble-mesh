@@ -74,6 +74,13 @@ class RNBLEAdapter extends BLEAdapter {
      * @private
      */
     this._stateSubscription = null;
+
+    /**
+     * Disconnect callback
+     * @type {Function|null}
+     * @private
+     */
+    this._disconnectCallback = null;
   }
 
   /**
@@ -206,6 +213,19 @@ class RNBLEAdapter extends BLEAdapter {
     // Monitor disconnection
     device.onDisconnected(() => {
       this._devices.delete(deviceId);
+
+      // Clean up subscriptions for this device
+      for (const [key, subscription] of this._subscriptions.entries()) {
+        if (key.startsWith(`${deviceId}:`)) {
+          subscription.remove();
+          this._subscriptions.delete(key);
+        }
+      }
+
+      // Notify transport
+      if (this._disconnectCallback) {
+        this._disconnectCallback(deviceId);
+      }
     });
 
     return {
@@ -221,6 +241,14 @@ class RNBLEAdapter extends BLEAdapter {
    * @returns {Promise<void>}
    */
   async disconnect(deviceId) {
+    // Clean up subscriptions first
+    for (const [key, subscription] of this._subscriptions.entries()) {
+      if (key.startsWith(`${deviceId}:`)) {
+        subscription.remove();
+        this._subscriptions.delete(key);
+      }
+    }
+
     const device = this._devices.get(deviceId);
     if (device) {
       await this._manager.cancelDeviceConnection(deviceId);
@@ -301,6 +329,14 @@ class RNBLEAdapter extends BLEAdapter {
       PoweredOn: BLEAdapter.STATE.POWERED_ON
     };
     return stateMap[state] || BLEAdapter.STATE.UNKNOWN;
+  }
+
+  /**
+   * Registers a callback for device disconnection events
+   * @param {Function} callback - Callback function receiving peerId
+   */
+  onDeviceDisconnected(callback) {
+    this._disconnectCallback = callback;
   }
 
   /**

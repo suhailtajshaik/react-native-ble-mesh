@@ -46,6 +46,7 @@ function useMesh(config = {}) {
 
   // Create mesh instance ref (persists across renders)
   const meshRef = useRef(null);
+  const mountedRef = useRef(true);
 
   // State
   const [state, setState] = useState('uninitialized');
@@ -64,6 +65,7 @@ function useMesh(config = {}) {
   // Initialize mesh
   const initialize = useCallback(async (transport) => {
     try {
+      if (!mountedRef.current) { return; }
       setState('initializing');
       setError(null);
 
@@ -71,11 +73,15 @@ function useMesh(config = {}) {
 
       // Setup state change listener
       mesh.on('state-changed', ({ newState }) => {
-        setState(newState);
+        if (mountedRef.current) {
+          setState(newState);
+        }
       });
 
       mesh.on('error', (err) => {
-        setError(err);
+        if (mountedRef.current) {
+          setError(err);
+        }
       });
 
       // Initialize with storage
@@ -90,8 +96,10 @@ function useMesh(config = {}) {
 
       return mesh;
     } catch (err) {
-      setState('error');
-      setError(err);
+      if (mountedRef.current) {
+        setState('error');
+        setError(err);
+      }
       throw err;
     }
   }, [getMesh, config.storage]);
@@ -102,7 +110,9 @@ function useMesh(config = {}) {
     try {
       await mesh.start(transport);
     } catch (err) {
-      setError(err);
+      if (mountedRef.current) {
+        setError(err);
+      }
       throw err;
     }
   }, [getMesh]);
@@ -114,7 +124,9 @@ function useMesh(config = {}) {
       try {
         await mesh.stop();
       } catch (err) {
-        setError(err);
+        if (mountedRef.current) {
+          setError(err);
+        }
       }
     }
   }, []);
@@ -129,16 +141,25 @@ function useMesh(config = {}) {
         // Ignore destroy errors
       }
       meshRef.current = null;
-      setState('destroyed');
+      if (mountedRef.current) {
+        setState('destroyed');
+      }
     }
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Immediately mark as unmounted to prevent state updates
+      mountedRef.current = false;
+
       if (meshRef.current) {
-        meshRef.current.destroy().catch(() => {});
-        meshRef.current = null;
+        const mesh = meshRef.current;
+        meshRef.current = null; // Null ref immediately to prevent new operations
+
+        mesh.destroy().catch(() => {
+          // Ignore cleanup errors
+        });
       }
     };
   }, []);

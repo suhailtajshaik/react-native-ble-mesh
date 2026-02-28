@@ -60,6 +60,13 @@ class NodeBLEAdapter extends BLEAdapter {
      * @private
      */
     this._scanCallback = null;
+
+    /**
+     * Disconnect callback
+     * @type {Function|null}
+     * @private
+     */
+    this._disconnectCallback = null;
   }
 
   /**
@@ -181,6 +188,18 @@ class NodeBLEAdapter extends BLEAdapter {
     // Monitor disconnection
     peripheral.once('disconnect', () => {
       this._peripherals.delete(deviceId);
+
+      // Clean up subscriptions for this device
+      for (const [key] of this._subscriptions.entries()) {
+        if (key.startsWith(`${deviceId}:`)) {
+          this._subscriptions.delete(key);
+        }
+      }
+
+      // Notify transport
+      if (this._disconnectCallback) {
+        this._disconnectCallback(deviceId);
+      }
     });
 
     return {
@@ -196,6 +215,13 @@ class NodeBLEAdapter extends BLEAdapter {
    * @returns {Promise<void>}
    */
   async disconnect(deviceId) {
+    // Clean up subscriptions first
+    for (const [key] of this._subscriptions.entries()) {
+      if (key.startsWith(`${deviceId}:`)) {
+        this._subscriptions.delete(key);
+      }
+    }
+
     const peripheral = this._peripherals.get(deviceId);
     if (peripheral) {
       await this._disconnectPeripheral(peripheral);
@@ -408,6 +434,14 @@ class NodeBLEAdapter extends BLEAdapter {
         if (error) { reject(error); } else { resolve(); }
       });
     });
+  }
+
+  /**
+   * Registers a callback for device disconnection events
+   * @param {Function} callback - Callback function receiving peerId
+   */
+  onDeviceDisconnected(callback) {
+    this._disconnectCallback = callback;
   }
 
   /**

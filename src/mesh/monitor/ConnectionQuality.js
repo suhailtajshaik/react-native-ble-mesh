@@ -3,7 +3,7 @@
 /**
  * @fileoverview Connection Quality Calculator
  * @module mesh/monitor/ConnectionQuality
- * 
+ *
  * Calculates real-time connection quality per peer based on
  * RSSI, latency, packet loss, and throughput metrics.
  */
@@ -19,7 +19,7 @@ const QUALITY_LEVEL = Object.freeze({
   GOOD: 'good',
   FAIR: 'fair',
   POOR: 'poor',
-  DISCONNECTED: 'disconnected',
+  DISCONNECTED: 'disconnected'
 });
 
 /**
@@ -42,7 +42,7 @@ const DEFAULT_CONFIG = Object.freeze({
   /** Number of samples to keep per metric */
   sampleSize: 20,
   /** Peer timeout — mark disconnected after this (ms) */
-  peerTimeoutMs: 30000,
+  peerTimeoutMs: 30000
 });
 
 /**
@@ -129,7 +129,7 @@ class PeerQualityTracker {
    * @returns {number|null}
    */
   getAvgRssi() {
-    if (this._rssiSamples.length === 0) return null;
+    if (this._rssiSamples.length === 0) { return null; }
     return this._rssiSamples.reduce((a, b) => a + b, 0) / this._rssiSamples.length;
   }
 
@@ -138,7 +138,7 @@ class PeerQualityTracker {
    * @returns {number|null}
    */
   getAvgLatency() {
-    if (this._latencySamples.length === 0) return null;
+    if (this._latencySamples.length === 0) { return null; }
     return this._latencySamples.reduce((a, b) => a + b, 0) / this._latencySamples.length;
   }
 
@@ -147,7 +147,7 @@ class PeerQualityTracker {
    * @returns {number}
    */
   getPacketLoss() {
-    if (this._packetsSent === 0) return 0;
+    if (this._packetsSent === 0) { return 0; }
     return 1 - (this._packetsAcked / this._packetsSent);
   }
 
@@ -156,9 +156,9 @@ class PeerQualityTracker {
    * @returns {number}
    */
   getThroughputKbps() {
-    if (!this._transferStartTime || this._bytesTransferred === 0) return 0;
+    if (!this._transferStartTime || this._bytesTransferred === 0) { return 0; }
     const elapsedMs = Date.now() - this._transferStartTime;
-    if (elapsedMs === 0) return 0;
+    if (elapsedMs === 0) { return 0; }
     return (this._bytesTransferred * 8) / elapsedMs; // kbps
   }
 
@@ -178,18 +178,18 @@ class PeerQualityTracker {
    * @returns {number}
    */
   _scoreMetric(value, thresholds, higherIsBetter = false) {
-    if (value === null || value === undefined) return 0.5; // neutral
+    if (value === null || value === undefined) { return 0.5; } // neutral
 
     if (higherIsBetter) {
-      if (value >= thresholds.excellent) return 1.0;
-      if (value >= thresholds.good) return 0.75;
-      if (value >= thresholds.fair) return 0.5;
+      if (value >= thresholds.excellent) { return 1.0; }
+      if (value >= thresholds.good) { return 0.75; }
+      if (value >= thresholds.fair) { return 0.5; }
       return 0.25;
     } else {
       // Lower is better (latency, packet loss)
-      if (value <= thresholds.excellent) return 1.0;
-      if (value <= thresholds.good) return 0.75;
-      if (value <= thresholds.fair) return 0.5;
+      if (value <= thresholds.excellent) { return 1.0; }
+      if (value <= thresholds.good) { return 0.75; }
+      if (value <= thresholds.fair) { return 0.5; }
       return 0.25;
     }
   }
@@ -209,7 +209,7 @@ class PeerQualityTracker {
         packetLoss: 0,
         throughputKbps: 0,
         transport: this._transport,
-        lastUpdated: this._lastActivity,
+        lastUpdated: this._lastActivity
       };
     }
 
@@ -228,10 +228,7 @@ class PeerQualityTracker {
                   (plScore * w.packetLoss) + (tpScore * w.throughput);
 
     let level;
-    if (score >= 0.8) level = QUALITY_LEVEL.EXCELLENT;
-    else if (score >= 0.6) level = QUALITY_LEVEL.GOOD;
-    else if (score >= 0.4) level = QUALITY_LEVEL.FAIR;
-    else level = QUALITY_LEVEL.POOR;
+    if (score >= 0.8) { level = QUALITY_LEVEL.EXCELLENT; } else if (score >= 0.6) { level = QUALITY_LEVEL.GOOD; } else if (score >= 0.4) { level = QUALITY_LEVEL.FAIR; } else { level = QUALITY_LEVEL.POOR; }
 
     const previousLevel = this._currentLevel;
     this._currentLevel = level;
@@ -246,7 +243,7 @@ class PeerQualityTracker {
       throughputKbps: Math.round(throughput),
       transport: this._transport,
       lastUpdated: Date.now(),
-      changed: previousLevel !== level,
+      changed: previousLevel !== level
     };
   }
 }
@@ -272,7 +269,7 @@ class ConnectionQuality extends EventEmitter {
    * Starts periodic quality updates
    */
   start() {
-    if (this._updateTimer) return;
+    if (this._updateTimer) { return; }
     this._updateTimer = setInterval(() => this._update(), this._config.updateIntervalMs);
   }
 
@@ -374,7 +371,7 @@ class ConnectionQuality extends EventEmitter {
    */
   getQuality(peerId) {
     const tracker = this._peers.get(peerId);
-    if (!tracker) return null;
+    if (!tracker) { return null; }
     return tracker.calculate();
   }
 
@@ -407,5 +404,5 @@ class ConnectionQuality extends EventEmitter {
 module.exports = {
   ConnectionQuality,
   PeerQualityTracker,
-  QUALITY_LEVEL,
+  QUALITY_LEVEL
 };

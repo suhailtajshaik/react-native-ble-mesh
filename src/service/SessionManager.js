@@ -7,6 +7,9 @@
 
 const { CryptoError } = require('../errors');
 
+const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_MESSAGE_COUNT = 1000000; // 1 million messages before nonce exhaustion risk
+
 /**
  * Manages Noise Protocol sessions for secure peer communication.
  * @class SessionManager
@@ -39,6 +42,19 @@ class SessionManager {
   encryptFor(peerId, plaintext) {
     const entry = this._sessions.get(peerId);
     if (!entry) { throw CryptoError.encryptionFailed({ reason: 'Session not found', peerId }); }
+
+    // Check session expiry
+    if (Date.now() - entry.createdAt > MAX_SESSION_AGE_MS) {
+      this._sessions.delete(peerId);
+      throw CryptoError.encryptionFailed({ reason: 'Session expired', peerId });
+    }
+
+    // Check nonce exhaustion
+    if (entry.messageCount >= MAX_MESSAGE_COUNT) {
+      this._sessions.delete(peerId);
+      throw CryptoError.encryptionFailed({ reason: 'Session message limit reached, re-handshake required', peerId });
+    }
+
     try {
       const ciphertext = entry.session.encrypt(plaintext);
       entry.lastUsedAt = Date.now();
@@ -60,7 +76,7 @@ class SessionManager {
       }
       return plaintext;
     } catch (error) {
-      return null;
+      throw CryptoError.decryptionFailed({ reason: error.message, peerId });
     }
   }
 
@@ -75,8 +91,67 @@ class SessionManager {
 
   importSession(peerId, state) {
     if (!state || !state.sessionData) { throw new Error('Invalid session state'); }
+
+    const data = state.sessionData;
+
+    // If sessionData already has encrypt/decrypt methods, use it directly
+    if (typeof data.encrypt === 'function' && typeof data.decrypt === 'function') {
+      this._sessions.set(peerId, {
+        session: data,
+        createdAt: state.createdAt || Date.now(),
+        lastUsedAt: state.lastUsedAt || Date.now(),
+        messageCount: state.messageCount || 0
+      });
+      return;
+    }
+
+    // Reconstruct session from exported key material
+    const sendKey = data.sendKey instanceof Uint8Array ? data.sendKey : new Uint8Array(data.sendKey);
+    const recvKey = data.recvKey instanceof Uint8Array ? data.recvKey : new Uint8Array(data.recvKey);
+    let sendNonce = data.sendNonce || 0;
+    let recvNonce = data.recvNonce || 0;
+
+    // Try to get crypto provider for real encrypt/decrypt
+    let provider = null;
+    try {
+      const { createProvider } = require('../crypto/AutoCrypto');
+      provider = createProvider('auto');
+    } catch (e) {
+      // No crypto provider available
+    }
+
+    const session = {
+      encrypt: (plaintext) => {
+        if (provider && typeof provider.encrypt === 'function') {
+          const nonce = new Uint8Array(24);
+          const view = new DataView(nonce.buffer);
+          view.setUint32(nonce.byteLength - 8, 0, true);
+          view.setUint32(nonce.byteLength - 4, sendNonce++, true);
+          return provider.encrypt(sendKey, nonce, plaintext);
+        }
+        return plaintext;
+      },
+      decrypt: (ciphertext) => {
+        if (provider && typeof provider.decrypt === 'function') {
+          const nonce = new Uint8Array(24);
+          const view = new DataView(nonce.buffer);
+          view.setUint32(nonce.byteLength - 8, 0, true);
+          view.setUint32(nonce.byteLength - 4, recvNonce++, true);
+          return provider.decrypt(recvKey, nonce, ciphertext);
+        }
+        return ciphertext;
+      },
+      export: () => ({
+        sendKey: Array.from(sendKey),
+        recvKey: Array.from(recvKey),
+        sendNonce,
+        recvNonce,
+        nonceSize: 24
+      })
+    };
+
     this._sessions.set(peerId, {
-      session: state.sessionData,
+      session,
       createdAt: state.createdAt || Date.now(),
       lastUsedAt: state.lastUsedAt || Date.now(),
       messageCount: state.messageCount || 0

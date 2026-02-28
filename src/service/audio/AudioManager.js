@@ -121,9 +121,15 @@ class AudioManager extends EventEmitter {
    * @returns {Promise<void>}
    */
   async destroy() {
-    // End all sessions
+    // End all sessions and wait for completion
+    const endPromises = [];
     for (const [, session] of this._sessions) {
-      await session.end();
+      if (session && typeof session.end === 'function') {
+        endPromises.push(session.end().catch(() => {}));
+      }
+    }
+    if (endPromises.length > 0) {
+      await Promise.all(endPromises);
     }
     this._sessions.clear();
 

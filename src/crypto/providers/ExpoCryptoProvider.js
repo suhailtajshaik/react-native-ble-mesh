@@ -3,11 +3,11 @@
 /**
  * @fileoverview Expo-crypto based provider
  * @module crypto/providers/ExpoCryptoProvider
- * 
+ *
  * Uses expo-crypto for Expo managed workflow projects.
  * Note: expo-crypto provides hashing and random bytes but NOT key exchange or AEAD.
  * Falls back to tweetnacl for those operations.
- * 
+ *
  * Install: npx expo install expo-crypto tweetnacl
  */
 
@@ -16,7 +16,7 @@ const CryptoProvider = require('../CryptoProvider');
 /**
  * Crypto provider for Expo projects.
  * Uses expo-crypto for hashing/random, tweetnacl for key exchange and AEAD.
- * 
+ *
  * @class ExpoCryptoProvider
  * @extends CryptoProvider
  */
@@ -69,13 +69,29 @@ class ExpoCryptoProvider extends CryptoProvider {
   /** @inheritdoc */
   encrypt(key, nonce, plaintext, _ad) {
     const nacl = this._getNacl();
-    return nacl.secretbox(plaintext, nonce, key);
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox(plaintext, fullNonce, key);
   }
 
   /** @inheritdoc */
   decrypt(key, nonce, ciphertext, _ad) {
     const nacl = this._getNacl();
-    return nacl.secretbox.open(ciphertext, nonce, key) || null;
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox.open(ciphertext, fullNonce, key) || null;
   }
 
   /** @inheritdoc */

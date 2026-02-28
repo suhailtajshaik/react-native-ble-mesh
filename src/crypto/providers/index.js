@@ -7,5 +7,5 @@ const ExpoCryptoProvider = require('./ExpoCryptoProvider');
 module.exports = {
   TweetNaClProvider,
   QuickCryptoProvider,
-  ExpoCryptoProvider,
+  ExpoCryptoProvider
 };

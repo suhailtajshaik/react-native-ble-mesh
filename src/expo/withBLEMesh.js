@@ -3,10 +3,10 @@
 /**
  * @fileoverview Expo config plugin for react-native-ble-mesh
  * @module expo/withBLEMesh
- * 
+ *
  * Automatically configures BLE permissions and background modes
  * for iOS and Android when used with Expo.
- * 
+ *
  * Usage in app.json:
  * {
  *   "expo": {
@@ -34,8 +34,8 @@ const DEFAULT_OPTIONS = {
     'android.permission.BLUETOOTH_SCAN',
     'android.permission.BLUETOOTH_CONNECT',
     'android.permission.BLUETOOTH_ADVERTISE',
-    'android.permission.ACCESS_FINE_LOCATION',
-  ],
+    'android.permission.ACCESS_FINE_LOCATION'
+  ]
 };
 
 /**
@@ -47,8 +47,8 @@ const DEFAULT_OPTIONS = {
 function withBLEMeshIOS(config, options) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  if (!config.ios) config.ios = {};
-  if (!config.ios.infoPlist) config.ios.infoPlist = {};
+  if (!config.ios) { config.ios = {}; }
+  if (!config.ios.infoPlist) { config.ios.infoPlist = {}; }
 
   // Add Bluetooth usage description
   config.ios.infoPlist.NSBluetoothAlwaysUsageDescription = opts.bluetoothAlwaysPermission;
@@ -71,8 +71,8 @@ function withBLEMeshIOS(config, options) {
 function withBLEMeshAndroid(config, options) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  if (!config.android) config.android = {};
-  if (!config.android.permissions) config.android.permissions = [];
+  if (!config.android) { config.android = {}; }
+  if (!config.android.permissions) { config.android.permissions = []; }
 
   // Add BLE permissions (avoid duplicates)
   const existingPerms = new Set(config.android.permissions);

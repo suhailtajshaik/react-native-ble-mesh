@@ -99,7 +99,13 @@ class RouteTable {
 
     // Enforce max routes limit
     if (!existingRoute && this._routes.size >= this.maxRoutes) {
-      this._evictOldestRoute();
+      // First try to clean up expired routes before evicting valid ones
+      this.cleanup();
+
+      // If still at capacity after cleanup, evict oldest
+      if (this._routes.size >= this.maxRoutes) {
+        this._evictOldestRoute();
+      }
     }
 
     const route = {

@@ -3,7 +3,7 @@
 /**
  * @fileoverview TweetNaCl-based crypto provider
  * @module crypto/providers/TweetNaClProvider
- * 
+ *
  * Uses the `tweetnacl` library — lightweight, audited, works everywhere.
  * Install: npm install tweetnacl
  */
@@ -13,7 +13,7 @@ const CryptoProvider = require('../CryptoProvider');
 /**
  * Crypto provider using tweetnacl.
  * Provides X25519 key exchange, XSalsa20-Poly1305 AEAD, SHA-512 (for hashing).
- * 
+ *
  * @class TweetNaClProvider
  * @extends CryptoProvider
  */
@@ -67,13 +67,29 @@ class TweetNaClProvider extends CryptoProvider {
     const nacl = this._getNacl();
     // tweetnacl uses XSalsa20-Poly1305 with 24-byte nonce
     // nacl.secretbox includes authentication
-    return nacl.secretbox(plaintext, nonce, key);
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox(plaintext, fullNonce, key);
   }
 
   /** @inheritdoc */
   decrypt(key, nonce, ciphertext, _ad) {
     const nacl = this._getNacl();
-    const result = nacl.secretbox.open(ciphertext, nonce, key);
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    const result = nacl.secretbox.open(ciphertext, fullNonce, key);
     return result || null; // returns null on auth failure
   }
 

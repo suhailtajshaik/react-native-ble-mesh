@@ -17,7 +17,7 @@ const FILE_MESSAGE_TYPE = Object.freeze({
   /** Transfer complete acknowledgment */
   COMPLETE: 'file:complete',
   /** Transfer cancelled */
-  CANCEL: 'file:cancel',
+  CANCEL: 'file:cancel'
 });
 
 /**
@@ -29,7 +29,7 @@ const FILE_TRANSFER_STATE = Object.freeze({
   TRANSFERRING: 'transferring',
   COMPLETE: 'complete',
   FAILED: 'failed',
-  CANCELLED: 'cancelled',
+  CANCELLED: 'cancelled'
 });
 
 /**
@@ -66,7 +66,7 @@ class FileMessage {
    * @returns {number} 0-100
    */
   get progress() {
-    if (this.totalChunks === 0) return 100;
+    if (this.totalChunks === 0) { return 100; }
     return Math.round((this.receivedChunks / this.totalChunks) * 100);
   }
 
@@ -75,7 +75,7 @@ class FileMessage {
    * @returns {number}
    */
   get elapsedMs() {
-    if (!this.startedAt) return 0;
+    if (!this.startedAt) { return 0; }
     const end = this.completedAt || Date.now();
     return end - this.startedAt;
   }
@@ -92,7 +92,7 @@ class FileMessage {
       mimeType: this.mimeType,
       size: this.size,
       totalChunks: this.totalChunks,
-      chunkSize: this.chunkSize,
+      chunkSize: this.chunkSize
     };
   }
 
@@ -110,7 +110,7 @@ class FileMessage {
       size: offer.size,
       totalChunks: offer.totalChunks,
       chunkSize: offer.chunkSize,
-      senderId,
+      senderId
     });
   }
 }
@@ -118,5 +118,5 @@ class FileMessage {
 module.exports = {
   FileMessage,
   FILE_MESSAGE_TYPE,
-  FILE_TRANSFER_STATE,
+  FILE_TRANSFER_STATE
 };

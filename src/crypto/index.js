@@ -3,7 +3,7 @@
 /**
  * @fileoverview Crypto module — pluggable provider system
  * @module crypto
- * 
+ *
  * Provides a CryptoProvider interface with auto-detection:
  * - TweetNaClProvider (tweetnacl) — works everywhere
  * - QuickCryptoProvider (react-native-quick-crypto) — native speed
@@ -20,5 +20,5 @@ module.exports = {
   QuickCryptoProvider,
   ExpoCryptoProvider,
   detectProvider,
-  createProvider,
+  createProvider
 };

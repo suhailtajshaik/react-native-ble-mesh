@@ -55,7 +55,7 @@ class FileAssembler {
    * @returns {number} 0-100
    */
   get progress() {
-    if (this._totalChunks === 0) return 100;
+    if (this._totalChunks === 0) { return 100; }
     return Math.round((this._chunks.size / this._totalChunks) * 100);
   }
 
@@ -87,6 +87,9 @@ class FileAssembler {
       result.set(chunk, offset);
       offset += chunk.length;
     }
+
+    // Free chunk memory immediately after assembly
+    this._chunks.clear();
 
     return result;
   }

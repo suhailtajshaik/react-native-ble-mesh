@@ -73,6 +73,11 @@ class PendingFragmentSet {
    * @returns {Uint8Array} Complete assembled payload
    */
   assemble() {
+    const MAX_ASSEMBLY_SIZE = 500 * 1024; // 500KB max for mesh messages
+    if (this.totalPayloadLength > MAX_ASSEMBLY_SIZE) {
+      throw new Error(`Fragment assembly too large: ${this.totalPayloadLength} bytes exceeds ${MAX_ASSEMBLY_SIZE} byte limit`);
+    }
+
     const result = new Uint8Array(this.totalPayloadLength);
     let offset = 0;
 

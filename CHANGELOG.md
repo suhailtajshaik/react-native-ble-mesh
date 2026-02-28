@@ -1,47 +1,85 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
 
-## [2.1.0] - 2026-02-22
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0] - 2026-02-28
+
+Major release consolidating all features since v1.1.1. Replaces the slow pure-JS
+crypto module with a pluggable native provider system, adds Wi-Fi Direct transport,
+Expo support, file sharing, connection quality monitoring, and comprehensive
+production-hardening fixes for real iOS/Android devices.
+
+**433 tests passing across 23 test suites.**
+
+### Breaking Changes
+
+#### Pure JS Crypto Module Removed
+The entire pure-JS `src/crypto/` module (X25519, ChaCha20-Poly1305, SHA-256, HMAC,
+HKDF, Poly1305, Noise XX handshake, KeyManager/KeyPair/SecureStorage) has been
+removed. X25519 key exchange took ~100ms+ per operation on mobile (vs ~1ms native),
+causing battery drain and UI thread blocking.
+
+**Migration:** The new pluggable crypto provider system replaces it automatically:
+- [`tweetnacl`](https://npmjs.com/package/tweetnacl) — Lightweight, audited, pure JS (default fallback)
+- [`react-native-quick-crypto`](https://npmjs.com/package/react-native-quick-crypto) — Native JSI speed (auto-preferred)
+- [`expo-crypto`](https://npmjs.com/package/expo-crypto) + tweetnacl — For Expo projects (auto-detected)
+
+The `./crypto` package.json export has been removed. Crypto constants
+(`CRYPTO_CONFIG`, `NOISE_PROTOCOL_NAME`, `NOISE_HANDSHAKE_STATE`) remain for
+protocol compatibility.
+
+#### Crypto Standardized on XSalsa20-Poly1305
+All three crypto providers now use `nacl.secretbox` (XSalsa20-Poly1305) with
+24-byte nonces. Previously, QuickCryptoProvider used ChaCha20-Poly1305 with 12-byte
+nonces, making cross-provider encrypted sessions incompatible. Sessions established
+with one provider can now be decrypted by any other.
+
+#### Handshake XOR Fallbacks Removed
+The HandshakeManager no longer falls back to XOR-based "encryption" when tweetnacl
+is unavailable. This was a security vulnerability — XOR provides no real encryption.
+The handshake now requires a proper crypto provider or throws an explicit error.
 
 ### New Features
 
 #### Wi-Fi Direct Transport
-- **`WiFiDirectTransport`** — High-bandwidth transport (~250Mbps, ~200m range) via `react-native-wifi-p2p`
+- **`WiFiDirectTransport`** — High-bandwidth transport (~250 Mbps, ~200 m range) via `react-native-wifi-p2p`
 - **`MultiTransport`** — Aggregates BLE + Wi-Fi Direct behind a single interface
-  - Auto-selects BLE for small messages (<1KB), Wi-Fi Direct for large payloads
+  - Auto-selects BLE for small messages (<1 KB), Wi-Fi Direct for large payloads
   - Automatic fallback if preferred transport fails
   - Strategies: `auto`, `ble-only`, `wifi-only`, `redundant`
-- Peer dependency: `react-native-wifi-p2p` (optional — only needed for Wi-Fi Direct)
+- Peer dependency: `react-native-wifi-p2p` (optional)
 
 #### Expo Support
 - **Expo config plugin** (`app.plugin.js`) — automatically configures BLE permissions
-  - iOS: `NSBluetoothAlwaysUsageDescription`, `UIBackgroundModes` (bluetooth-central, bluetooth-peripheral)
+  - iOS: `NSBluetoothAlwaysUsageDescription`, `UIBackgroundModes`
   - Android: `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, `BLUETOOTH_ADVERTISE`, `ACCESS_FINE_LOCATION`
-  - Usage: `["react-native-ble-mesh", { "bluetoothAlwaysPermission": "..." }]` in app.json plugins
+  - Usage: `["react-native-ble-mesh", { "bluetoothAlwaysPermission": "..." }]` in app.json
 - Supports Expo SDK 53+ with config plugins / dev client
 
 #### File & Image Sharing
 - **`FileManager`** — Full file transfer orchestration over the mesh
-  - Chunking with configurable size (default 4KB) and max file size (default 10MB)
+  - Chunking with configurable size (default 4 KB) and max file size (default 10 MB)
   - Progress events: `fileSendProgress`, `fileReceiveProgress`, `fileReceived`
   - Concurrent transfer management (max 5 simultaneous)
-  - Transfer timeouts (default 5 minutes) with automatic cancellation
+  - Transfer timeouts (default 5 min) with automatic cancellation
   - `mesh.sendFile(peerId, { data, name, mimeType })` high-level API
+  - Binary chunk protocol (3-4x smaller than JSON encoding)
+  - Incoming offer validation (size limits, required fields, chunk count)
 - **`FileChunker`** — Splits files into mesh-compatible chunks
-- **`FileAssembler`** — Reassembles received chunks with out-of-order support
+- **`FileAssembler`** — Reassembles received chunks with out-of-order support and memory cleanup after assembly
 - **`FileMessage`** — Transfer metadata with offer/chunk/complete protocol
 
-#### Native Crypto Integration
-- **Pluggable crypto provider system** replacing the removed pure JS crypto
-- **`CryptoProvider`** — Abstract interface for all crypto operations (key gen, key exchange, AEAD, hashing, random bytes)
-- Built-in providers:
-  - **`TweetNaClProvider`** — Uses `tweetnacl` (lightweight, audited, works everywhere)
-  - **`QuickCryptoProvider`** — Uses `react-native-quick-crypto` (native JSI speed)
-  - **`ExpoCryptoProvider`** — Uses `expo-crypto` + `tweetnacl` for Expo projects
-- **`AutoCrypto.detectProvider()`** — Automatically picks the best available provider at runtime
-  - Priority: quick-crypto → expo-crypto → tweetnacl
+#### Native Crypto Provider System
+- **`CryptoProvider`** — Abstract interface for key gen, key exchange, AEAD, hashing, random bytes
+- **`TweetNaClProvider`** — Uses `tweetnacl` (lightweight, audited, works everywhere)
+- **`QuickCryptoProvider`** — Uses `react-native-quick-crypto` (native JSI speed)
+- **`ExpoCryptoProvider`** — Uses `expo-crypto` + `tweetnacl` for Expo projects
+- **`AutoCrypto.detectProvider()`** — Picks best available provider at runtime
+  - Priority: quick-crypto > expo-crypto > tweetnacl
 - Usage: `new MeshNetwork({ crypto: 'auto' })` or pass a provider instance
-- All providers are optional peer dependencies
 
 #### Connection Quality Indicator
 - **`ConnectionQuality`** — Real-time per-peer connection quality tracking
@@ -49,100 +87,97 @@
   - Metrics: RSSI, latency, packet loss, throughput, active transport
   - Weighted scoring: RSSI (30%) + latency (30%) + packet loss (25%) + throughput (15%)
   - Configurable thresholds, sample sizes, and update intervals
-  - Automatic peer timeout detection
 - `mesh.getConnectionQuality(peerId)` and `mesh.getAllConnectionQuality()`
 - Event: `connectionQualityChanged` when a peer's quality level changes
 
 #### iOS Background BLE
-- **State restoration support** added to `RNBLEAdapter` via `restoreIdentifier` option
+- **State restoration support** in `RNBLEAdapter` via `restoreIdentifier` option
   - Allows iOS to re-launch the app and restore BLE connections after termination
   - Automatically re-populates device map from restored state
-- **Comprehensive guide**: `docs/IOS-BACKGROUND-BLE.md` covering:
-  - Background mode setup (Expo + bare RN)
-  - iOS limitations: scanning throttling (~1/5min), advertising restrictions, connection interval changes
-  - Workarounds for each limitation
-  - State restoration configuration
-  - Known iOS bugs (post-reboot, 24h scanning stop, post-update disconnection)
-  - Testing recommendations
-  - Recommended mesh configuration for iOS
+- Guide: `docs/IOS-BACKGROUND-BLE.md`
 
-### Testing
-- **432 tests passing, 0 failures** (88 new tests added)
-- New test suites:
-  - `ConnectionQuality.test.js` — Quality calculation, RSSI/latency/packet loss recording, timeouts, events
-  - `CryptoProvider.test.js` — Abstract interface, TweetNaCl mock provider, auto-detection
-  - `FileManager.test.js` — Chunking, assembly, send/receive flow, progress, cancellation
-  - `configPlugin.test.js` — iOS/Android permission injection, deduplication
-  - `WiFiDirectTransport.test.js` — Lifecycle, discovery, connection, send/broadcast
-  - `MultiTransport.test.js` — Auto strategy, fallback, peer merging, broadcast
-
-### Documentation
-- `docs/SPEC-v2.1.md` — Full feature specification with API designs
-- `docs/IOS-BACKGROUND-BLE.md` — iOS background BLE guide with workarounds
-
----
-
-## [2.0.0] - 2026-02-22
-
-### ⚠️ Breaking Changes
-
-#### Crypto Module Removed
-The entire `src/crypto/` module has been removed. This includes:
-- X25519 key exchange (pure JavaScript BigInt implementation)
-- ChaCha20-Poly1305 AEAD encryption/decryption
-- SHA-256 hashing
-- HMAC-SHA256 message authentication
-- HKDF key derivation
-- Poly1305 MAC
-- Noise Protocol XX handshake (handshake, session, state)
-- Key management (KeyManager, KeyPair, SecureStorage)
-
-**Why:** The pure JavaScript BigInt crypto was a major performance bottleneck on mobile devices. X25519 key exchange took ~100ms+ per operation (vs ~1ms with native). This caused battery drain, UI thread blocking on Hermes/JSC, and made the library impractical for real-world mesh networks with frequent peer connections.
-
-**Migration:** Replace with established, battle-tested libraries:
-- [`tweetnacl`](https://npmjs.com/package/tweetnacl) — Lightweight, audited, pure JS (recommended for most cases)
-- [`libsodium-wrappers`](https://npmjs.com/package/libsodium-wrappers) — Full NaCl API, WASM-accelerated
-- [`react-native-quick-crypto`](https://npmjs.com/package/react-native-quick-crypto) — Native speed, drop-in Node.js crypto replacement for React Native
-
-The `./crypto` package export has been removed. Crypto constants (`CRYPTO_CONFIG`, `NOISE_PROTOCOL_NAME`, `NOISE_HANDSHAKE_STATE`) are still available for protocol compatibility.
+#### Real Noise NN Handshake
+- HandshakeManager now implements a real Noise NN handshake using crypto providers
+  (X25519 ephemeral key exchange + XSalsa20-Poly1305 session encryption)
+- SessionManager reconstructs functional encrypt/decrypt when importing sessions
+- Session expiry: 24-hour max age and 1 million message count limit to prevent nonce exhaustion
+- Handshake tie-breaking via public key comparison for simultaneous initiation
 
 ### Bug Fixes
 
-- **MeshNetwork restart crash** — Calling `start()` after `stop()` threw "Service already initialized". The service tried to re-initialize on every start. Now correctly skips initialization if already initialized, allowing proper stop/start cycling.
-- **MockTransport missing peer ID** — Creating a `MockTransport()` without `localPeerId` caused "localPeerId required" errors when linking two transports. Now auto-generates a unique ID if none provided.
-- **BLE connection timer leak** — `BLETransport.connectToPeer()` created a timeout timer that was never cleared on successful connection, leaking memory over time. Now properly clears the timer on success.
-- **Error message clarity** — All error classes (`MeshError`, `ValidationError`, `ConnectionError`, `CryptoError`, `HandshakeError`) now prefix messages with the error class name (e.g., `"ValidationError: Invalid type"` instead of just `"Invalid type"`). Makes error identification in catch blocks and logs much easier.
+#### Critical (Production Blockers)
+- **BLE MTU-based write chunking** — BLE writes now respect per-peer MTU (negotiated up to 512 bytes). Previously, writes exceeding the default 20-byte MTU were silently truncated, corrupting every message longer than a few bytes.
+- **BLE disconnect event wiring** — `RNBLEAdapter` and `NodeBLEAdapter` now notify the transport layer on device disconnection. Previously, disconnected peers remained in the connected-peers map indefinitely, causing sends to a dead connection.
+- **BLE write queue serialization** — Per-peer write queue prevents concurrent BLE characteristic writes. Concurrent writes caused data corruption on iOS and "device busy" errors on Android.
+- **Nonce size standardized to 24 bytes** — SessionManager was generating 12-byte nonces but XSalsa20-Poly1305 requires 24 bytes, causing every encrypted message to fail decryption.
+
+#### High Severity
+- **MeshNetwork start() crash** — Starting with BLETransport auto-detects the adapter or throws a helpful error instead of crashing on `undefined`.
+- **Event listener leak** — `MeshNetwork.stop()` now removes fileManager and connectionQuality listeners added during `start()`.
+- **Store-and-forward re-encryption** — Cached messages are now re-encrypted via `sendPrivateMessage` on delivery instead of sending stale ciphertext.
+- **Channel message routing** — MeshService now correctly parses channelId from incoming payloads (JSON + length-prefix fallback).
+- **Broadcast send** — `MeshService.sendBroadcast()` fallback now actually sends through transport instead of silently dropping.
+- **EmergencyManager async wipe** — `_triggerPanic` is now properly async with error handling at call sites.
+- **Handshake tie-breaking** — Simultaneous handshake initiation no longer causes both sides to fail; deterministic winner selected by public key comparison.
+- **Session expiry** — Sessions now expire after 24 hours or 1M messages, preventing nonce reuse.
+- **File transfer chunk timeout** — Each chunk has a 10-second send timeout; transfer aborts if peer disconnects mid-transfer.
+- **Fragment assembly bounds check** — Rejects assembled payloads exceeding 500 KB to prevent memory exhaustion from malformed fragments.
+- **BLE subscription cleanup** — Both BLE adapters now clean up characteristic subscriptions on disconnect.
+- **Dedup after send** — Messages are now marked as seen in the dedup manager *after* successful send, not before, allowing retries on failure.
+- **`_sendRaw` guard** — MeshService guards against sends after destroy, preventing "cannot read property of null" crashes.
+- **React hook memory leak** — `useMessages` clears `messageIdRef` on unmount; `useMesh` uses `mountedRef` pattern to prevent post-unmount state updates.
+
+#### Medium Severity
+- **Hop count off-by-one** — MessageRouter used `>=` instead of `>` for max hops, dropping messages one hop early.
+- **Broadcast relay flood** — Broadcast messages now respect TTL and limit relay to max 3 peers instead of flooding all connected peers exponentially.
+- **Double-buffered bloom filter** — DedupManager now uses a 1-minute grace period when rotating bloom filters, preventing false-negative dedup during the rotation window.
+- **Event name constants** — MeshNetwork uses `EVENTS.*` constants (colon format: `peer:connected`) instead of hardcoded strings.
+- **Config merge** — `_mergeConfig` now includes `fileTransfer` and `qualityConfig` sections.
+- **Safe `getStatus()`** — Returns safely before initialization instead of throwing on undefined.
+- **StoreAndForward secure IDs** — Uses `randomBytes()` instead of `Math.random()` for message IDs.
+- **BLE auto-scan** — BLETransport auto-starts scanning after `start()`.
+- **Timer cleanup** — All `setInterval` timers (BatteryOptimizer, StoreAndForwardManager, NetworkMonitor, BroadcastManager) call `.unref()` to prevent blocking Node.js process exit.
+- **AudioManager destroy** — Properly awaits `session.end()` using `Promise.all()`.
+- **NetworkMonitor health check** — Health check timer callback now has try-catch error handling.
+- **RouteTable eviction** — Cleans expired routes before evicting valid ones when table is full.
+- **PeerManager cleanup** — Protects peers in `CONNECTING` state from stale-peer cleanup.
+- **BroadcastManager dedup** — Auto-cleanup timer every 5 minutes prevents unbounded memory growth.
+- **FileAssembler memory** — Clears internal chunk map after assembly to free memory.
+- **SessionManager decrypt** — Throws `CryptoError` on decryption failure instead of returning silent null.
 
 ### Testing
 
-All **344 tests passing, 0 failures**.
+**433 tests, 23 test suites, 0 failures.**
 
-#### New Test Suites (7 added)
-- **`__tests__/transport/BLETransport.test.js`** — Start/stop lifecycle, scanning, peer connection/disconnection, broadcast, timeout handling, power mode switching
-- **`__tests__/transport/MockTransport.test.js`** — Auto-ID generation, linking, bidirectional message passing, peer simulation, message logging
-- **`__tests__/mesh/MeshNetwork.unit.test.js`** — Constructor defaults, config merging (deep merge), validation (message text, peer ID), channel name normalization, lifecycle (start/stop/restart/destroy), status reporting
-- **`__tests__/service/MeshService.test.js`** — Initialize/start/stop/destroy lifecycle, transport requirement, identity management, peer queries, broadcast messaging
-- **`__tests__/service/BatteryOptimizer.test.js`** — Mode switching (HIGH_PERFORMANCE/BALANCED/LOW_POWER/AUTO), battery level updates, transport integration, destroy cleanup
-- **`__tests__/platform/ios.test.js`** — BLE background mode, battery optimizer for iOS power management, MTU 185 fragmentation (BLE 4.2+), store-and-forward state restoration
-- **`__tests__/platform/android.test.js`** — BLE permission denial handling, MTU 23 (BLE 4.0) and 512 (BLE 5.0) fragmentation, Doze mode with low-power settings, BLE bonding reconnection, LRU cache memory limits, BloomFilter false positive rate verification
-
-#### Previously Failing Tests Fixed (10 → 0)
-- Integration test: MeshNetwork restart after stop
-- Integration test: MockTransport linking without explicit peer IDs
-- Integration test: Message text validation error matching
-- Integration test: Peer ID validation error matching
-- Compression tests: ValidationError message matching (4 tests)
-- StoreAndForward tests: ValidationError for invalid inputs (2 tests)
+#### New Test Suites (13 added since v1.1.1)
+- `BLETransport.test.js` — Lifecycle, scanning, connection, broadcast, timeout, power modes
+- `MockTransport.test.js` — Auto-ID, linking, bidirectional messaging, peer simulation
+- `MeshNetwork.unit.test.js` — Config, validation, lifecycle, status
+- `MeshService.test.js` — Initialize, start, stop, destroy, identity, broadcast
+- `BatteryOptimizer.test.js` — Mode switching, battery levels, transport integration
+- `ios.test.js` — Background BLE, MTU 185 fragmentation, state restoration
+- `android.test.js` — Permissions, MTU 23/512, Doze mode, bonding, bloom filter rates
+- `ConnectionQuality.test.js` — Quality calculation, RSSI/latency/packet loss, timeouts
+- `CryptoProvider.test.js` — Abstract interface, TweetNaCl provider, auto-detection
+- `FileManager.test.js` — Chunking, assembly, send/receive flow, progress, cancellation
+- `configPlugin.test.js` — iOS/Android permission injection, deduplication
+- `WiFiDirectTransport.test.js` — Lifecycle, discovery, connection, send/broadcast
+- `MultiTransport.test.js` — Auto strategy, fallback, peer merging, broadcast
 
 ### Removed
-- `src/crypto/` — All pure JS cryptographic implementations (see Breaking Changes)
-- `__tests__/crypto/` — All crypto unit tests (aead, hkdf, hmac, noise, sha256, x25519)
-- `__tests__/integration/handshake.test.js` — Noise Protocol handshake integration test
+- `src/crypto/aead.js`, `chacha20.js`, `hkdf.js`, `hmac.js`, `poly1305.js`, `sha256.js`, `x25519.js` — Pure JS crypto
+- `src/crypto/noise/` — Noise Protocol XX handshake, session, state
+- `src/crypto/keys/` — KeyManager, KeyPair, SecureStorage
+- `__tests__/crypto/aead.test.js`, `hkdf.test.js`, `hmac.test.js`, `noise.test.js`, `sha256.test.js`, `x25519.test.js`
+- `__tests__/integration/handshake.test.js` — Noise XX integration test
 - `./crypto` export from `package.json` exports map
+- XOR-based encryption fallbacks in HandshakeManager
 
-### Changed
-- `jest.config.js` — Removed `jest-junit` reporter dependency (was causing test runner failures)
-- Error base class now includes class name in message for all subclasses
+### Documentation
+- `docs/SPEC-v2.1.md` — Full feature specification
+- `docs/IOS-BACKGROUND-BLE.md` — iOS background BLE guide with workarounds
+- `docs/OPTIMIZATION.md` — Performance optimization notes
+- Complete README rewrite with file sharing, connection quality, Wi-Fi Direct, and Expo examples
 
 ---
 
@@ -215,29 +250,11 @@ All **344 tests passing, 0 failures**.
 - Automatic compression for payloads above threshold
 - 40-60% bandwidth reduction for text messages
 - Compression statistics tracking
-- Knuth's multiplicative hash (2654435761) for optimal distribution
-
-#### TypeScript Enhancements
-- Comprehensive type definitions for all new modules
-- Interfaces: `StoreAndForwardStats`, `NetworkMonitorStats`, `NodeHealth`, `BatteryOptimizerStats`, `EmergencyManagerStats`, `WipeResult`, `CompressionStats`, `MeshNetworkStatus`
-- Full JSDoc documentation
-
-### Changed
-- Input validation now uses typed errors (`ValidationError`, `MeshError`) consistently
-- Fixed average wipe time calculation to use proper running average formula
-- Enhanced compression with proper final literals block handling
 
 ### Fixed
 - LZ4 compression final token handling for data ending with unmatched literals
 - Average wipe time calculation bug (was averaging incorrectly)
 - Missing input validation in `broadcast()` and `sendDirect()` methods
-
-### Testing
-- Integration tests for full MeshNetwork lifecycle
-- Performance benchmarks for panic wipe time (<200ms verification)
-- Comprehensive unit tests for MessageCompressor
-- Store and Forward delivery/caching tests
-- Network Monitor health tracking tests
 
 ---
 
@@ -245,7 +262,6 @@ All **344 tests passing, 0 failures**.
 
 ### Changed
 - Improved npm search visibility with enhanced keywords
-- Updated package description
 
 ---
 
@@ -265,59 +281,23 @@ All **344 tests passing, 0 failures**.
 
 ## [1.0.1] - 2026-01-17
 
-- Merge pull request #10 from suhailtajshaik/development (0380149)
-- Added release CI-CD (f83bdad)
-- Merge pull request #9 from suhailtajshaik/development (4cf7700)
-- Added release CI-CD (7134c50)
-- Added build fix (4501a88)
-- Merge pull request #8 from suhailtajshaik/development (7b258be)
-- Added build fix (f681f18)
-- Merge pull request #7 from suhailtajshaik/development (1ad634b)
-- Add GitHub Actions workflow for NPM publishing (9e77095)
-- ci: add GitHub Actions for automated releases (cb2612b)
-- Merge pull request #6 from suhailtajshaik/development (a8e9c5c)
-- docs: add Bitchat inspiration credit to README (3aeeb67)
-- Merge pull request #3 from suhailtajshaik/development (83584c0)
-- chore: remove GitHub CI workflows (b8a2241)
-- fix(ci): lower coverage thresholds to match current test coverage (1d2b9be)
-- Added eslint fixes (8adc54b)
-- Added Acknowledgments (de7cb7a)
-- Merge pull request #2 from suhailtajshaik/development (78a0a8f)
-- Code cleanup (c757c72)
-- Merge pull request #1 from suhailtajshaik/project-improvement-recommendations-2M3j3 (064a3a4)
+### Added
+- Release CI/CD with GitHub Actions
+- Bitchat inspiration credit in README
+- ESLint fixes and code cleanup
 
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+---
 
 ## [1.0.0] - 2024-01-01
 
 ### Added
 
 #### Core Features
-- **End-to-End Encryption**: Noise Protocol XX handshake with X25519 key exchange
-- **ChaCha20-Poly1305 AEAD**: Authenticated encryption for all private messages
+- **End-to-End Encryption**: Noise Protocol handshake with X25519 key exchange
+- **AEAD Encryption**: Authenticated encryption for all private messages
 - **Multi-Hop Routing**: Messages relay through intermediate peers (up to 7 hops)
 - **Duplicate Detection**: Bloom filter + LRU cache for efficient deduplication
 - **Message Fragmentation**: Large messages automatically split and reassembled
-
-#### Cryptographic Primitives
-- Pure JavaScript SHA-256 implementation (FIPS 180-4)
-- HMAC-SHA256 for message authentication (RFC 2104)
-- HKDF for key derivation (RFC 5869)
-- X25519 elliptic curve Diffie-Hellman (RFC 7748)
-- ChaCha20 stream cipher (RFC 8439)
-- Poly1305 MAC (RFC 8439)
-- ChaCha20-Poly1305 AEAD (RFC 8439)
-
-#### Noise Protocol
-- Full Noise XX handshake pattern implementation
-- Symmetric state management (MixHash, MixKey)
-- Transport session with nonce management
-- Forward secrecy through ephemeral keys
-- Identity hiding (static keys encrypted)
 
 #### Messaging
 - Broadcast messages (unencrypted, reach all peers)
@@ -355,59 +335,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hex/Base64 encoding
 - UUID generation
 - EventEmitter with typed events
-- LRU cache
-- Rate limiter
-- Retry with exponential backoff
-
-### Security
-- All crypto passes official RFC test vectors
-- Constant-time comparison for authentication tags
-- Secure key storage abstractions
-- No secrets in logs or error messages
-- Key zeroing after use
-
-### Documentation
-- Complete API reference
-- Protocol specification
-- Security documentation with threat model
-- Architecture documentation
-
-### Testing
-- Unit tests for all crypto modules (100% coverage)
-- Protocol serialization tests
-- Mesh layer tests (BloomFilter, routing)
-- Integration tests for handshake flow
-
-## [0.1.0] - Initial Development
-
-### Added
-- Project structure and configuration
-- Basic module scaffolding
-- Initial test setup
+- LRU cache, rate limiter, retry with exponential backoff
 
 ---
 
-## Roadmap
-
-### [1.2.0] - Planned
-- File transfer support
-- Improved route optimization
-
-### [1.3.0] - Planned
-- Group key agreement
-- Post-quantum key exchange option
-- Message persistence with IndexedDB
-- Web transport (WebRTC)
-
-### [2.0.0] - Future
-- TypeScript rewrite
-- WASM crypto for performance
-- Multiple transport support
-- Mesh network visualization
-
----
-
-[2.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.1.0
 [2.0.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.0.0
 [1.1.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.1
 [1.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.0
@@ -416,4 +347,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.0.2]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.2
 [1.0.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.1
 [1.0.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.0.0
-[0.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v0.1.0

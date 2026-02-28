@@ -91,6 +91,18 @@ describe('TweetNaClProvider', () => {
     expect(result).toBeNull();
   });
 
+  it('handles short nonces by padding to 24 bytes', () => {
+    const key = new Uint8Array(32).fill(1);
+    const shortNonce = new Uint8Array(12).fill(2); // 12-byte nonce
+    const plaintext = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
+
+    const ciphertext = provider.encrypt(key, shortNonce, plaintext);
+    expect(ciphertext).toBeInstanceOf(Uint8Array);
+
+    const decrypted = provider.decrypt(key, shortNonce, ciphertext);
+    expect(decrypted).toEqual(plaintext);
+  });
+
   it('hashes data', () => {
     const hash = provider.hash(new Uint8Array([1, 2, 3]));
     expect(hash).toBeInstanceOf(Uint8Array);

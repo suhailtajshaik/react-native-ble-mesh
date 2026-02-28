@@ -439,14 +439,8 @@ class StoreAndForwardManager extends EventEmitter {
      * @private
      */
   _generateId() {
-    const bytes = new Uint8Array(16);
-    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-      crypto.getRandomValues(bytes);
-    } else {
-      for (let i = 0; i < 16; i++) {
-        bytes[i] = Math.floor(Math.random() * 256);
-      }
-    }
+    const { randomBytes } = require('../../utils/bytes');
+    const bytes = randomBytes(16);
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
@@ -459,6 +453,10 @@ class StoreAndForwardManager extends EventEmitter {
       () => this.pruneExpiredMessages(),
       this._config.cleanupIntervalMs
     );
+    // Allow Node.js process to exit even if timer is active (important for tests)
+    if (this._cleanupTimer && typeof this._cleanupTimer.unref === 'function') {
+      this._cleanupTimer.unref();
+    }
   }
 
   /**

@@ -74,44 +74,45 @@ class QuickCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  encrypt(key, nonce, plaintext, ad) {
-    const crypto = this._getCrypto();
-    const cipher = crypto.createCipheriv('chacha20-poly1305', key, nonce, { authTagLength: 16 });
-    if (ad && ad.length > 0) { cipher.setAAD(Buffer.from(ad)); }
-    const encrypted = cipher.update(Buffer.from(plaintext));
-    cipher.final();
-    const tag = cipher.getAuthTag();
-    const result = new Uint8Array(encrypted.length + tag.length);
-    result.set(new Uint8Array(encrypted), 0);
-    result.set(new Uint8Array(tag), encrypted.length);
+  encrypt(key, nonce, plaintext, _ad) {
+    // Use tweetnacl for encryption to ensure cross-provider compatibility
+    // QuickCrypto's advantage is in fast native key generation (X25519), not AEAD
+    const nacl = require('tweetnacl');
+
+    // Ensure 24-byte nonce for XSalsa20-Poly1305
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox(plaintext, fullNonce, key);
+  }
+
+  /** @inheritdoc */
+  decrypt(key, nonce, ciphertext, _ad) {
+    const nacl = require('tweetnacl');
+
+    // Ensure 24-byte nonce for XSalsa20-Poly1305
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    const result = nacl.secretbox.open(ciphertext, fullNonce, key);
+    if (!result) {
+      return null; // Decryption failed: authentication error
+    }
     return result;
   }
 
   /** @inheritdoc */
-  decrypt(key, nonce, ciphertext, ad) {
-    const crypto = this._getCrypto();
-    const tagStart = ciphertext.length - 16;
-    const encrypted = ciphertext.slice(0, tagStart);
-    const tag = ciphertext.slice(tagStart);
-
-    try {
-      const decipher = crypto.createDecipheriv('chacha20-poly1305', key, nonce, { authTagLength: 16 });
-      decipher.setAuthTag(Buffer.from(tag));
-      if (ad && ad.length > 0) { decipher.setAAD(Buffer.from(ad)); }
-      const decrypted = decipher.update(Buffer.from(encrypted));
-      decipher.final();
-      return new Uint8Array(decrypted);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /** @inheritdoc */
   hash(data) {
-    const crypto = this._getCrypto();
-    const h = crypto.createHash('sha256');
-    h.update(Buffer.from(data));
-    return new Uint8Array(h.digest());
+    // Use SHA-512 truncated to 32 bytes for cross-provider compatibility
+    const nacl = require('tweetnacl');
+    const full = nacl.hash(data); // SHA-512
+    return full.slice(0, 32);
   }
 
   /** @inheritdoc */

@@ -88,6 +88,9 @@ class FileAssembler {
       offset += chunk.length;
     }
 
+    // Free chunk memory immediately after assembly
+    this._chunks.clear();
+
     return result;
   }
 

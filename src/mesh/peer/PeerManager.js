@@ -230,7 +230,12 @@ class PeerManager extends EventEmitter {
   cleanup(maxAge = this.peerTimeout) {
     const removed = [];
     for (const [id, peer] of this._peers) {
-      if (peer.isStale(maxAge) && !peer.isConnected()) {
+      // Don't remove peers that are actively connecting or connected
+      if (peer.isConnected() || peer.connectionState === CONNECTION_STATE.CONNECTING) {
+        continue;
+      }
+
+      if (peer.isStale(maxAge)) {
         this._peers.delete(id);
         removed.push(peer);
         this.emit(EVENTS.PEER_LOST, peer);

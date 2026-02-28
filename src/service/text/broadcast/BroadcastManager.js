@@ -45,6 +45,17 @@ class BroadcastManager extends EventEmitter {
     this._senderId = null;
     /** @private */
     this._sendCallback = null;
+    /** @private */
+    this._cleanupTimer = null;
+
+    // Auto-cleanup every 5 minutes
+    this._cleanupTimer = setInterval(() => {
+      this.cleanup();
+    }, 5 * 60 * 1000);
+
+    if (this._cleanupTimer && typeof this._cleanupTimer.unref === 'function') {
+      this._cleanupTimer.unref();
+    }
   }
 
   /**
@@ -160,6 +171,11 @@ class BroadcastManager extends EventEmitter {
   clear() {
     this._recentBroadcasts = [];
     this._seenMessageIds.clear();
+
+    if (this._cleanupTimer) {
+      clearInterval(this._cleanupTimer);
+      this._cleanupTimer = null;
+    }
   }
 
   /**

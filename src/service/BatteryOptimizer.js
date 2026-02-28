@@ -474,6 +474,10 @@ class BatteryOptimizer extends EventEmitter {
       },
       this._config.batteryCheckIntervalMs
     );
+    // Don't prevent process exit (important for tests and cleanup)
+    if (this._batteryCheckTimer && typeof this._batteryCheckTimer.unref === 'function') {
+      this._batteryCheckTimer.unref();
+    }
   }
 
   /**

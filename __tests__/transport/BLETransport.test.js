@@ -84,7 +84,7 @@ describe('BLETransport', () => {
   describe('scanning', () => {
     it('starts and stops scanning', async () => {
       await transport.start();
-      await transport.startScanning();
+      // start() auto-starts scanning
       expect(transport.isScanning).toBe(true);
       transport.stopScanning();
       expect(transport.isScanning).toBe(false);
@@ -96,13 +96,13 @@ describe('BLETransport', () => {
     });
 
     it('emits scanStarted and scanStopped', async () => {
-      await transport.start();
       const started = jest.fn();
       const stopped = jest.fn();
       transport.on('scanStarted', started);
       transport.on('scanStopped', stopped);
 
-      await transport.startScanning();
+      // start() auto-starts scanning
+      await transport.start();
       expect(started).toHaveBeenCalled();
 
       transport.stopScanning();

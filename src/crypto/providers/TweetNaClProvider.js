@@ -67,13 +67,29 @@ class TweetNaClProvider extends CryptoProvider {
     const nacl = this._getNacl();
     // tweetnacl uses XSalsa20-Poly1305 with 24-byte nonce
     // nacl.secretbox includes authentication
-    return nacl.secretbox(plaintext, nonce, key);
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox(plaintext, fullNonce, key);
   }
 
   /** @inheritdoc */
   decrypt(key, nonce, ciphertext, _ad) {
     const nacl = this._getNacl();
-    const result = nacl.secretbox.open(ciphertext, nonce, key);
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    const result = nacl.secretbox.open(ciphertext, fullNonce, key);
     return result || null; // returns null on auth failure
   }
 

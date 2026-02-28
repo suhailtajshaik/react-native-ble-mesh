@@ -150,6 +150,20 @@ class FileManager extends EventEmitter {
       throw new Error('Max concurrent incoming transfers reached');
     }
 
+    // Validate offer fields
+    if (!offer || !offer.id || !offer.name) {
+      throw new Error('Invalid file offer: missing id or name');
+    }
+    if (typeof offer.totalChunks !== 'number' || offer.totalChunks <= 0) {
+      throw new Error('Invalid file offer: invalid totalChunks');
+    }
+    if (typeof offer.size !== 'number' || offer.size <= 0) {
+      throw new Error('Invalid file offer: invalid size');
+    }
+    if (offer.size > this._config.maxFileSize) {
+      throw new Error(`File too large: ${offer.size} bytes exceeds ${this._config.maxFileSize} byte limit`);
+    }
+
     const fileMeta = FileMessage.fromOffer(offer, senderId);
     const assembler = new FileAssembler(offer.id, offer.totalChunks, offer.size);
 

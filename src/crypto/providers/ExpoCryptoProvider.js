@@ -69,13 +69,29 @@ class ExpoCryptoProvider extends CryptoProvider {
   /** @inheritdoc */
   encrypt(key, nonce, plaintext, _ad) {
     const nacl = this._getNacl();
-    return nacl.secretbox(plaintext, nonce, key);
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox(plaintext, fullNonce, key);
   }
 
   /** @inheritdoc */
   decrypt(key, nonce, ciphertext, _ad) {
     const nacl = this._getNacl();
-    return nacl.secretbox.open(ciphertext, nonce, key) || null;
+
+    // Ensure 24-byte nonce (pad short nonces with zeros)
+    let fullNonce = nonce;
+    if (nonce.length < 24) {
+      fullNonce = new Uint8Array(24);
+      fullNonce.set(nonce);
+    }
+
+    return nacl.secretbox.open(ciphertext, fullNonce, key) || null;
   }
 
   /** @inheritdoc */

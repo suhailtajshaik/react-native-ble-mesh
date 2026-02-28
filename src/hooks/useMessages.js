@@ -114,6 +114,8 @@ function useMessages(mesh, options = {}) {
       mesh.off('broadcast-received', handleBroadcast);
       mesh.off('private-message-received', handlePrivate);
       mesh.off('channel-message-received', handleChannel);
+      // Clear dedup Set on unmount
+      messageIdRef.current.clear();
     };
   }, [mesh, addMessage]);
 

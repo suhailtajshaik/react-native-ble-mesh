@@ -20,8 +20,8 @@ const { BatteryOptimizer, BATTERY_MODE } = require('./service/BatteryOptimizer')
 const { EmergencyManager, PANIC_TRIGGER } = require('./service/EmergencyManager');
 const { MessageCompressor } = require('./utils/compression');
 const { ValidationError, MeshError } = require('./errors');
-const { FileManager, FILE_MESSAGE_TYPE } = require('./service/file');
-const { SERVICE_STATE } = require('./constants');
+const { FileManager } = require('./service/file');
+const { SERVICE_STATE, EVENTS } = require('./constants');
 
 /**
  * Default MeshNetwork configuration
@@ -206,7 +206,23 @@ class MeshNetwork extends EventEmitter {
     }
 
     // Create transport if not provided
-    this._transport = transport || new BLETransport();
+    if (!transport) {
+      try {
+        const { RNBLEAdapter } = require('./transport/adapters');
+        const adapter = new RNBLEAdapter();
+        this._transport = new BLETransport(adapter);
+      } catch (e) {
+        throw new MeshError(
+          'No transport provided and BLE adapter not available. ' +
+          'Either pass a transport to start(), install react-native-ble-plx for BLE, ' +
+          'or use MockTransport for testing.',
+          'E900',
+          { cause: e.message }
+        );
+      }
+    } else {
+      this._transport = transport;
+    }
 
     // Initialize the service (only on first start)
     if (this._service._state === SERVICE_STATE.UNINITIALIZED) {
@@ -255,6 +271,15 @@ class MeshNetwork extends EventEmitter {
     if (this._state !== 'running') {
       return;
     }
+
+    // Clean up listeners added in start()
+    this._fileManager.removeAllListeners('sendProgress');
+    this._fileManager.removeAllListeners('receiveProgress');
+    this._fileManager.removeAllListeners('fileReceived');
+    this._fileManager.removeAllListeners('transferFailed');
+    this._fileManager.removeAllListeners('transferCancelled');
+    this._connectionQuality.removeAllListeners('qualityChanged');
+    this._connectionQuality.stop();
 
     await this._service.stop();
     this._state = 'stopped';
@@ -322,7 +347,9 @@ class MeshNetwork extends EventEmitter {
       // If peer is offline and store-forward is enabled, cache the message
       if (this._storeForward && this._isPeerOffline(peerId)) {
         const payload = this._encodeMessage(text);
-        await this._storeForward.cacheForOfflinePeer(peerId, payload);
+        await this._storeForward.cacheForOfflinePeer(peerId, payload, {
+          needsEncryption: true
+        });
         this.emit('messageCached', { peerId, text });
         return 'cached';
       }
@@ -542,21 +569,56 @@ class MeshNetwork extends EventEmitter {
 
     const transfer = this._fileManager.prepareSend(peerId, fileInfo);
 
-    // Send offer
-    const offerPayload = new TextEncoder().encode(JSON.stringify(transfer.offer));
+    // Send offer (JSON is OK for metadata, but use binary type marker)
+    const offerJson = JSON.stringify(transfer.offer);
+    const offerBytes = new TextEncoder().encode(offerJson);
+    const offerPayload = new Uint8Array(1 + offerBytes.length);
+    offerPayload[0] = 0x01; // Binary type marker for OFFER
+    offerPayload.set(offerBytes, 1);
     await this._service._sendRaw(peerId, offerPayload);
 
-    // Send chunks sequentially
+    // Send chunks sequentially using binary protocol
     for (let i = 0; i < transfer.chunks.length; i++) {
+      // Check if still running (handles app backgrounding)
+      if (this._state !== 'running') {
+        this._fileManager.cancelTransfer(transfer.id);
+        throw new MeshError('File transfer cancelled: network stopped', 'E900');
+      }
+
       const chunk = transfer.chunks[i];
-      const chunkMsg = {
-        type: FILE_MESSAGE_TYPE.CHUNK,
-        transferId: transfer.id,
-        index: chunk.index,
-        data: Array.from(chunk.data) // serialize for JSON transport
-      };
-      const payload = new TextEncoder().encode(JSON.stringify(chunkMsg));
-      await this._service._sendRaw(peerId, payload);
+
+      // Binary format: [type(1)] [transferIdLen(1)] [transferId(N)] [index(2)] [data(M)]
+      const transferIdBytes = new TextEncoder().encode(transfer.id);
+      const header = new Uint8Array(1 + 1 + transferIdBytes.length + 2);
+      let offset = 0;
+      header[offset++] = 0x02; // Binary type marker for CHUNK
+      header[offset++] = transferIdBytes.length;
+      header.set(transferIdBytes, offset);
+      offset += transferIdBytes.length;
+      header[offset++] = (chunk.index >> 8) & 0xFF;
+      header[offset++] = chunk.index & 0xFF;
+
+      // Combine header + chunk data
+      const payload = new Uint8Array(header.length + chunk.data.length);
+      payload.set(header, 0);
+      payload.set(chunk.data, header.length);
+
+      // Add per-chunk timeout (10 seconds)
+      const sendPromise = this._service._sendRaw(peerId, payload);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Chunk send timeout')), 10000)
+      );
+
+      try {
+        await Promise.race([sendPromise, timeoutPromise]);
+      } catch (err) {
+        this._fileManager.cancelTransfer(transfer.id);
+        this.emit('fileTransferFailed', {
+          id: transfer.id, name: fileInfo.name, error: err.message
+        });
+        throw err;
+      }
+
       this._fileManager.markChunkSent(transfer.id, i);
     }
 
@@ -609,13 +671,14 @@ class MeshNetwork extends EventEmitter {
      * @returns {Object} Status
      */
   getStatus() {
+    const identity = this._state === 'running' ? this._service.getIdentity() : null;
     return {
       state: this._state,
-      identity: this._service.getIdentity(),
-      peers: this.getPeers().length,
-      connectedPeers: this.getConnectedPeers().length,
-      channels: this.getChannels().length,
-      health: this.getNetworkHealth(),
+      identity,
+      peers: this._state === 'running' ? this.getPeers().length : 0,
+      connectedPeers: this._state === 'running' ? this.getConnectedPeers().length : 0,
+      channels: this._state === 'running' ? this.getChannels().length : 0,
+      health: this._state === 'running' ? this.getNetworkHealth() : null,
       batteryMode: this.getBatteryMode()
     };
   }
@@ -655,7 +718,9 @@ class MeshNetwork extends EventEmitter {
       encryption: { ...defaults.encryption, ...custom.encryption },
       routing: { ...defaults.routing, ...custom.routing },
       compression: { ...defaults.compression, ...custom.compression },
-      storeAndForward: { ...defaults.storeAndForward, ...custom.storeAndForward }
+      storeAndForward: { ...defaults.storeAndForward, ...custom.storeAndForward },
+      fileTransfer: { ...defaults.fileTransfer, ...custom.fileTransfer },
+      qualityConfig: { ...defaults.qualityConfig, ...custom.qualityConfig }
     };
   }
 
@@ -665,12 +730,12 @@ class MeshNetwork extends EventEmitter {
      */
   _setupEventForwarding() {
     // Forward service events with PRD-style naming
-    this._service.on('peer-discovered', (peer) => {
+    this._service.on(EVENTS.PEER_DISCOVERED, (peer) => {
       this._monitor.trackPeerDiscovered(peer.id);
       this.emit('peerDiscovered', peer);
     });
 
-    this._service.on('peer-connected', (peer) => {
+    this._service.on(EVENTS.PEER_CONNECTED, (peer) => {
       if (peer.rssi) {
         this._connectionQuality.recordRssi(peer.id, peer.rssi);
       }
@@ -681,7 +746,7 @@ class MeshNetwork extends EventEmitter {
       }
     });
 
-    this._service.on('peer-disconnected', (peer) => {
+    this._service.on(EVENTS.PEER_DISCONNECTED, (peer) => {
       this._monitor.trackPeerDisconnected(peer.id);
       this._connectionQuality.removePeer(peer.id);
       this.emit('peerDisconnected', peer);
@@ -751,7 +816,14 @@ class MeshNetwork extends EventEmitter {
     if (!this._storeForward) { return; }
 
     const sendFn = async (payload) => {
-      await this._service._sendRaw(peerId, payload);
+      // Re-encrypt and send via the proper encrypted channel
+      try {
+        const text = new TextDecoder().decode(payload);
+        await this._service.sendPrivateMessage(peerId, text);
+      } catch (e) {
+        // Fallback to raw send if encryption fails
+        await this._service._sendRaw(peerId, payload);
+      }
     };
 
     const result = await this._storeForward.deliverCachedMessages(peerId, sendFn);

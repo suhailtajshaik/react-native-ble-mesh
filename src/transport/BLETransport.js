@@ -30,6 +30,7 @@ class BLETransport extends Transport {
    * @param {string} [options.powerMode='BALANCED'] - Power mode
    * @param {number} [options.maxPeers=8] - Maximum peers
    * @param {number} [options.connectTimeoutMs=10000] - Connection timeout
+   * @param {number} [options.mtu=23] - Default BLE MTU
    */
   constructor(adapter, options = {}) {
     super(options);
@@ -60,11 +61,32 @@ class BLETransport extends Transport {
     this._connectTimeoutMs = options.connectTimeoutMs || 10000;
 
     /**
+     * BLE MTU (Maximum Transmission Unit)
+     * @type {number}
+     * @private
+     */
+    this._mtu = options.mtu || 23; // Default BLE MTU
+
+    /**
      * Whether scanning is active
      * @type {boolean}
      * @private
      */
     this._isScanning = false;
+
+    /**
+     * Per-peer write queues for serializing BLE writes
+     * @type {Map<string, Array>}
+     * @private
+     */
+    this._writeQueue = new Map();
+
+    /**
+     * Per-peer write locks
+     * @type {Map<string, boolean>}
+     * @private
+     */
+    this._writing = new Map();
 
     /**
      * Bound event handlers for cleanup
@@ -84,6 +106,14 @@ class BLETransport extends Transport {
    */
   get isScanning() {
     return this._isScanning;
+  }
+
+  /**
+   * Gets the current BLE MTU
+   * @returns {number} Current MTU in bytes
+   */
+  get mtu() {
+    return this._mtu;
   }
 
   /**
@@ -107,7 +137,18 @@ class BLETransport extends Transport {
       }
 
       this._adapter.onStateChange(this._handlers.onStateChange);
+
+      // Register disconnect callback if adapter supports it
+      if (typeof this._adapter.onDeviceDisconnected === 'function') {
+        this._adapter.onDeviceDisconnected((peerId) => {
+          this._handleDeviceDisconnected(peerId);
+        });
+      }
+
       this._setState(Transport.STATE.RUNNING);
+
+      // Auto-start scanning for peers
+      await this.startScanning();
     } catch (error) {
       this._setState(Transport.STATE.ERROR);
       throw error;
@@ -200,6 +241,19 @@ class BLETransport extends Transport {
         timeoutPromise
       ]);
 
+      // Negotiate MTU for larger payloads
+      let negotiatedMtu = this._mtu;
+      try {
+        if (typeof this._adapter.requestMTU === 'function') {
+          const mtu = await this._adapter.requestMTU(peerId, 512);
+          if (mtu) {
+            negotiatedMtu = mtu;
+          }
+        }
+      } catch (mtuError) {
+        // MTU negotiation failure is non-fatal, continue with default MTU
+      }
+
       // Subscribe to notifications
       await this._adapter.subscribe(
         peerId,
@@ -211,7 +265,8 @@ class BLETransport extends Transport {
       const connectionInfo = {
         peerId,
         device,
-        connectedAt: Date.now()
+        connectedAt: Date.now(),
+        mtu: negotiatedMtu
       };
 
       this._peers.set(peerId, connectionInfo);
@@ -258,12 +313,21 @@ class BLETransport extends Transport {
       throw ConnectionError.fromCode('E207', peerId);
     }
 
-    await this._adapter.write(
-      peerId,
-      BLE_SERVICE_UUID,
-      BLE_CHARACTERISTIC_TX,
-      data
-    );
+    const peerInfo = this._peers.get(peerId);
+    const mtu = peerInfo.mtu || this._mtu || 23;
+    const chunkSize = Math.max(mtu - 3, 20); // ATT header overhead, minimum 20
+
+    if (data.length <= chunkSize) {
+      // Single write
+      await this._queuedWrite(peerId, data);
+      return;
+    }
+
+    // Chunk data for BLE MTU compliance
+    for (let offset = 0; offset < data.length; offset += chunkSize) {
+      const chunk = data.slice(offset, Math.min(offset + chunkSize, data.length));
+      await this._queuedWrite(peerId, chunk);
+    }
   }
 
   /**
@@ -330,6 +394,15 @@ class BLETransport extends Transport {
   _handleDeviceDisconnected(peerId) {
     if (this._peers.has(peerId)) {
       this._peers.delete(peerId);
+
+      // Clean up write queue
+      const queue = this._writeQueue.get(peerId);
+      if (queue) {
+        queue.forEach(({ reject }) => reject(new Error('Peer disconnected')));
+        this._writeQueue.delete(peerId);
+      }
+      this._writing.delete(peerId);
+
       this.emit('peerDisconnected', { peerId, reason: 'connection_lost' });
     }
   }
@@ -355,6 +428,51 @@ class BLETransport extends Transport {
     return new Promise((_, reject) => {
       setTimeout(() => reject(new Error(message)), ms);
     });
+  }
+
+  /**
+   * Queues a write operation to serialize BLE writes
+   * @param {string} peerId - Target peer ID
+   * @param {Uint8Array} data - Data to write
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _queuedWrite(peerId, data) {
+    if (!this._writeQueue.has(peerId)) {
+      this._writeQueue.set(peerId, []);
+    }
+
+    return new Promise((resolve, reject) => {
+      this._writeQueue.get(peerId).push({ data, resolve, reject });
+      this._processWriteQueue(peerId);
+    });
+  }
+
+  /**
+   * Processes the write queue for a peer
+   * @param {string} peerId - Target peer ID
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _processWriteQueue(peerId) {
+    if (this._writing.get(peerId)) { return; } // Already processing
+
+    const queue = this._writeQueue.get(peerId);
+    if (!queue || queue.length === 0) { return; }
+
+    this._writing.set(peerId, true);
+
+    while (queue.length > 0) {
+      const { data, resolve, reject } = queue.shift();
+      try {
+        await this._adapter.write(peerId, BLE_SERVICE_UUID, BLE_CHARACTERISTIC_TX, data);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    }
+
+    this._writing.set(peerId, false);
   }
 }
 

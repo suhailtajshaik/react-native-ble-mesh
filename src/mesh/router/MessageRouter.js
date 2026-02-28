@@ -22,7 +22,8 @@ function generateUUID() {
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-` +
+    `${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /**
@@ -148,8 +149,8 @@ class MessageRouter extends EventEmitter {
       return null;
     }
 
-    // Check hop count
-    if (hopCount >= (maxHops || MESH_CONFIG.MAX_HOPS)) {
+    // Check hop count (allow delivery at exactly maxHops, just don't relay further)
+    if (hopCount > (maxHops || MESH_CONFIG.MAX_HOPS)) {
       this._stats.maxHopsDropped++;
       this.emit(EVENTS.MESSAGE_DROPPED, { messageId, reason: 'max_hops' });
       return null;
@@ -165,17 +166,18 @@ class MessageRouter extends EventEmitter {
     this._routeTable.addRoute(sourcePeerId, sourcePeerId, 0);
 
     // Check if message is for us
-    const isForUs = !message.recipientId ||
-                    message.recipientId === this.localPeerId ||
-                    (message.flags & MESSAGE_FLAGS.IS_BROADCAST);
+    const isForUs = !message.recipientId || message.recipientId === this.localPeerId;
+    const isBroadcast = (message.flags & MESSAGE_FLAGS.IS_BROADCAST) !== 0;
 
-    if (isForUs) {
+    // Deliver locally if for us or broadcast
+    if (isForUs || isBroadcast) {
       this.emit(EVENTS.MESSAGE_RECEIVED, message);
     }
 
-    // Relay if broadcast or not for us
-    const shouldRelay = (message.flags & MESSAGE_FLAGS.IS_BROADCAST) ||
-                        (message.recipientId && message.recipientId !== this.localPeerId);
+    // Relay decision: only relay if TTL allows AND message isn't exclusively for us
+    const shouldRelay = isBroadcast
+      ? (message.hopCount < (maxHops || MESH_CONFIG.MAX_HOPS)) // Broadcasts relay if hops remain
+      : (!isForUs); // Unicast only relays if not for us
 
     if (shouldRelay) {
       this._relayMessage(message, sourcePeerId);
@@ -237,8 +239,11 @@ class MessageRouter extends EventEmitter {
       return [nextHop];
     }
 
-    // No known route, flood to all
-    return Array.from(this._peers.keys()).filter(id => id !== excludePeerId);
+    // No known route - use limited flooding (max 3 peers, prefer recently active)
+    const allPeers = Array.from(this._peers.keys()).filter(id => id !== excludePeerId);
+    // Limit flood scope to prevent network storms
+    const maxFloodPeers = Math.min(3, allPeers.length);
+    return allPeers.slice(0, maxFloodPeers);
   }
 
   /**
@@ -270,23 +275,29 @@ class MessageRouter extends EventEmitter {
       expiresAt: now + MESH_CONFIG.MESSAGE_TTL_MS
     };
 
-    this._dedupManager.markSeen(messageId);
-    this._stats.messagesSent++;
-
     // Determine targets
     const targets = recipientId
       ? [this._routeTable.getNextHop(recipientId) || recipientId]
       : Array.from(this._peers.keys());
 
+    // Send to targets
+    let anySent = false;
     for (const peerId of targets) {
       const sendFn = this._peers.get(peerId);
       if (sendFn) {
         try {
           sendFn(message);
+          anySent = true;
         } catch (err) {
           this.emit(EVENTS.ERROR, err);
         }
       }
+    }
+
+    // Only mark as seen AFTER successful send
+    if (anySent) {
+      this._dedupManager.markSeen(messageId);
+      this._stats.messagesSent++;
     }
 
     this.emit(EVENTS.MESSAGE_SENT, message);

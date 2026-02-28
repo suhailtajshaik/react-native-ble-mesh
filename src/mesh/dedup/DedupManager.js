@@ -56,6 +56,13 @@ class DedupManager {
     this._cache = new MessageCache(config.cacheSize);
 
     /**
+     * Old Bloom filter kept during grace period after reset
+     * @type {BloomFilter|null}
+     * @private
+     */
+    this._oldBloomFilter = null;
+
+    /**
      * Auto-reset threshold for Bloom filter
      * @type {number}
      * @private
@@ -85,20 +92,25 @@ class DedupManager {
   isDuplicate(messageId) {
     this._stats.checks++;
 
-    // Quick check with Bloom filter
-    if (!this._bloomFilter.mightContain(messageId)) {
-      return false;
-    }
-    this._stats.bloomPositives++;
-
-    // Confirm with exact cache lookup (handles false positives)
+    // Check cache first (most accurate)
     if (this._cache.has(messageId)) {
       this._stats.cacheHits++;
       this._stats.duplicates++;
       return true;
     }
 
-    // Bloom filter false positive
+    // Check current bloom filter
+    if (this._bloomFilter.mightContain(messageId)) {
+      this._stats.bloomPositives++;
+      return true;
+    }
+
+    // Check old bloom filter if in grace period
+    if (this._oldBloomFilter && this._oldBloomFilter.mightContain(messageId)) {
+      this._stats.bloomPositives++;
+      return true;
+    }
+
     return false;
   }
 
@@ -135,14 +147,28 @@ class DedupManager {
    * @private
    */
   _resetBloomFilter() {
-    this._bloomFilter.clear();
+    // Create a new bloom filter instead of clearing the old one
+    // Keep the old filter active for checking during transition
+    const oldFilter = this._bloomFilter;
+    this._bloomFilter = new BloomFilter(
+      oldFilter.size || MESH_CONFIG.BLOOM_FILTER_SIZE,
+      oldFilter.hashCount || MESH_CONFIG.BLOOM_HASH_COUNT
+    );
     this._stats.resets++;
 
-    // Re-add all cached entries to Bloom filter
+    // Re-add all cached entries to new filter
     const entries = this._cache.getAll();
     for (const messageId of entries) {
       this._bloomFilter.add(messageId);
     }
+
+    // Keep old filter for a grace period by checking both
+    this._oldBloomFilter = oldFilter;
+
+    // Clear old filter after grace period
+    setTimeout(() => {
+      this._oldBloomFilter = null;
+    }, 60000); // 1 minute grace
   }
 
   /**

@@ -201,7 +201,7 @@ class EmergencyManager extends EventEmitter {
 
     // Check if threshold reached
     if (this._tapState.count >= this._config.tapCount) {
-      this._triggerPanic(PANIC_TRIGGER.TRIPLE_TAP);
+      this._triggerPanic(PANIC_TRIGGER.TRIPLE_TAP).catch(() => {});
       this._resetTapState();
     }
   }
@@ -226,7 +226,7 @@ class EmergencyManager extends EventEmitter {
         this._shakeState.isShaking = true;
         this._shakeState.startTime = now;
       } else if ((now - this._shakeState.startTime) >= this._config.shakeDurationMs) {
-        this._triggerPanic(PANIC_TRIGGER.SHAKE);
+        this._triggerPanic(PANIC_TRIGGER.SHAKE).catch(() => {});
         this._resetShakeState();
       }
     } else {
@@ -272,13 +272,21 @@ class EmergencyManager extends EventEmitter {
      * @param {string} trigger - Trigger type
      * @private
      */
-  _triggerPanic(trigger) {
+  async _triggerPanic(trigger) {
     if (this._config.requireConfirmation) {
       this.emit('panic-confirmation-required', { trigger });
       return;
     }
 
-    this._executeWipe(trigger);
+    try {
+      await this._executeWipe(trigger);
+    } catch (error) {
+      this.emit('error', {
+        message: 'Panic wipe failed',
+        error: error.message,
+        trigger
+      });
+    }
   }
 
   /**
@@ -300,17 +308,19 @@ class EmergencyManager extends EventEmitter {
     };
 
     // Execute all clearers in parallel for speed
+    const clearerResults = new Array(this._clearers.length);
     const promises = this._clearers.map(async (clearer, index) => {
       try {
         await clearer();
-        results.clearerResults.push({ index, success: true });
+        clearerResults[index] = { index, success: true };
       } catch (error) {
         results.errors.push({ index, error: error.message });
-        results.clearerResults.push({ index, success: false, error: error.message });
+        clearerResults[index] = { index, success: false, error: error.message };
       }
     });
 
     await Promise.all(promises);
+    results.clearerResults = clearerResults;
 
     const endTime = Date.now();
     const elapsedMs = endTime - startTime;

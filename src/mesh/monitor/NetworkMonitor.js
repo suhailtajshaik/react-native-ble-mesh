@@ -515,13 +515,24 @@ class NetworkMonitor extends EventEmitter {
      * @private
      */
   _startHealthCheck() {
+    if (this._healthCheckTimer) { return; }
+
     this._healthCheckTimer = setInterval(
       () => {
-        const report = this.generateHealthReport();
-        this.emit('health-report', report);
+        try {
+          const report = this.generateHealthReport();
+          this.emit('health-report', report);
+        } catch (error) {
+          // Don't let health check errors crash the monitor
+        }
       },
       this._config.healthCheckIntervalMs
     );
+
+    // Don't prevent process exit
+    if (this._healthCheckTimer && typeof this._healthCheckTimer.unref === 'function') {
+      this._healthCheckTimer.unref();
+    }
   }
 
   /**

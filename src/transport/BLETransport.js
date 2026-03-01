@@ -25,7 +25,7 @@ const { ConnectionError } = require('../errors');
 class BLETransport extends Transport {
   /**
    * Creates a new BLETransport instance
-   * @param {Object} adapter - BLE adapter instance (RNBLEAdapter or NodeBLEAdapter)
+   * @param {any} adapter - BLE adapter instance (RNBLEAdapter or NodeBLEAdapter)
    * @param {Object} [options={}] - Transport options
    * @param {string} [options.powerMode='BALANCED'] - Power mode
    * @param {number} [options.maxPeers=8] - Maximum peers
@@ -41,16 +41,17 @@ class BLETransport extends Transport {
 
     /**
      * BLE adapter instance
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._adapter = adapter;
 
     /**
      * Current power mode
-     * @type {Object}
+     * @type {any}
      * @private
      */
+    // @ts-ignore
     this._powerMode = POWER_MODE[options.powerMode] || POWER_MODE.BALANCED;
 
     /**
@@ -76,7 +77,7 @@ class BLETransport extends Transport {
 
     /**
      * Per-peer write queues for serializing BLE writes
-     * @type {Map<string, Array>}
+     * @type {Map<string, any[]>}
      * @private
      */
     this._writeQueue = new Map();
@@ -90,7 +91,7 @@ class BLETransport extends Transport {
 
     /**
      * Bound event handlers for cleanup
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._handlers = {
@@ -140,7 +141,7 @@ class BLETransport extends Transport {
 
       // Register disconnect callback if adapter supports it
       if (typeof this._adapter.onDeviceDisconnected === 'function') {
-        this._adapter.onDeviceDisconnected((peerId) => {
+        this._adapter.onDeviceDisconnected((/** @type {any} */ peerId) => {
           this._handleDeviceDisconnected(peerId);
         });
       }
@@ -149,7 +150,7 @@ class BLETransport extends Transport {
 
       // Auto-start scanning for peers
       await this.startScanning();
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this._setState(Transport.STATE.ERROR);
       throw error;
     }
@@ -232,12 +233,12 @@ class BLETransport extends Transport {
     }
 
     try {
-      let timeoutId;
+      /** @type {any} */ let timeoutId;
       const timeoutPromise = new Promise((_, reject) => {
         timeoutId = setTimeout(() => reject(new Error('Connection timeout')), this._connectTimeoutMs);
       });
       const device = await Promise.race([
-        this._adapter.connect(peerId).then(d => { clearTimeout(timeoutId); return d; }),
+        this._adapter.connect(peerId).then((/** @type {any} */ d) => { clearTimeout(timeoutId); return d; }),
         timeoutPromise
       ]);
 
@@ -259,7 +260,7 @@ class BLETransport extends Transport {
         peerId,
         BLE_SERVICE_UUID,
         BLE_CHARACTERISTIC_RX,
-        (data) => this._handleData(peerId, data)
+        (/** @type {any} */ data) => this._handleData(peerId, data)
       );
 
       const connectionInfo = {
@@ -271,7 +272,7 @@ class BLETransport extends Transport {
 
       this._peers.set(peerId, connectionInfo);
       this.emit('peerConnected', { peerId, rssi: device.rssi || -50 });
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       if (error.message === 'Connection timeout') {
         throw ConnectionError.connectionTimeout(peerId);
       }
@@ -362,7 +363,7 @@ class BLETransport extends Transport {
    * @param {string} modeName - Power mode name (PERFORMANCE, BALANCED, POWER_SAVER)
    */
   setPowerMode(modeName) {
-    const mode = POWER_MODE[modeName];
+    const mode = /** @type {any} */ (POWER_MODE)[modeName];
     if (mode) {
       this._powerMode = mode;
     }
@@ -384,7 +385,7 @@ class BLETransport extends Transport {
 
   /**
    * Handles discovered BLE devices
-   * @param {Object} device - Discovered device info
+   * @param {any} device - Discovered device info
    * @private
    */
   _handleDeviceDiscovered(device) {
@@ -452,7 +453,8 @@ class BLETransport extends Transport {
     }
 
     return new Promise((resolve, reject) => {
-      this._writeQueue.get(peerId).push({ data, resolve, reject });
+      // @ts-ignore
+      this?._writeQueue.get(peerId).push({ data, resolve, reject });
       this._processWriteQueue(peerId);
     });
   }

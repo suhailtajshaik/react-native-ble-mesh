@@ -12,7 +12,7 @@ const { FileMessage, FILE_TRANSFER_STATE } = require('./FileMessage');
 
 /**
  * Default file transfer configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   chunkSize: 4096,
@@ -36,21 +36,22 @@ const DEFAULT_CONFIG = Object.freeze({
  */
 class FileManager extends EventEmitter {
   /**
-   * @param {Object} [config={}]
+   * @param {any} [config]
    */
   constructor(config = {}) {
     super();
+    /** @type {any} */
     this._config = { ...DEFAULT_CONFIG, ...config };
     this._chunker = new FileChunker({
       chunkSize: this._config.chunkSize,
       maxFileSize: this._config.maxFileSize
     });
 
-    /** @type {Map<string, Object>} Active outgoing transfers */
+    /** @type {Map<string, any>} Active outgoing transfers */
     this._outgoing = new Map();
-    /** @type {Map<string, Object>} Active incoming transfers */
+    /** @type {Map<string, any>} Active incoming transfers */
     this._incoming = new Map();
-    /** @type {Map<string, NodeJS.Timeout>} Transfer timeouts */
+    /** @type {Map<string, any>} Transfer timeouts */
     this._timeouts = new Map();
   }
 
@@ -59,11 +60,8 @@ class FileManager extends EventEmitter {
    * The caller (MeshNetwork) is responsible for actually sending chunks via transport.
    *
    * @param {string} peerId - Target peer ID
-   * @param {Object} fileInfo - File information
-   * @param {Uint8Array} fileInfo.data - File data
-   * @param {string} fileInfo.name - File name
-   * @param {string} [fileInfo.mimeType='application/octet-stream'] - MIME type
-   * @returns {Object} Transfer object with id, offer, and chunks
+   * @param {any} fileInfo - File information
+   * @returns {any} Transfer object with id, offer, and chunks
    */
   prepareSend(peerId, fileInfo) {
     if (this._outgoing.size >= this._config.maxConcurrentTransfers) {
@@ -105,7 +103,7 @@ class FileManager extends EventEmitter {
   /**
    * Marks a chunk as sent and emits progress
    * @param {string} transferId - Transfer ID
-   * @param {number} chunkIndex - Chunk index that was sent
+   * @param {number} _chunkIndex - Chunk index that was sent
    */
   markChunkSent(transferId, _chunkIndex) {
     const transfer = this._outgoing.get(transferId);
@@ -141,7 +139,7 @@ class FileManager extends EventEmitter {
 
   /**
    * Handles an incoming file offer
-   * @param {Object} offer - File offer metadata
+   * @param {any} offer - File offer metadata
    * @param {string} senderId - Sender peer ID
    * @returns {string} Transfer ID
    */
@@ -234,15 +232,17 @@ class FileManager extends EventEmitter {
 
     if (this._outgoing.has(transferId)) {
       const transfer = this._outgoing.get(transferId);
-      transfer.state = FILE_TRANSFER_STATE.CANCELLED;
+      if (transfer) { transfer.state = FILE_TRANSFER_STATE.CANCELLED; }
       this._outgoing.delete(transferId);
       this.emit('transferCancelled', { transferId, direction: 'outgoing' });
     }
 
     if (this._incoming.has(transferId)) {
       const transfer = this._incoming.get(transferId);
-      transfer.meta.state = FILE_TRANSFER_STATE.CANCELLED;
-      transfer.assembler.clear();
+      if (transfer) {
+        transfer.meta.state = FILE_TRANSFER_STATE.CANCELLED;
+        transfer.assembler.clear();
+      }
       this._incoming.delete(transferId);
       this.emit('transferCancelled', { transferId, direction: 'incoming' });
     }
@@ -250,16 +250,16 @@ class FileManager extends EventEmitter {
 
   /**
    * Gets active transfers
-   * @returns {Object} { outgoing: [], incoming: [] }
+   * @returns {any}
    */
   getActiveTransfers() {
     return {
-      outgoing: Array.from(this._outgoing.values()).map(t => ({
+      outgoing: Array.from(this._outgoing.values()).map((/** @type {any} */ t) => ({
         id: t.id, peerId: t.peerId, name: t.meta.name,
         progress: Math.round((t.sentChunks / t.chunks.length) * 100),
         state: t.state
       })),
-      incoming: Array.from(this._incoming.values()).map(t => ({
+      incoming: Array.from(this._incoming.values()).map((/** @type {any} */ t) => ({
         id: t.meta.id, from: t.senderId, name: t.meta.name,
         progress: t.assembler.progress,
         state: t.meta.state
@@ -282,7 +282,10 @@ class FileManager extends EventEmitter {
     this.removeAllListeners();
   }
 
-  /** @private */
+  /**
+   * @param {string} transferId
+   * @private
+   */
   _setTransferTimeout(transferId) {
     const timer = setTimeout(() => {
       this.cancelTransfer(transferId);
@@ -294,7 +297,10 @@ class FileManager extends EventEmitter {
     this._timeouts.set(transferId, timer);
   }
 
-  /** @private */
+  /**
+   * @param {string} transferId
+   * @private
+   */
   _clearTransferTimeout(transferId) {
     const timer = this._timeouts.get(transferId);
     if (timer) {

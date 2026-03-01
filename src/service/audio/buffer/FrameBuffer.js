@@ -14,18 +14,16 @@ const { VOICE_MESSAGE_CONFIG } = require('../../../constants/audio');
 class FrameBuffer {
   /**
    * Creates a new FrameBuffer
-   * @param {Object} [options] - Buffer options
-   * @param {number} [options.maxFrames=30000] - Maximum frames to store
-   * @param {number} [options.maxBytes] - Maximum bytes to store
+   * @param {any} [options] - Buffer options
    */
   constructor(options = {}) {
-    /** @private */
+    /** @type {number} @private */
     this._maxFrames = options.maxFrames || 30000;
-    /** @private */
+    /** @type {number} @private */
     this._maxBytes = options.maxBytes || VOICE_MESSAGE_CONFIG.MAX_SIZE_BYTES;
-    /** @private */
+    /** @type {Uint8Array[]} @private */
     this._frames = [];
-    /** @private */
+    /** @type {number} @private */
     this._totalBytes = 0;
   }
 
@@ -99,6 +97,7 @@ class FrameBuffer {
    */
   serialize() {
     // Format: [frameCount(4)] + [frameLen(2) + frameData]...
+    /** @type {Uint8Array[]} */
     const parts = [];
     const countBytes = new Uint8Array(4);
     new DataView(countBytes.buffer).setUint32(0, this._frames.length, false);
@@ -111,7 +110,7 @@ class FrameBuffer {
       parts.push(frame);
     }
 
-    const totalLen = parts.reduce((sum, p) => sum + p.length, 0);
+    const totalLen = parts.reduce((/** @type {number} */ sum, /** @type {Uint8Array} */ p) => sum + p.length, 0);
     const result = new Uint8Array(totalLen);
     let offset = 0;
 

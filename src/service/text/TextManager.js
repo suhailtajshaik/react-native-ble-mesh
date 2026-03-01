@@ -21,7 +21,7 @@ const cachedDecoder = new TextDecoder();
 
 /**
  * Text manager states
- * @constant {Object}
+ * @constant {any}
  */
 const MANAGER_STATE = Object.freeze({
   UNINITIALIZED: 'uninitialized',
@@ -40,34 +40,34 @@ const MANAGER_STATE = Object.freeze({
 class TextManager extends EventEmitter {
   /**
    * Creates a new TextManager
-   * @param {Object} [options] - Manager options
+   * @param {any} [options] - Manager options
    */
   constructor(options = {}) {
     super();
 
-    /** @private */
+    /** @type {string} @private */
     this._state = MANAGER_STATE.UNINITIALIZED;
-    /** @private */
+    /** @type {any} @private */
     this._meshService = null;
     /** @private */
     this._channelManager = new ChannelManager();
     /** @private */
     this._broadcastManager = new BroadcastManager(options.broadcast);
-    /** @private */
+    /** @type {string | null} @private */
     this._senderId = null;
-    /** @private */
+    /** @type {number} @private */
     this._messageCounter = 0;
-    /** @private */
+    /** @type {Set<string>} @private */
     this._pendingReadReceipts = new Set();
-    /** @private */
+    /** @type {ReturnType<typeof setTimeout> | null} @private */
     this._readReceiptBatchTimeout = null;
-    /** @private */
+    /** @type {number} @private */
     this._readReceiptBatchDelayMs = options.readReceiptBatchDelayMs || 1000;
   }
 
   /**
    * Initializes the text manager
-   * @param {MeshService} meshService - Mesh service instance
+   * @param {any} meshService - Mesh service instance
    * @returns {Promise<void>}
    */
   async initialize(meshService) {
@@ -89,7 +89,7 @@ class TextManager extends EventEmitter {
       // Initialize broadcast manager
       this._broadcastManager.initialize({
         senderId: this._senderId,
-        sendCallback: (message) => this._sendBroadcastMessage(message)
+        sendCallback: (/** @type {any} */ message) => this._sendBroadcastMessage(message)
       });
 
       // Setup event forwarding
@@ -97,7 +97,7 @@ class TextManager extends EventEmitter {
 
       this._setState(MANAGER_STATE.READY);
       this.emit('initialized');
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this._setState(MANAGER_STATE.ERROR);
       throw new MeshError(`Text manager initialization failed: ${error.message}`, ERROR_CODE.E001);
     }
@@ -203,7 +203,7 @@ class TextManager extends EventEmitter {
   /**
    * Gets recent broadcasts
    * @param {number} [limit] - Maximum number to return
-   * @returns {TextMessage[]}
+   * @returns {any[]}
    */
   getRecentBroadcasts(limit) {
     return this._broadcastManager.getRecentBroadcasts(limit);
@@ -215,6 +215,7 @@ class TextManager extends EventEmitter {
    * Joins a channel
    * @param {string} channelId - Channel ID
    * @param {string} [password] - Optional password
+   * @returns {any}
    */
   joinChannel(channelId, password) {
     this._validateReady();
@@ -287,7 +288,7 @@ class TextManager extends EventEmitter {
 
   /**
    * Gets all joined channels
-   * @returns {Object[]}
+   * @returns {any[]}
    */
   getChannels() {
     return this._channelManager.getChannels();
@@ -296,7 +297,7 @@ class TextManager extends EventEmitter {
   /**
    * Gets a specific channel
    * @param {string} channelId - Channel ID
-   * @returns {Channel|undefined}
+   * @returns {any}
    */
   getChannel(channelId) {
     return this._channelManager.getChannel(channelId);
@@ -358,6 +359,7 @@ class TextManager extends EventEmitter {
         // Extract channel ID from payload
         this._handleChannelMessagePayload(peerId, payload);
         break;
+      // @ts-ignore
       case MESSAGE_TYPE.READ_RECEIPT:
         this._handleReadReceipt(peerId, payload);
         break;
@@ -379,20 +381,25 @@ class TextManager extends EventEmitter {
       EVENTS.CHANNEL_MEMBER_JOINED,
       EVENTS.CHANNEL_MEMBER_LEFT
     ];
-    channelEvents.forEach(event => {
-      this._channelManager.on(event, data => this.emit(event, data));
+    channelEvents.forEach((/** @type {any} */ event) => {
+      this._channelManager.on(event, (/** @type {any} */ data) => this.emit(event, data));
     });
 
     // Forward broadcast events
-    this._broadcastManager.on('broadcast-sent', data => {
+    this._broadcastManager.on('broadcast-sent', (/** @type {any} */ data) => {
       this.emit(EVENTS.BROADCAST_SENT, data);
     });
-    this._broadcastManager.on('broadcast-received', data => {
+    this._broadcastManager.on('broadcast-received', (/** @type {any} */ data) => {
       this.emit(EVENTS.BROADCAST_RECEIVED, data);
     });
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId - Peer ID
+   * @param {number} type - Message type
+   * @param {Uint8Array} payload - Message payload
+   * @private
+   */
   async _sendMessage(peerId, type, payload) {
     const data = new Uint8Array(1 + payload.length);
     data[0] = type;
@@ -403,7 +410,10 @@ class TextManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {any} message - Message to broadcast
+   * @private
+   */
   async _sendBroadcastMessage(message) {
     const serialized = message.serialize();
     const data = new Uint8Array(1 + serialized.length);
@@ -423,7 +433,11 @@ class TextManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId - Peer ID
+   * @param {Uint8Array} payload - Message payload
+   * @private
+   */
   _handleChannelMessagePayload(peerId, payload) {
     // First byte is channel ID length
     const channelIdLength = payload[0];
@@ -433,9 +447,14 @@ class TextManager extends EventEmitter {
     this.handleChannelMessage(peerId, channelId, messagePayload);
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId - Peer ID
+   * @param {Uint8Array} payload - Message payload
+   * @private
+   */
   _handleReadReceipt(peerId, payload) {
     // Parse read receipt payload
+    /** @type {string[]} */
     const messageIds = [];
     let offset = 0;
 
@@ -464,7 +483,7 @@ class TextManager extends EventEmitter {
     this._pendingReadReceipts.clear();
 
     // Pre-calculate total size and allocate once
-    const encodedIds = messageIds.map(id => cachedEncoder.encode(id));
+    const encodedIds = messageIds.map((/** @type {string} */ id) => cachedEncoder.encode(id));
     let totalLength = 0;
     for (let i = 0; i < encodedIds.length; i++) {
       totalLength += 1 + encodedIds[i].length;
@@ -489,16 +508,23 @@ class TextManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} newState - New state
+   * @private
+   */
   _setState(newState) {
     this._state = newState;
   }
 
-  /** @private */
+  /**
+   * @param {any} publicKey - Public key
+   * @returns {string}
+   * @private
+   */
   _publicKeyToId(publicKey) {
     if (publicKey instanceof Uint8Array) {
       return Array.from(publicKey.slice(0, 8))
-        .map(b => b.toString(16).padStart(2, '0'))
+        .map((/** @type {number} */ b) => b.toString(16).padStart(2, '0'))
         .join('');
     }
     return String(publicKey).slice(0, 16);
@@ -514,7 +540,7 @@ class TextManager extends EventEmitter {
 
   /**
    * Returns statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     return {
@@ -525,6 +551,7 @@ class TextManager extends EventEmitter {
   }
 }
 
+/** @type {any} */
 TextManager.STATE = MANAGER_STATE;
 
 module.exports = TextManager;

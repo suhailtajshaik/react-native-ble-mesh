@@ -50,6 +50,7 @@ class MockTransport extends Transport {
      * @type {string|null}
      * @private
      */
+    // @ts-ignore
     this._localPeerId = options.localPeerId || `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
@@ -122,7 +123,8 @@ class MockTransport extends Transport {
 
     // Deliver to linked transport if available
     const linkedTransport = this._linkedTransports.get(peerId);
-    if (linkedTransport && linkedTransport.isRunning) {
+    if (linkedTransport && /** @type {any} */ (linkedTransport).isRunning) {
+      // @ts-ignore
       linkedTransport._receiveMessage(this._localPeerId, data);
     }
   }
@@ -157,7 +159,7 @@ class MockTransport extends Transport {
   /**
    * Simulates a peer connection
    * @param {string} peerId - Connecting peer ID
-   * @param {Object} [info={}] - Connection info (rssi, etc.)
+   * @param {any} [info={}] - Connection info (rssi, etc.)
    */
   simulatePeerConnect(peerId, info = {}) {
     if (!this.isRunning || this._peers.has(peerId)) {
@@ -203,6 +205,7 @@ class MockTransport extends Transport {
     }
 
     this._linkedTransports.set(otherPeerId, otherTransport);
+    // @ts-ignore
     otherTransport._linkedTransports.set(this._localPeerId, this);
   }
 
@@ -212,7 +215,9 @@ class MockTransport extends Transport {
    */
   unlinkFrom(otherTransport) {
     const otherPeerId = otherTransport.localPeerId;
+    // @ts-ignore
     this._linkedTransports.delete(otherPeerId);
+    // @ts-ignore
     otherTransport._linkedTransports.delete(this._localPeerId);
   }
 

@@ -47,7 +47,7 @@ class LRUCache {
     }
 
     // Move to end (most recently used)
-    const value = this._cache.get(key);
+    const value = /** @type {V} */ (this._cache.get(key));
     this._cache.delete(key);
     this._cache.set(key, value);
 
@@ -67,7 +67,9 @@ class LRUCache {
     } else if (this._cache.size >= this._maxSize) {
       // Remove least recently used (first item)
       const firstKey = this._cache.keys().next().value;
-      this._cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this._cache.delete(firstKey);
+      }
     }
 
     this._cache.set(key, value);
@@ -134,7 +136,7 @@ class LRUCache {
 
   /**
    * Returns all entries in the cache (most recent last)
-   * @returns {Array} Array of [key, value] pairs
+   * @returns {any[]} Array of [key, value] pairs
    */
   entries() {
     return Array.from(this._cache.entries());
@@ -194,7 +196,11 @@ class LRUCache {
     // Evict oldest items if over new limit
     while (this._cache.size > this._maxSize) {
       const firstKey = this._cache.keys().next().value;
-      this._cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this._cache.delete(firstKey);
+      } else {
+        break;
+      }
     }
   }
 }

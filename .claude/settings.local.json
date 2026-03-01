@@ -21,7 +21,16 @@
       "Bash(npm config set:*)",
       "Bash(npm publish:*)",
       "Bash(wc:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(head:*)",
+      "Bash(grep:*)",
+      "Bash(grep error TS8024:*)",
+      "Bash(grep error TS:*)",
+      "Bash(npx tsc --noEmit 2>&1 | grep 'src/crypto/' 2>&1)",
+      "Bash(npx tsc --noEmit 2>&1 | grep 'src/transport/WiFiDirectTransport' 2>&1)",
+      "Bash(npx tsc --noEmit 2>&1 | grep 'src/hooks/' 2>&1)",
+      "Bash(npx tsc --noEmit 2>&1 | grep 'src/utils/EventEmitter' 2>&1)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

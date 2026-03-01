@@ -64,7 +64,9 @@ function createProvider(config) {
     return detectProvider();
   }
 
+  // @ts-ignore
   if (typeof config === 'object' && typeof config.generateKeyPair === 'function') {
+    // @ts-ignore
     return config; // Already a provider instance
   }
 

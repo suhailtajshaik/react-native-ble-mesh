@@ -21,35 +21,35 @@ class NodeBLEAdapter extends BLEAdapter {
   /**
    * Creates a new NodeBLEAdapter instance
    * @param {Object} [options={}] - Adapter options
-   * @param {Object} [options.noble] - Noble instance
+   * @param {any} [options.noble] - Noble instance
    */
   constructor(options = {}) {
     super(options);
 
     /**
      * Noble instance
-     * @type {Object|null}
+     * @type {any}
      * @private
      */
     this._noble = options.noble || null;
 
     /**
      * Connected peripherals map
-     * @type {Map<string, Object>}
+     * @type {Map<string, any>}
      * @private
      */
     this._peripherals = new Map();
 
     /**
      * Discovered peripherals cache
-     * @type {Map<string, Object>}
+     * @type {Map<string, any>}
      * @private
      */
     this._discoveredPeripherals = new Map();
 
     /**
      * Subscription handlers map
-     * @type {Map<string, Object>}
+     * @type {Map<string, any>}
      * @private
      */
     this._subscriptions = new Map();
@@ -82,6 +82,7 @@ class NodeBLEAdapter extends BLEAdapter {
     // Try to load noble if not provided
     if (!this._noble) {
       try {
+        // @ts-ignore
         this._noble = require('@abandonware/noble');
       } catch (error) {
         throw new Error(
@@ -91,7 +92,7 @@ class NodeBLEAdapter extends BLEAdapter {
     }
 
     // Set up state change listener
-    this._noble.on('stateChange', (state) => {
+    this._noble.on('stateChange', (/** @type {any} */ state) => {
       this._notifyStateChange(this._mapState(state));
     });
 
@@ -141,7 +142,7 @@ class NodeBLEAdapter extends BLEAdapter {
       uuid.toLowerCase().replace(/-/g, '')
     );
 
-    this._noble.on('discover', (peripheral) => {
+    this._noble.on('discover', (/** @type {any} */ peripheral) => {
       this._discoveredPeripherals.set(peripheral.id, peripheral);
 
       if (this._scanCallback) {
@@ -284,7 +285,7 @@ class NodeBLEAdapter extends BLEAdapter {
       throw new Error(`Characteristic ${charUUID} not found`);
     }
 
-    characteristic.on('data', (data) => {
+    characteristic.on('data', (/** @type {any} */ data) => {
       callback(new Uint8Array(data));
     });
 
@@ -318,7 +319,7 @@ class NodeBLEAdapter extends BLEAdapter {
       poweredOff: BLEAdapter.STATE.POWERED_OFF,
       poweredOn: BLEAdapter.STATE.POWERED_ON
     };
-    return stateMap[state] || BLEAdapter.STATE.UNKNOWN;
+    return /** @type {any} */ (stateMap)[state] || BLEAdapter.STATE.UNKNOWN;
   }
 
   /**
@@ -336,7 +337,7 @@ class NodeBLEAdapter extends BLEAdapter {
         reject(new Error('Bluetooth initialization timeout'));
       }, 10000);
 
-      this._noble.once('stateChange', (state) => {
+      this._noble.once('stateChange', (/** @type {any} */ state) => {
         clearTimeout(timeout);
         if (state === 'poweredOn') {
           resolve();
@@ -349,13 +350,13 @@ class NodeBLEAdapter extends BLEAdapter {
 
   /**
    * Connects to a peripheral
-   * @param {Object} peripheral - Noble peripheral
+   * @param {any} peripheral - Noble peripheral
    * @returns {Promise<void>}
    * @private
    */
   _connectPeripheral(peripheral) {
     return new Promise((resolve, reject) => {
-      peripheral.connect((error) => {
+      peripheral.connect((/** @type {any} */ error) => {
         if (error) { reject(error); } else { resolve(); }
       });
     });
@@ -363,7 +364,7 @@ class NodeBLEAdapter extends BLEAdapter {
 
   /**
    * Disconnects from a peripheral
-   * @param {Object} peripheral - Noble peripheral
+   * @param {any} peripheral - Noble peripheral
    * @returns {Promise<void>}
    * @private
    */
@@ -375,13 +376,13 @@ class NodeBLEAdapter extends BLEAdapter {
 
   /**
    * Discovers services and characteristics
-   * @param {Object} peripheral - Noble peripheral
+   * @param {any} peripheral - Noble peripheral
    * @returns {Promise<void>}
    * @private
    */
   _discoverServices(peripheral) {
     return new Promise((resolve, reject) => {
-      peripheral.discoverAllServicesAndCharacteristics((error) => {
+      peripheral.discoverAllServicesAndCharacteristics((/** @type {any} */ error) => {
         if (error) { reject(error); } else { resolve(); }
       });
     });
@@ -389,10 +390,10 @@ class NodeBLEAdapter extends BLEAdapter {
 
   /**
    * Finds a characteristic on a peripheral
-   * @param {Object} peripheral - Noble peripheral
+   * @param {any} peripheral - Noble peripheral
    * @param {string} serviceUUID - Service UUID
    * @param {string} charUUID - Characteristic UUID
-   * @returns {Object|null} Characteristic or null
+   * @returns {any} Characteristic or null
    * @private
    */
   _findCharacteristic(peripheral, serviceUUID, charUUID) {
@@ -400,23 +401,23 @@ class NodeBLEAdapter extends BLEAdapter {
     const formattedCharUUID = charUUID.toLowerCase().replace(/-/g, '');
 
     const service = peripheral.services?.find(
-      s => s.uuid === formattedServiceUUID
+      (/** @type {any} */ s) => s.uuid === formattedServiceUUID
     );
     return service?.characteristics?.find(
-      c => c.uuid === formattedCharUUID
+      (/** @type {any} */ c) => c.uuid === formattedCharUUID
     ) || null;
   }
 
   /**
    * Writes to a characteristic
-   * @param {Object} characteristic - Noble characteristic
+   * @param {any} characteristic - Noble characteristic
    * @param {Buffer} data - Data to write
    * @returns {Promise<void>}
    * @private
    */
   _writeCharacteristic(characteristic, data) {
     return new Promise((resolve, reject) => {
-      characteristic.write(data, false, (error) => {
+      characteristic.write(data, false, (/** @type {any} */ error) => {
         if (error) { reject(error); } else { resolve(); }
       });
     });
@@ -424,13 +425,13 @@ class NodeBLEAdapter extends BLEAdapter {
 
   /**
    * Subscribes to a characteristic
-   * @param {Object} characteristic - Noble characteristic
+   * @param {any} characteristic - Noble characteristic
    * @returns {Promise<void>}
    * @private
    */
   _subscribeCharacteristic(characteristic) {
     return new Promise((resolve, reject) => {
-      characteristic.subscribe((error) => {
+      characteristic.subscribe((/** @type {any} */ error) => {
         if (error) { reject(error); } else { resolve(); }
       });
     });

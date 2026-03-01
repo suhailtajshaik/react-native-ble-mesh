@@ -74,7 +74,7 @@ function validatePositiveInt(value, name) {
  * Validates that a value is one of the allowed values
  * @param {*} value - Value to validate
  * @param {string} name - Name of the parameter for error messages
- * @param {Array} allowed - Array of allowed values
+ * @param {any[]} allowed - Array of allowed values
  * @throws {ValidationError} If value is not in allowed list
  */
 function validateEnum(value, name, allowed) {

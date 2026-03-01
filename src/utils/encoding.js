@@ -21,9 +21,12 @@ for (let i = 0; i < 256; i++) {
 }
 
 // Cached TextEncoder/TextDecoder singletons (avoid per-call allocation)
-let _cachedEncoder = null;
-let _cachedDecoder = null;
+/** @type {any} */ let _cachedEncoder = null;
+/** @type {any} */ let _cachedDecoder = null;
 
+/**
+ * @returns {any}
+ */
 function _getEncoder() {
   if (!_cachedEncoder && typeof TextEncoder !== 'undefined') {
     _cachedEncoder = new TextEncoder();
@@ -31,6 +34,9 @@ function _getEncoder() {
   return _cachedEncoder;
 }
 
+/**
+ * @returns {any}
+ */
 function _getDecoder() {
   if (!_cachedDecoder && typeof TextDecoder !== 'undefined') {
     _cachedDecoder = new TextDecoder();

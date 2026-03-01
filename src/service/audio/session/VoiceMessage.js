@@ -29,17 +29,14 @@ const VOICE_MESSAGE_MAGIC = new Uint8Array([0x56, 0x4D, 0x53, 0x47]); // 'VMSG'
 class VoiceMessage {
   /**
    * Creates a VoiceMessage from recorded frames
-   * @param {Object} options - Message options
-   * @param {FrameBuffer} options.frames - Recorded frames
-   * @param {Object} options.metadata - Recording metadata
-   * @param {Uint8Array} options.senderId - Sender ID (32 bytes)
+   * @param {any} options - Message options
    */
   constructor(options) {
     const { frames, metadata, senderId } = options;
 
-    /** @private */
+    /** @type {any} @private */
     this._frames = frames;
-    /** @private */
+    /** @type {any} @private */
     this._metadata = {
       version: 1,
       codec: metadata.codec || AUDIO_CODEC_TYPE.LC3,
@@ -49,17 +46,15 @@ class VoiceMessage {
       channels: metadata.channels || 1,
       createdAt: metadata.createdAt || Date.now()
     };
-    /** @private */
+    /** @type {Uint8Array} @private */
     this._senderId = senderId || new Uint8Array(32);
-    /** @private */
+    /** @type {number} @private */
     this._playbackPosition = 0;
   }
 
   /**
    * Starts recording a new voice message
-   * @param {Object} options - Recording options
-   * @param {LC3Codec} options.codec - Initialized codec
-   * @param {Uint8Array} options.senderId - Sender ID
+   * @param {any} options - Recording options
    * @returns {VoiceMessageRecorder}
    */
   static startRecording(options) {
@@ -160,7 +155,7 @@ class VoiceMessage {
 
   /**
    * Returns metadata
-   * @returns {Object}
+   * @returns {any}
    */
   getMetadata() {
     return {
@@ -190,7 +185,7 @@ class VoiceMessage {
 
   /**
    * Gets next frame for playback
-   * @returns {{frame: Uint8Array, index: number, done: boolean}|null}
+   * @returns {any}
    */
   getNextFrame() {
     if (this._playbackPosition >= this._frames.getFrameCount()) {
@@ -237,9 +232,7 @@ class VoiceMessage {
 class VoiceMessageRecorder extends EventEmitter {
   /**
    * Creates a new recorder
-   * @param {Object} options - Recorder options
-   * @param {LC3Codec} options.codec - Initialized codec
-   * @param {Uint8Array} options.senderId - Sender ID
+   * @param {any} options - Recorder options
    */
   constructor(options) {
     super();
@@ -250,19 +243,19 @@ class VoiceMessageRecorder extends EventEmitter {
       throw AudioError.codecInitFailed({ reason: 'Codec must be initialized' });
     }
 
-    /** @private */
+    /** @type {any} @private */
     this._codec = codec;
-    /** @private */
+    /** @type {Uint8Array} @private */
     this._senderId = senderId || new Uint8Array(32);
     /** @private */
     this._frames = new FrameBuffer();
-    /** @private */
+    /** @type {any} @private */
     this._encoder = null;
-    /** @private */
+    /** @type {number} @private */
     this._startTime = Date.now();
-    /** @private */
+    /** @type {boolean} @private */
     this._cancelled = false;
-    /** @private */
+    /** @type {any} @private */
     this._config = codec.getConfig();
 
     // Lazy load encoder

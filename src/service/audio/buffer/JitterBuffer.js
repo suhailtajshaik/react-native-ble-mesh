@@ -149,7 +149,7 @@ class JitterBuffer extends EventEmitter {
 
   /**
    * Returns buffer statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     return {

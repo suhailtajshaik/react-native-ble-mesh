@@ -13,7 +13,7 @@ const { ConnectionError } = require('../errors');
 
 /**
  * Wi-Fi Direct transport states
- * @constant {Object}
+ * @constant {any}
  */
 const WIFI_DIRECT_STATE = Object.freeze({
   AVAILABLE: 'available',
@@ -46,6 +46,7 @@ class WiFiDirectTransport extends Transport {
     this._isDiscovering = false;
     this._isGroupOwner = false;
     this._groupInfo = null;
+    /** @type {any} */
     this._subscriptions = [];
   }
 
@@ -75,16 +76,16 @@ class WiFiDirectTransport extends Transport {
 
     try {
       const p2p = this._getWifiP2p();
-      await p2p.initialize();
+      await p2p?.initialize();
 
       // Check if Wi-Fi Direct is supported
-      const isAvailable = await p2p.isSuccessfulInitialize();
+      const isAvailable = await p2p?.isSuccessfulInitialize();
       if (!isAvailable) {
         throw new ConnectionError('Wi-Fi Direct is not available on this device', 'E100');
       }
 
       this._setState(Transport.STATE.RUNNING);
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this._setState(Transport.STATE.ERROR);
       throw error;
     }
@@ -107,13 +108,13 @@ class WiFiDirectTransport extends Transport {
 
       // Disconnect from group
       try {
-        await p2p.removeGroup();
+        await p2p?.removeGroup();
       } catch (e) {
         // Ignore — may not be in a group
       }
 
       // Cleanup subscriptions
-      this._subscriptions.forEach(sub => {
+      this._subscriptions.forEach((/** @type {any} */ sub) => {
         if (sub && typeof sub.remove === 'function') { sub.remove(); }
       });
       this._subscriptions = [];
@@ -132,7 +133,7 @@ class WiFiDirectTransport extends Transport {
     if (!this.isRunning || this._isDiscovering) { return; }
 
     const p2p = this._getWifiP2p();
-    await p2p.discoverPeers();
+    await p2p?.discoverPeers();
     this._isDiscovering = true;
     this.emit('discoveryStarted');
   }
@@ -146,7 +147,7 @@ class WiFiDirectTransport extends Transport {
 
     const p2p = this._getWifiP2p();
     try {
-      await p2p.stopDiscoveringPeers();
+      await p2p?.stopDiscoveringPeers();
     } catch (e) {
       // Ignore
     }
@@ -173,9 +174,9 @@ class WiFiDirectTransport extends Transport {
     const p2p = this._getWifiP2p();
 
     try {
-      await p2p.connect(peerId);
+      await p2p?.connect(peerId);
 
-      const connectionInfo = await p2p.getConnectionInfo();
+      const connectionInfo = await p2p?.getConnectionInfo();
       this._isGroupOwner = connectionInfo.isGroupOwner || false;
       this._groupInfo = connectionInfo;
 
@@ -187,7 +188,7 @@ class WiFiDirectTransport extends Transport {
       });
 
       this.emit('peerConnected', { peerId, transport: 'wifi-direct' });
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw ConnectionError.connectionFailed(peerId, { cause: error.message });
     }
   }
@@ -202,7 +203,7 @@ class WiFiDirectTransport extends Transport {
 
     const p2p = this._getWifiP2p();
     try {
-      await p2p.removeGroup();
+      await p2p?.removeGroup();
     } catch (e) {
       // Ignore
     }
@@ -231,10 +232,10 @@ class WiFiDirectTransport extends Transport {
 
     if (this._isGroupOwner) {
       // Group owner sends via server socket
-      await p2p.sendMessage(base64);
+      await p2p?.sendMessage(base64);
     } else {
       // Client sends to group owner address
-      await p2p.sendMessageTo(peerInfo.groupOwnerAddress, this._port, base64);
+      await p2p?.sendMessageTo(peerInfo.groupOwnerAddress, this._port, base64);
     }
   }
 
@@ -261,16 +262,20 @@ class WiFiDirectTransport extends Transport {
     if (!this.isRunning) { return []; }
     const p2p = this._getWifiP2p();
     try {
-      return await p2p.getAvailablePeers();
+      return await p2p?.getAvailablePeers();
     } catch (e) {
       return [];
     }
   }
 
-  /** @private */
+  /**
+   * @private
+   * @returns {any}
+   */
   _getWifiP2p() {
     if (!this._wifiP2p) {
       try {
+        // @ts-ignore
         this._wifiP2p = require('react-native-wifi-p2p');
       } catch (e) {
         throw new Error(
@@ -283,7 +288,7 @@ class WiFiDirectTransport extends Transport {
   }
 
   /** @private */
-  _uint8ArrayToBase64(bytes) {
+  _uint8ArrayToBase64(/** @type {any} */ bytes) {
     const chunks = [];
     for (let i = 0; i < bytes.length; i += 8192) {
       chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + 8192, bytes.length))));

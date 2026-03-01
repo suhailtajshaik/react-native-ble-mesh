@@ -7,7 +7,7 @@
 
 /**
  * File transfer message types
- * @constant {Object}
+ * @constant {any}
  */
 const FILE_MESSAGE_TYPE = Object.freeze({
   /** Initial file offer with metadata */
@@ -22,7 +22,7 @@ const FILE_MESSAGE_TYPE = Object.freeze({
 
 /**
  * File transfer states
- * @constant {Object}
+ * @constant {any}
  */
 const FILE_TRANSFER_STATE = Object.freeze({
   PENDING: 'pending',
@@ -38,14 +38,7 @@ const FILE_TRANSFER_STATE = Object.freeze({
  */
 class FileMessage {
   /**
-   * @param {Object} options
-   * @param {string} options.id - Transfer ID
-   * @param {string} options.name - File name
-   * @param {string} options.mimeType - MIME type
-   * @param {number} options.size - Total size in bytes
-   * @param {number} options.totalChunks - Total number of chunks
-   * @param {number} [options.chunkSize=4096] - Chunk size in bytes
-   * @param {string} [options.senderId] - Sender peer ID
+   * @param {any} options
    */
   constructor(options) {
     this.id = options.id;
@@ -57,7 +50,9 @@ class FileMessage {
     this.senderId = options.senderId || null;
     this.receivedChunks = 0;
     this.state = FILE_TRANSFER_STATE.PENDING;
+    /** @type {number | null} */
     this.startedAt = null;
+    /** @type {number | null} */
     this.completedAt = null;
   }
 
@@ -82,7 +77,7 @@ class FileMessage {
 
   /**
    * Serializes the file offer metadata
-   * @returns {Object}
+   * @returns {any}
    */
   toOffer() {
     return {
@@ -98,7 +93,7 @@ class FileMessage {
 
   /**
    * Creates a FileMessage from an offer
-   * @param {Object} offer
+   * @param {any} offer
    * @param {string} senderId
    * @returns {FileMessage}
    */

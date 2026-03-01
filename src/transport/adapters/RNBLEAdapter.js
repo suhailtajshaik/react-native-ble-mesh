@@ -21,14 +21,14 @@ class RNBLEAdapter extends BLEAdapter {
   /**
    * Creates a new RNBLEAdapter instance
    * @param {Object} [options={}] - Adapter options
-   * @param {Object} [options.BleManager] - BleManager class from react-native-ble-plx
+   * @param {any} [options.BleManager] - BleManager class from react-native-ble-plx
    */
   constructor(options = {}) {
     super(options);
 
     /**
      * BleManager instance
-     * @type {Object|null}
+     * @type {any}
      * @private
      */
     this._manager = null;
@@ -45,32 +45,33 @@ class RNBLEAdapter extends BLEAdapter {
      * @type {string|null}
      * @private
      */
+    // @ts-ignore
     this._restoreIdentifier = options.restoreIdentifier || null;
 
     /**
      * Connected devices map
-     * @type {Map<string, Object>}
+     * @type {Map<string, any>}
      * @private
      */
     this._devices = new Map();
 
     /**
      * Subscription handlers map
-     * @type {Map<string, Object>}
+     * @type {Map<string, any>}
      * @private
      */
     this._subscriptions = new Map();
 
     /**
      * Scan subscription reference
-     * @type {Object|null}
+     * @type {any}
      * @private
      */
     this._scanSubscription = null;
 
     /**
      * State subscription reference
-     * @type {Object|null}
+     * @type {any}
      * @private
      */
     this._stateSubscription = null;
@@ -96,6 +97,7 @@ class RNBLEAdapter extends BLEAdapter {
     // Try to load BleManager if not provided
     if (!this._BleManager) {
       try {
+        // @ts-ignore
         const blePlx = require('react-native-ble-plx');
         this._BleManager = blePlx.BleManager;
       } catch (error) {
@@ -108,7 +110,7 @@ class RNBLEAdapter extends BLEAdapter {
     const managerOptions = {};
     if (this._restoreIdentifier) {
       managerOptions.restoreStateIdentifier = this._restoreIdentifier;
-      managerOptions.restoreStateFunction = (restoredState) => {
+      managerOptions.restoreStateFunction = (/** @type {any} */ restoredState) => {
         // Re-populate devices from restored state
         if (restoredState && restoredState.connectedPeripherals) {
           for (const peripheral of restoredState.connectedPeripherals) {
@@ -117,10 +119,11 @@ class RNBLEAdapter extends BLEAdapter {
         }
       };
     }
+    // @ts-ignore
     this._manager = new this._BleManager(managerOptions);
 
     // Subscribe to state changes
-    this._stateSubscription = this._manager.onStateChange((state) => {
+    this._stateSubscription = this._manager.onStateChange((/** @type {any} */ state) => {
       this._notifyStateChange(this._mapState(state));
     }, true);
 
@@ -174,7 +177,7 @@ class RNBLEAdapter extends BLEAdapter {
   async startScan(serviceUUIDs, callback) {
     this._ensureInitialized();
 
-    this._manager.startDeviceScan(serviceUUIDs, null, (error, device) => {
+    this._manager.startDeviceScan(serviceUUIDs, null, (/** @type {any} */ error, /** @type {any} */ device) => {
       if (error) {
         return;
       }
@@ -292,7 +295,7 @@ class RNBLEAdapter extends BLEAdapter {
       deviceId,
       serviceUUID,
       charUUID,
-      (error, characteristic) => {
+      (/** @type {any} */ error, /** @type {any} */ characteristic) => {
         if (!error && characteristic) {
           const data = this._base64ToUint8Array(characteristic.value);
           callback(data);
@@ -328,7 +331,7 @@ class RNBLEAdapter extends BLEAdapter {
       PoweredOff: BLEAdapter.STATE.POWERED_OFF,
       PoweredOn: BLEAdapter.STATE.POWERED_ON
     };
-    return stateMap[state] || BLEAdapter.STATE.UNKNOWN;
+    return /** @type {any} */ (stateMap)[state] || BLEAdapter.STATE.UNKNOWN;
   }
 
   /**

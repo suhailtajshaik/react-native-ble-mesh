@@ -40,7 +40,7 @@ class ConnectionError extends MeshError {
    * @returns {ConnectionError} New ConnectionError instance
    */
   static fromCode(code, peerId = null, details = null) {
-    const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.E200;
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || /** @type {Record<string, string>} */ (ERROR_MESSAGES).E200;
     return new ConnectionError(message, code, peerId, details);
   }
 
@@ -96,7 +96,7 @@ class ConnectionError extends MeshError {
 
   /**
    * Converts error to a JSON-serializable object
-   * @returns {Object} JSON representation of the error
+   * @returns {any} JSON representation of the error
    */
   toJSON() {
     return {

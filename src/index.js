@@ -69,7 +69,7 @@ function createMeshNetwork(config) {
 
 /**
  * Create a new MeshService instance
- * @param {Object} [config] - Configuration options
+ * @param {any} [config] - Configuration options
  * @returns {MeshService}
  */
 function createMeshService(config) {
@@ -80,7 +80,7 @@ function createMeshService(config) {
  * Create and initialize a MeshService for Node.js usage
  * @param {Object} [options] - Configuration options
  * @param {string} [options.displayName='MeshNode'] - Display name for this node
- * @param {Object} [options.storage=null] - Storage adapter (null for MemoryStorage)
+ * @param {any} [options.storage=null] - Storage adapter (null for MemoryStorage)
  * @returns {Promise<MeshService>} Initialized MeshService
  * @example
  * const mesh = await createNodeMesh({ displayName: 'Alice' });

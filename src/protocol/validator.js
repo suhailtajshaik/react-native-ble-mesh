@@ -13,18 +13,19 @@ const { PROTOCOL_VERSION, MESSAGE_TYPE, MESH_CONFIG } = require('../constants');
  * Set of valid message type values for fast lookup.
  * @type {Set<number>}
  */
-const VALID_MESSAGE_TYPES = new Set(Object.values(MESSAGE_TYPE));
+const VALID_MESSAGE_TYPES = new Set(/** @type {number[]} */ (Object.values(MESSAGE_TYPE)));
 
 /**
  * Cached frozen result for valid validations to avoid repeated allocations.
  * @type {{ valid: boolean, errors: string[] }}
  */
-const VALID_RESULT = Object.freeze({ valid: true, errors: Object.freeze([]) });
+// @ts-ignore
+const VALID_RESULT = /** @type {{ valid: boolean, errors: string[] }} */ (Object.freeze({ valid: true, errors: Object.freeze([]) }));
 
 /**
  * Validates a message header.
  *
- * @param {MessageHeader|Object} header - Header to validate
+ * @param {any} header - Header to validate
  * @returns {{ valid: boolean, errors: string[] }} Validation result
  *
  * @example
@@ -121,7 +122,7 @@ function validateHeader(header) {
 /**
  * Validates a complete message (header + payload).
  *
- * @param {Message|Object} message - Message to validate
+ * @param {any} message - Message to validate
  * @returns {{ valid: boolean, errors: string[] }} Validation result
  *
  * @example
@@ -208,7 +209,7 @@ function isValidMessageType(type) {
 /**
  * Checks if a message is expired.
  *
- * @param {Message|MessageHeader|Object} messageOrHeader - Message or header
+ * @param {any} messageOrHeader - Message or header
  * @returns {boolean} True if expired
  */
 function isExpired(messageOrHeader) {
@@ -219,7 +220,7 @@ function isExpired(messageOrHeader) {
 /**
  * Checks if hop count has exceeded maximum.
  *
- * @param {Message|MessageHeader|Object} messageOrHeader - Message or header
+ * @param {any} messageOrHeader - Message or header
  * @returns {boolean} True if exceeded
  */
 function hasExceededMaxHops(messageOrHeader) {

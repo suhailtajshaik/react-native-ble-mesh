@@ -15,13 +15,13 @@
 class Storage {
   /**
    * Creates a new Storage instance
-   * @param {Object} [options={}] - Storage options
-   * @param {string} [options.prefix=''] - Key prefix for namespacing
+   * @param {any} [options={}] - Storage options
+   *
    */
   constructor(options = {}) {
     /**
      * Storage options
-     * @type {Object}
+     * @type {any}
      * @protected
      */
     this._options = {
@@ -43,7 +43,7 @@ class Storage {
   /**
    * Gets a value by key
    * @abstract
-   * @param {string} key - Key to retrieve
+   * @param {string} _key - Key to retrieve
    * @returns {Promise<any>} Stored value or undefined
    * @throws {Error} If not implemented by subclass
    */
@@ -54,8 +54,8 @@ class Storage {
   /**
    * Sets a value by key
    * @abstract
-   * @param {string} key - Key to set
-   * @param {any} value - Value to store
+   * @param {string} _key - Key to set
+   * @param {any} _value - Value to store
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
@@ -66,7 +66,7 @@ class Storage {
   /**
    * Deletes a value by key
    * @abstract
-   * @param {string} key - Key to delete
+   * @param {string} _key - Key to delete
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
@@ -77,7 +77,7 @@ class Storage {
   /**
    * Checks if a key exists
    * @abstract
-   * @param {string} key - Key to check
+   * @param {string} _key - Key to check
    * @returns {Promise<boolean>} True if key exists
    * @throws {Error} If not implemented by subclass
    */
@@ -134,7 +134,7 @@ class Storage {
 
   /**
    * Sets multiple key-value pairs
-   * @param {Map<string, any>|Object} entries - Entries to set
+   * @param {Map<string, any>|any} entries - Entries to set
    * @returns {Promise<void>}
    */
   async setMany(entries) {

@@ -7,7 +7,7 @@
 
 /**
  * Error codes organized by category
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const ERROR_CODE = Object.freeze({
   // Initialization errors (E0xx)
@@ -108,7 +108,7 @@ const ERROR_CODE = Object.freeze({
 
 /**
  * Error messages for each error code
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const ERROR_MESSAGES = Object.freeze({
   E001: 'Initialization failed',

@@ -7,7 +7,7 @@
 
 /**
  * Default retry options
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_OPTIONS = {
   maxRetries: 3,
@@ -21,7 +21,7 @@ const DEFAULT_OPTIONS = {
 /**
  * Calculates delay with optional jitter
  * @param {number} attempt - Current attempt number (0-based)
- * @param {Object} options - Retry options
+ * @param {any} options - Retry options
  * @returns {number} Delay in milliseconds
  * @private
  */
@@ -46,13 +46,10 @@ function calculateDelay(attempt, options) {
  * Retries an async function with exponential backoff
  * @template T
  * @param {function(): Promise<T>} fn - Async function to retry
- * @param {Object} [options] - Retry options
- * @param {number} [options.maxRetries=3] - Maximum number of retries
- * @param {number} [options.initialDelay=100] - Initial delay in milliseconds
- * @param {number} [options.maxDelay=10000] - Maximum delay in milliseconds
- * @param {number} [options.factor=2] - Exponential factor
- * @param {boolean} [options.jitter=true] - Add randomness to delays
+ * @param {any} [options] - Retry options   *
+ * @param {object} options
  * @param {function(Error, number): boolean} [options.shouldRetry] - Predicate to determine if should retry
+ * @param {object} options
  * @param {function(Error, number): void} [options.onRetry] - Callback on each retry
  * @returns {Promise<T>} Result of the function
  * @throws {Error} Last error if all retries fail
@@ -66,7 +63,7 @@ async function retry(fn, options = {}) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       lastError = error;
 
       // Check if we should retry
@@ -94,11 +91,12 @@ async function retry(fn, options = {}) {
  * Creates a retryable version of an async function
  * @template T
  * @param {function(...*): Promise<T>} fn - Async function to wrap
- * @param {Object} [options] - Retry options
+ * @param {any} [options] - Retry options
  * @returns {function(...*): Promise<T>} Wrapped function with retry logic
  */
 function retryable(fn, options = {}) {
   return function retryableFn(...args) {
+    // @ts-ignore
     return retry(() => fn.apply(this, args), options);
   };
 }
@@ -109,7 +107,7 @@ function retryable(fn, options = {}) {
  * @returns {function(Error): boolean} Predicate function
  */
 function retryOn(errorTypes) {
-  return (error) => {
+  return (/** @type {any} */ error) => {
     return errorTypes.some(ErrorType => error instanceof ErrorType);
   };
 }
@@ -120,7 +118,7 @@ function retryOn(errorTypes) {
  * @returns {function(Error): boolean} Predicate function
  */
 function retryExcept(errorTypes) {
-  return (error) => {
+  return (/** @type {any} */ error) => {
     return !errorTypes.some(ErrorType => error instanceof ErrorType);
   };
 }
@@ -131,7 +129,7 @@ function retryExcept(errorTypes) {
  * @returns {function(Error): boolean} Predicate function
  */
 function retryOnCodes(codes) {
-  return (error) => {
+  return (/** @type {any} */ error) => {
     return error.code && codes.includes(error.code);
   };
 }

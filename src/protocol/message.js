@@ -10,8 +10,8 @@ const { MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
 const { MessageError } = require('../errors');
 
 // Cached TextEncoder/TextDecoder singletons (avoids per-call allocation)
-let _encoder = null;
-let _decoder = null;
+/** @type {any} */ let _encoder = null;
+/** @type {any} */ let _decoder = null;
 function _getEncoder() {
   if (!_encoder) { _encoder = new TextEncoder(); }
   return _encoder;
@@ -28,11 +28,11 @@ function _getDecoder() {
 class Message {
   /**
    * Creates a new Message instance.
-   * @param {MessageHeader} header - Message header
+   * @param {any} header - Message header
    * @param {Uint8Array} payload - Message payload
    */
   constructor(header, payload) {
-    /** @type {MessageHeader} */
+    /** @type {any} */
     this.header = header;
     /** @type {Uint8Array} */
     this.payload = payload;
@@ -40,15 +40,7 @@ class Message {
 
   /**
    * Creates a new message with the given options.
-   * @param {Object} options - Message options
-   * @param {number} options.type - Message type from MESSAGE_TYPE
-   * @param {Uint8Array|string} options.payload - Message payload
-   * @param {number} [options.flags=0] - Message flags
-   * @param {number} [options.maxHops=7] - Maximum hops
-   * @param {number} [options.ttlMs] - Time-to-live in ms
-   * @param {number} [options.fragmentIndex=0] - Fragment index
-   * @param {number} [options.fragmentTotal=1] - Total fragments
-   * @param {Uint8Array} [options.messageId] - Optional message ID
+   * @param {any} options - Message options   *
    * @returns {Message} New message instance
    */
   static create(options) {

@@ -14,6 +14,7 @@ const FNV_PRIME = 0x01000193;
 const FNV_OFFSET = 0x811c9dc5;
 
 // Cached TextEncoder singleton (avoids per-call allocation)
+/** @type {any} */
 let _encoder = null;
 function _getEncoder() {
   if (!_encoder && typeof TextEncoder !== 'undefined') {

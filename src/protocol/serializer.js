@@ -15,7 +15,7 @@ const { MessageError } = require('../errors');
  * Serializes a message header to bytes.
  * Calculates CRC32 checksum and includes it in the output.
  *
- * @param {MessageHeader|Object} header - Header to serialize
+ * @param {any} header - Header to serialize
  * @returns {Uint8Array} 48-byte serialized header
  * @throws {MessageError} If header is invalid
  *
@@ -81,7 +81,7 @@ function serializeHeader(header) {
 /**
  * Serializes a complete message (header + payload) to bytes.
  *
- * @param {Message|Object} message - Message to serialize
+ * @param {any} message - Message to serialize
  * @returns {Uint8Array} Serialized message bytes
  * @throws {MessageError} If message is invalid
  *
@@ -109,8 +109,8 @@ function serialize(message) {
 
   // Convert string payload to bytes
   if (typeof payload === 'string') {
-    if (!serialize._encoder) { serialize._encoder = new TextEncoder(); }
-    payload = serialize._encoder.encode(payload);
+    if (!(/** @type {any} */ (serialize))._encoder) { /** @type {any} */ (serialize)._encoder = new TextEncoder(); }
+    payload = /** @type {any} */ (serialize)._encoder.encode(payload);
   }
 
   // Default to empty payload

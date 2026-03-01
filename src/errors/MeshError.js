@@ -37,7 +37,7 @@ class MeshError extends Error {
 
     /**
      * Additional error details
-     * @type {Object|null}
+     * @type {any}
      */
     this.details = details;
 
@@ -60,7 +60,7 @@ class MeshError extends Error {
    * @returns {MeshError} New MeshError instance
    */
   static fromCode(code, details = null) {
-    const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.E900;
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || /** @type {Record<string, string>} */ (ERROR_MESSAGES).E900;
     return new MeshError(message, code, details);
   }
 
@@ -69,12 +69,12 @@ class MeshError extends Error {
    * @returns {string} Error type name
    */
   getTypeName() {
-    return ERROR_CODE[this.code] || 'UNKNOWN_ERROR';
+    return /** @type {Record<string, string>} */ (ERROR_CODE)[this.code] || 'UNKNOWN_ERROR';
   }
 
   /**
    * Converts error to a JSON-serializable object
-   * @returns {Object} JSON representation of the error
+   * @returns {any} JSON representation of the error
    */
   toJSON() {
     return {

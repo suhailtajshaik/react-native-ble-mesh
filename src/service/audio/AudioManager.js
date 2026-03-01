@@ -18,7 +18,7 @@ const { unpackFrame, createStreamFrame } = require('./transport/AudioFramer');
 
 /**
  * Audio manager states
- * @constant {Object}
+ * @constant {any}
  */
 const MANAGER_STATE = Object.freeze({
   UNINITIALIZED: 'uninitialized',
@@ -37,28 +37,29 @@ const MANAGER_STATE = Object.freeze({
 class AudioManager extends EventEmitter {
   /**
    * Creates a new AudioManager
-   * @param {Object} [options] - Manager options
-   * @param {string} [options.quality='MEDIUM'] - Audio quality preset
+   * @param {any} [options] - Manager options
    */
   constructor(options = {}) {
     super();
 
-    /** @private */
+    /** @type {string} @private */
     this._quality = options.quality || 'MEDIUM';
-    /** @private */
+    /** @type {string} @private */
     this._state = MANAGER_STATE.UNINITIALIZED;
-    /** @private */
+    /** @type {any} @private */
     this._meshService = null;
-    /** @private */
+    /** @type {any} @private */
     this._codec = null;
-    /** @private */
+    /** @type {Map<string, any>} @private */
     this._sessions = new Map(); // peerId -> AudioSession
-    /** @private */
+    /** @type {Map<string, any>} @private */
     this._pendingRequests = new Map(); // peerId -> { resolve, reject, timeout }
     /** @private */
     this._voiceAssembler = new AudioAssembler();
-    /** @private */
+    /** @type {any} @private */
     this._senderId = null;
+    /** @type {string|undefined} @private */
+    this._lastVoiceMessagePeerId = undefined;
 
     this._setupAssemblerEvents();
   }
@@ -68,15 +69,15 @@ class AudioManager extends EventEmitter {
    * @private
    */
   _setupAssemblerEvents() {
-    this._voiceAssembler.on('complete', (data) => {
+    this._voiceAssembler.on('complete', (/** @type {any} */ data) => {
       this._handleVoiceMessageComplete(data);
     });
 
-    this._voiceAssembler.on('progress', (data) => {
+    this._voiceAssembler.on('progress', (/** @type {any} */ data) => {
       this.emit(EVENTS.VOICE_MESSAGE_PROGRESS, data);
     });
 
-    this._voiceAssembler.on('timeout', (data) => {
+    this._voiceAssembler.on('timeout', (/** @type {any} */ data) => {
       this.emit(EVENTS.VOICE_MESSAGE_FAILED, {
         ...data,
         error: AudioError.voiceMessageTimeout(data.messageId)
@@ -86,7 +87,7 @@ class AudioManager extends EventEmitter {
 
   /**
    * Initializes the audio manager
-   * @param {MeshService} meshService - Mesh service instance
+   * @param {any} meshService - Mesh service instance
    * @returns {Promise<void>}
    */
   async initialize(meshService) {
@@ -104,13 +105,13 @@ class AudioManager extends EventEmitter {
       this._senderId = identity.publicKey || new Uint8Array(32);
 
       // Initialize codec
-      const qualityConfig = AUDIO_QUALITY[this._quality];
+      const qualityConfig = /** @type {any} */ (AUDIO_QUALITY)[this._quality];
       this._codec = new LC3Codec(qualityConfig);
       await this._codec.initialize();
 
       this._setState(MANAGER_STATE.READY);
       this.emit('initialized', { quality: this._quality, codec: this._codec.getConfig() });
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this._setState(MANAGER_STATE.ERROR);
       throw AudioError.codecInitFailed({ reason: error.message });
     }
@@ -122,6 +123,7 @@ class AudioManager extends EventEmitter {
    */
   async destroy() {
     // End all sessions and wait for completion
+    /** @type {Promise<void>[]} */
     const endPromises = [];
     for (const [, session] of this._sessions) {
       if (session && typeof session.end === 'function') {
@@ -156,7 +158,7 @@ class AudioManager extends EventEmitter {
    * @param {string} quality - Quality preset (LOW, MEDIUM, HIGH)
    */
   setQuality(quality) {
-    if (!AUDIO_QUALITY[quality]) {
+    if (!/** @type {any} */ (AUDIO_QUALITY)[quality]) {
       throw AudioError.invalidConfig(`Unknown quality: ${quality}`);
     }
     this._quality = quality;
@@ -172,7 +174,7 @@ class AudioManager extends EventEmitter {
 
   /**
    * Returns codec info
-   * @returns {Object|null}
+   * @returns {any}
    */
   getCodecInfo() {
     return this._codec ? this._codec.getConfig() : null;
@@ -181,7 +183,7 @@ class AudioManager extends EventEmitter {
   /**
    * Requests an audio stream with a peer
    * @param {string} peerId - Remote peer ID
-   * @returns {Promise<AudioSession>}
+   * @returns {Promise<any>}
    */
   async requestStream(peerId) {
     this._validateReady();
@@ -194,7 +196,7 @@ class AudioManager extends EventEmitter {
       peerId,
       codec: this._codec,
       isInitiator: true,
-      sendCallback: (data) => this._sendStreamData(data)
+      sendCallback: (/** @type {any} */ data) => this._sendStreamData(data)
     });
 
     session.setRequesting();
@@ -219,7 +221,7 @@ class AudioManager extends EventEmitter {
   /**
    * Accepts an incoming stream request
    * @param {string} peerId - Remote peer ID
-   * @returns {Promise<AudioSession>}
+   * @returns {Promise<any>}
    */
   async acceptStream(peerId) {
     this._validateReady();
@@ -270,7 +272,7 @@ class AudioManager extends EventEmitter {
   /**
    * Gets a session by peer ID
    * @param {string} peerId - Peer ID
-   * @returns {AudioSession|undefined}
+   * @returns {any}
    */
   getSession(peerId) {
     return this._sessions.get(peerId);
@@ -278,11 +280,11 @@ class AudioManager extends EventEmitter {
 
   /**
    * Gets all active sessions
-   * @returns {AudioSession[]}
+   * @returns {any[]}
    */
   getActiveSessions() {
     return Array.from(this._sessions.values())
-      .filter(s => s.getState() === AUDIO_SESSION_STATE.ACTIVE);
+      .filter((/** @type {any} */ s) => s.getState() === AUDIO_SESSION_STATE.ACTIVE);
   }
 
   /**
@@ -301,7 +303,7 @@ class AudioManager extends EventEmitter {
   /**
    * Sends a voice message to a peer
    * @param {string} peerId - Remote peer ID
-   * @param {VoiceMessage} message - Voice message to send
+   * @param {any} message - Voice message to send
    * @returns {Promise<string>} Message ID
    */
   async sendVoiceMessage(peerId, message) {
@@ -353,7 +355,10 @@ class AudioManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @private
+   */
   _handleStreamRequest(peerId) {
     if (this._sessions.has(peerId)) { return; }
 
@@ -361,7 +366,7 @@ class AudioManager extends EventEmitter {
       peerId,
       codec: this._codec,
       isInitiator: false,
-      sendCallback: (data) => this._sendStreamData(data)
+      sendCallback: (/** @type {any} */ data) => this._sendStreamData(data)
     });
 
     session.setPending();
@@ -370,7 +375,10 @@ class AudioManager extends EventEmitter {
     this.emit(EVENTS.AUDIO_STREAM_REQUEST, { peerId });
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @private
+   */
   _handleStreamAccept(peerId) {
     const request = this._pendingRequests.get(peerId);
     if (request) {
@@ -383,7 +391,11 @@ class AudioManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @param {Uint8Array} payload
+   * @private
+   */
   _handleStreamReject(peerId, payload) {
     const request = this._pendingRequests.get(peerId);
     if (request) {
@@ -395,20 +407,27 @@ class AudioManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @param {Uint8Array} payload
+   * @private
+   */
   _handleStreamData(peerId, payload) {
     const session = this._sessions.get(peerId);
     if (session && session.getState() === AUDIO_SESSION_STATE.ACTIVE) {
       try {
         const { frame, sequenceNumber, timestampDelta } = unpackFrame(payload);
         session.receiveAudio(frame, sequenceNumber, timestampDelta);
-      } catch (error) {
+      } catch (/** @type {any} */ error) {
         this.emit('error', error);
       }
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @private
+   */
   _handleStreamEnd(peerId) {
     const session = this._sessions.get(peerId);
     if (session) {
@@ -418,7 +437,11 @@ class AudioManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @param {Uint8Array} payload
+   * @private
+   */
   _handleVoiceMessageFragment(peerId, payload) {
     const fullPayload = new Uint8Array(payload.length + 1);
     fullPayload[0] = payload[0]; // type is already in payload for fragments
@@ -431,7 +454,10 @@ class AudioManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {any} param0
+   * @private
+   */
   _handleVoiceMessageComplete({ messageId, size }) {
     // Note: The actual voice message data comes from the assembler
     this.emit(EVENTS.VOICE_MESSAGE_RECEIVED, {
@@ -441,13 +467,21 @@ class AudioManager extends EventEmitter {
     });
   }
 
-  /** @private */
+  /**
+   * @param {any} param0
+   * @private
+   */
   async _sendStreamData({ peerId, frame, sequenceNumber, timestampDelta }) {
     const packed = createStreamFrame(frame, sequenceNumber, timestampDelta);
     await this._sendRaw(peerId, packed);
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @param {number} type
+   * @param {Uint8Array} payload
+   * @private
+   */
   async _sendMessage(peerId, type, payload) {
     const data = new Uint8Array(1 + payload.length);
     data[0] = type;
@@ -455,7 +489,11 @@ class AudioManager extends EventEmitter {
     await this._sendRaw(peerId, data);
   }
 
-  /** @private */
+  /**
+   * @param {string} peerId
+   * @param {Uint8Array} data
+   * @private
+   */
   async _sendRaw(peerId, data) {
     if (this._meshService && typeof this._meshService._sendRaw === 'function') {
       await this._meshService._sendRaw(peerId, data);
@@ -474,7 +512,10 @@ class AudioManager extends EventEmitter {
     }
   }
 
-  /** @private */
+  /**
+   * @param {string} newState
+   * @private
+   */
   _setState(newState) {
     this._state = newState;
   }

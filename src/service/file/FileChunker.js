@@ -27,7 +27,7 @@ class FileChunker {
    * Splits data into chunks
    * @param {Uint8Array} data - File data
    * @param {string} transferId - Transfer ID
-   * @returns {Object[]} Array of chunk objects
+   * @returns {any[]} Array of chunk objects
    * @throws {Error} If data exceeds max file size
    */
   chunk(data, transferId) {

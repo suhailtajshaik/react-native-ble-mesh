@@ -12,11 +12,7 @@
 class Channel {
   /**
    * Creates a new Channel
-   * @param {Object} options - Channel options
-   * @param {string} options.id - Channel ID
-   * @param {string} [options.name] - Channel display name
-   * @param {string} [options.password] - Channel password (hashed)
-   * @param {number} [options.createdAt] - Creation timestamp
+   * @param {any} options - Channel options
    */
   constructor(options) {
     const { id, name, password, createdAt } = options;
@@ -25,17 +21,17 @@ class Channel {
       throw new Error('Channel ID is required');
     }
 
-    /** @private */
+    /** @type {string} @private */
     this._id = id;
-    /** @private */
+    /** @type {string} @private */
     this._name = name || id;
-    /** @private */
+    /** @type {Uint8Array | null} @private */
     this._passwordHash = password ? this._hashPassword(password) : null;
-    /** @private */
+    /** @type {Set<string>} @private */
     this._members = new Set();
-    /** @private */
+    /** @type {number} @private */
     this._createdAt = createdAt || Date.now();
-    /** @private */
+    /** @type {number} @private */
     this._joinedAt = Date.now();
   }
 
@@ -157,7 +153,7 @@ class Channel {
 
   /**
    * Converts to JSON representation
-   * @returns {Object}
+   * @returns {any}
    */
   toJSON() {
     return {
@@ -173,7 +169,7 @@ class Channel {
 
   /**
    * Creates a Channel from JSON
-   * @param {Object} json - JSON object
+   * @param {any} json - JSON object
    * @returns {Channel}
    */
   static fromJSON(json) {
@@ -184,7 +180,7 @@ class Channel {
     });
 
     if (json.members) {
-      json.members.forEach(peerId => channel.addMember(peerId));
+      json.members.forEach((/** @type {string} */ peerId) => channel.addMember(peerId));
     }
 
     channel._joinedAt = json.joinedAt || Date.now();

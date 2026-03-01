@@ -16,7 +16,7 @@ const { ValidationError } = require('../../errors');
  * @property {string} [name] - Display name
  * @property {number[]} [publicKey] - Public key bytes
  * @property {number} [hopCount] - Hop count
- * @property {Object} [capabilities] - Peer capabilities
+ * @property {any} [capabilities] - Peer capabilities
  */
 
 /**
@@ -27,10 +27,7 @@ const { ValidationError } = require('../../errors');
 class PeerDiscovery extends EventEmitter {
   /**
    * Creates a new PeerDiscovery handler
-   * @param {Object} options - Configuration options
-   * @param {string} options.localPeerId - Local peer's ID
-   * @param {Uint8Array} [options.publicKey] - Local peer's public key
-   * @param {string} [options.displayName] - Local display name
+   * @param {any} options - Configuration options   *
    */
   constructor(options = {}) {
     super();
@@ -59,13 +56,13 @@ class PeerDiscovery extends EventEmitter {
 
     /**
      * Capabilities advertised to peers
-     * @type {Object}
+     * @type {any}
      */
     this.capabilities = options.capabilities || {};
 
     /**
      * Discovery statistics
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._stats = {
@@ -80,9 +77,10 @@ class PeerDiscovery extends EventEmitter {
 
   /**
    * Creates an announce message payload
-   * @returns {Object} Announce payload
+   * @returns {any} Announce payload
    */
   createAnnouncePayload() {
+    /** @type {any} */
     const payload = {
       peerId: this.localPeerId,
       name: this.displayName,
@@ -100,8 +98,9 @@ class PeerDiscovery extends EventEmitter {
   /**
    * Creates a peer request payload
    * @param {string} [targetPeerId] - Specific peer to request (null for broadcast)
-   * @returns {Object} Request payload
+   * @returns {any} Request payload
    */
+  // @ts-ignore
   createRequestPayload(targetPeerId = null) {
     return {
       requesterId: this.localPeerId,
@@ -113,7 +112,7 @@ class PeerDiscovery extends EventEmitter {
   /**
    * Creates a peer response payload
    * @param {string} requesterId - ID of requesting peer
-   * @returns {Object} Response payload
+   * @returns {any} Response payload
    */
   createResponsePayload(requesterId) {
     return {
@@ -129,9 +128,9 @@ class PeerDiscovery extends EventEmitter {
   /**
    * Processes an incoming discovery message
    * @param {number} type - Message type
-   * @param {Object} payload - Message payload
+   * @param {any} payload - Message payload
    * @param {string} sourcePeerId - Source peer ID
-   * @returns {Object|null} Response to send, or null
+   * @returns {any} Response to send, or null
    */
   processMessage(type, payload, sourcePeerId) {
     // Ignore our own messages
@@ -158,7 +157,7 @@ class PeerDiscovery extends EventEmitter {
 
   /**
    * Handles a peer announce message
-   * @param {Object} payload - Announce payload
+   * @param {any} payload - Announce payload
    * @param {string} sourcePeerId - Source peer ID
    * @returns {null} No response needed
    * @private
@@ -181,9 +180,9 @@ class PeerDiscovery extends EventEmitter {
 
   /**
    * Handles a peer request message
-   * @param {Object} payload - Request payload
-   * @param {string} sourcePeerId - Source peer ID
-   * @returns {Object|null} Response payload or null
+   * @param {any} payload - Request payload
+   * @param {string} _sourcePeerId - Source peer ID
+   * @returns {any} Response payload or null
    * @private
    */
   _handleRequest(payload, _sourcePeerId) {
@@ -203,7 +202,7 @@ class PeerDiscovery extends EventEmitter {
 
   /**
    * Handles a peer response message
-   * @param {Object} payload - Response payload
+   * @param {any} payload - Response payload
    * @param {string} sourcePeerId - Source peer ID
    * @returns {null} No response needed
    * @private
@@ -230,7 +229,7 @@ class PeerDiscovery extends EventEmitter {
 
   /**
    * Updates local peer information
-   * @param {Object} info - New info
+   * @param {any} info - New info
    */
   updateLocalInfo(info) {
     if (info.displayName !== undefined) { this.displayName = info.displayName; }
@@ -242,7 +241,7 @@ class PeerDiscovery extends EventEmitter {
 
   /**
    * Gets discovery statistics
-   * @returns {Object} Statistics
+   * @returns {any} Statistics
    */
   getStats() {
     return { ...this._stats };

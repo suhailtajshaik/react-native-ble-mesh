@@ -22,7 +22,7 @@
 
 /**
  * Default configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_OPTIONS = {
   /** iOS NSBluetoothAlwaysUsageDescription */
@@ -40,9 +40,9 @@ const DEFAULT_OPTIONS = {
 
 /**
  * Modifies the iOS Info.plist for BLE permissions.
- * @param {Object} config - Expo config
- * @param {Object} options - Plugin options
- * @returns {Object} Modified config
+ * @param {any} config - Expo config
+ * @param {any} options - Plugin options
+ * @returns {any} Modified config
  */
 function withBLEMeshIOS(config, options) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
@@ -64,9 +64,9 @@ function withBLEMeshIOS(config, options) {
 
 /**
  * Modifies the Android manifest for BLE permissions.
- * @param {Object} config - Expo config
- * @param {Object} options - Plugin options
- * @returns {Object} Modified config
+ * @param {any} config - Expo config
+ * @param {any} options - Plugin options
+ * @returns {any} Modified config
  */
 function withBLEMeshAndroid(config, options) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
@@ -86,9 +86,9 @@ function withBLEMeshAndroid(config, options) {
 
 /**
  * Main Expo config plugin.
- * @param {Object} config - Expo config
- * @param {Object} [options={}] - Plugin options
- * @returns {Object} Modified config
+ * @param {any} config - Expo config
+ * @param {any} [options={}] - Plugin options
+ * @returns {any} Modified config
  */
 function withBLEMesh(config, options = {}) {
   config = withBLEMeshIOS(config, options);

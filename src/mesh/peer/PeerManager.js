@@ -18,9 +18,9 @@ const { ValidationError, ConnectionError } = require('../../errors');
 class PeerManager extends EventEmitter {
   /**
    * Creates a new PeerManager
-   * @param {Object} [options] - Configuration options
-   * @param {number} [options.maxPeers] - Maximum number of peers
-   * @param {number} [options.peerTimeout] - Timeout for stale peers
+   * @param {any} [options] - Configuration options
+   *
+   *
    */
   constructor(options = {}) {
     super();
@@ -39,7 +39,7 @@ class PeerManager extends EventEmitter {
 
     /**
      * Peers by ID
-     * @type {Map<string, Peer>}
+     * @type {Map<string, any>}
      * @private
      */
     this._peers = new Map();
@@ -54,8 +54,8 @@ class PeerManager extends EventEmitter {
 
   /**
    * Adds or updates a peer
-   * @param {Object} info - Peer information
-   * @returns {Peer} The added or updated peer
+   * @param {any} info - Peer information
+   * @returns {any} The added or updated peer
    */
   addPeer(info) {
     if (!info || typeof info.id !== 'string') {
@@ -90,7 +90,7 @@ class PeerManager extends EventEmitter {
   /**
    * Gets a peer by ID
    * @param {string} id - Peer ID
-   * @returns {Peer|undefined} The peer or undefined
+   * @returns {any} The peer or undefined
    */
   getPeer(id) {
     return this._peers.get(id);
@@ -98,7 +98,7 @@ class PeerManager extends EventEmitter {
 
   /**
    * Gets all peers
-   * @returns {Peer[]} Array of all peers
+   * @returns {any[]} Array of all peers
    */
   getAllPeers() {
     return Array.from(this._peers.values());
@@ -106,7 +106,7 @@ class PeerManager extends EventEmitter {
 
   /**
    * Gets connected peers
-   * @returns {Peer[]} Array of connected peers
+   * @returns {any[]} Array of connected peers
    */
   getConnectedPeers() {
     const result = [];
@@ -118,7 +118,7 @@ class PeerManager extends EventEmitter {
 
   /**
    * Gets peers with secure sessions
-   * @returns {Peer[]} Array of secured peers
+   * @returns {any[]} Array of secured peers
    */
   getSecuredPeers() {
     const result = [];
@@ -130,7 +130,7 @@ class PeerManager extends EventEmitter {
 
   /**
    * Gets directly connected peers
-   * @returns {Peer[]} Array of direct peers
+   * @returns {any[]} Array of direct peers
    */
   getDirectPeers() {
     const result = [];
@@ -144,7 +144,7 @@ class PeerManager extends EventEmitter {
    * Updates a peer's connection state
    * @param {string} id - Peer ID
    * @param {string} state - New connection state
-   * @returns {Peer|undefined} Updated peer or undefined
+   * @returns {any} Updated peer or undefined
    */
   updateConnectionState(id, state) {
     const peer = this._peers.get(id);
@@ -166,7 +166,7 @@ class PeerManager extends EventEmitter {
   /**
    * Marks a peer as secured
    * @param {string} id - Peer ID
-   * @returns {Peer|undefined} Updated peer or undefined
+   * @returns {any} Updated peer or undefined
    */
   markSecured(id) {
     const peer = this._peers.get(id);
@@ -237,7 +237,7 @@ class PeerManager extends EventEmitter {
   /**
    * Cleans up stale peers
    * @param {number} [maxAge] - Maximum age in ms, defaults to peerTimeout
-   * @returns {Peer[]} Array of removed peers
+   * @returns {any[]} Array of removed peers
    */
   cleanup(maxAge = this.peerTimeout) {
     const removed = [];

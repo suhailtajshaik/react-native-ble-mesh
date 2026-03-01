@@ -32,7 +32,7 @@ class CryptoError extends MeshError {
    * @returns {CryptoError} New CryptoError instance
    */
   static fromCode(code, details = null) {
-    const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.E400;
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || /** @type {Record<string, string>} */ (ERROR_MESSAGES).E400;
     return new CryptoError(message, code, details);
   }
 

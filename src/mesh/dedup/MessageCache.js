@@ -19,7 +19,9 @@ class CacheNode {
   constructor(key, timestamp) {
     this.key = key;
     this.timestamp = timestamp;
+    /** @type {CacheNode|null} */
     this.prev = null;
+    /** @type {CacheNode|null} */
     this.next = null;
   }
 }
@@ -207,6 +209,7 @@ class MessageCache {
    */
   getAll() {
     const result = [];
+    /** @type {CacheNode|null} */
     let node = this._head;
     while (node) {
       result.push(node.key);

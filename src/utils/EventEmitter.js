@@ -12,8 +12,8 @@
 class EventEmitter {
   /**
    * Creates a new EventEmitter
-   * @param {Object} [options] - Configuration options
-   * @param {number} [options.maxListeners=10] - Maximum listeners per event
+   * @param {any} [options] - Configuration options
+   *
    */
   constructor(options = {}) {
     /**
@@ -47,6 +47,7 @@ class EventEmitter {
     }
 
     const listeners = this._events.get(event);
+    if (!listeners) { return this; }
 
     // Warn if max listeners exceeded
     if (listeners.length >= this._maxListeners) {
@@ -76,7 +77,7 @@ class EventEmitter {
       this._events.set(event, []);
     }
 
-    this._events.get(event).push({ listener, once: true });
+    this._events.get(event)?.push({ listener, once: true });
     return this;
   }
 
@@ -92,13 +93,13 @@ class EventEmitter {
     }
 
     const listeners = this._events.get(event);
-    const index = listeners.findIndex(entry => entry.listener === listener);
+    const index = listeners?.findIndex(entry => entry.listener === listener) ?? -1;
 
     if (index !== -1) {
-      listeners.splice(index, 1);
+      listeners?.splice(index, 1);
     }
 
-    if (listeners.length === 0) {
+    if (listeners?.length === 0) {
       this._events.delete(event);
     }
 
@@ -117,6 +118,7 @@ class EventEmitter {
     }
 
     const listeners = this._events.get(event);
+    if (!listeners) { return false; }
     const hasOnce = listeners.some(e => e.once);
     const iterList = hasOnce ? listeners.slice() : listeners;
 
@@ -169,7 +171,7 @@ class EventEmitter {
     if (!this._events.has(event)) {
       return 0;
     }
-    return this._events.get(event).length;
+    return this._events.get(event)?.length ?? 0;
   }
 
   /**

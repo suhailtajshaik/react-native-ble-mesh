@@ -66,7 +66,7 @@ function createFragmentHeader(index, total, payloadLength) {
 /**
  * Parses a fragment header
  * @param {Uint8Array} data - Fragment data
- * @returns {Object} Parsed header { index, total, payloadLength }
+ * @returns {any} Parsed header { index, total, payloadLength }
  */
 function parseFragmentHeader(data) {
   if (data.length < FRAGMENT_HEADER_SIZE) {
@@ -139,7 +139,7 @@ function fragment(payload, messageId, maxSize = DEFAULT_FRAGMENT_SIZE) {
 /**
  * Gets fragment information without parsing full data
  * @param {Uint8Array} fragmentData - Fragment data
- * @returns {Object} Fragment info { index, total, payloadLength, payload }
+ * @returns {any} Fragment info { index, total, payloadLength, payload }
  */
 function getFragmentInfo(fragmentData) {
   const header = parseFragmentHeader(fragmentData);

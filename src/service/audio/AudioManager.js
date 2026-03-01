@@ -158,7 +158,8 @@ class AudioManager extends EventEmitter {
    * @param {string} quality - Quality preset (LOW, MEDIUM, HIGH)
    */
   setQuality(quality) {
-    if (!/** @type {any} */ (AUDIO_QUALITY)[quality]) {
+    const qualities = /** @type {any} */ (AUDIO_QUALITY);
+    if (!qualities[quality]) {
       throw AudioError.invalidConfig(`Unknown quality: ${quality}`);
     }
     this._quality = quality;

@@ -30,7 +30,9 @@
       "Bash(npx tsc --noEmit 2>&1 | grep 'src/transport/WiFiDirectTransport' 2>&1)",
       "Bash(npx tsc --noEmit 2>&1 | grep 'src/hooks/' 2>&1)",
       "Bash(npx tsc --noEmit 2>&1 | grep 'src/utils/EventEmitter' 2>&1)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npm pack:*)"
     ]
   }
 }

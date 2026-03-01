@@ -43,7 +43,7 @@ for (let i = 0; i < BASE64_CHARS.length; i++) {
  * @returns {Uint8Array}
  */
 function base64ToUint8Array(str) {
-  let len = str.length;
+  const len = str.length;
   let padding = 0;
   if (str[len - 1] === '=') { padding++; }
   if (str[len - 2] === '=') { padding++; }

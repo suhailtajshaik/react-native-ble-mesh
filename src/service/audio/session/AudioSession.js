@@ -20,11 +20,7 @@ const LC3Decoder = require('../codec/LC3Decoder');
 class AudioSession extends EventEmitter {
   /**
    * Creates a new AudioSession
-   * @param {Object} options - Session options
-   * @param {string} options.peerId - Remote peer ID
-   * @param {LC3Codec} options.codec - Initialized codec
-   * @param {boolean} options.isInitiator - Whether local peer initiated
-   * @param {Function} [options.sendCallback] - Callback to send data
+   * @param {any} options - Session options
    */
   constructor(options) {
     super();
@@ -35,15 +31,15 @@ class AudioSession extends EventEmitter {
       throw AudioError.codecInitFailed({ reason: 'Codec must be initialized' });
     }
 
-    /** @private */
+    /** @type {string} @private */
     this._peerId = peerId;
-    /** @private */
+    /** @type {any} @private */
     this._codec = codec;
-    /** @private */
+    /** @type {boolean} @private */
     this._isInitiator = isInitiator;
-    /** @private */
+    /** @type {Function} @private */
     this._sendCallback = sendCallback || (() => {});
-    /** @private */
+    /** @type {string} @private */
     this._state = AUDIO_SESSION_STATE.IDLE;
     /** @private */
     this._encoder = new LC3Encoder(codec);
@@ -54,11 +50,11 @@ class AudioSession extends EventEmitter {
       depth: AUDIO_STREAM_CONFIG.JITTER_BUFFER_FRAMES,
       frameMs: codec.getConfig().frameMs
     });
-    /** @private */
+    /** @type {number} @private */
     this._sendSequence = 0;
-    /** @private */
+    /** @type {number | null} @private */
     this._startTime = null;
-    /** @private */
+    /** @type {any} @private */
     this._stats = {
       framesSent: 0,
       framesReceived: 0,
@@ -74,7 +70,7 @@ class AudioSession extends EventEmitter {
    * @private
    */
   _setupBufferEvents() {
-    this._jitterBuffer.on('underrun', (data) => {
+    this._jitterBuffer.on('underrun', (/** @type {any} */ data) => {
       this.emit('underrun', data);
     });
 
@@ -110,7 +106,7 @@ class AudioSession extends EventEmitter {
     const frames = await this._encoder.pushSamples(samples);
 
     for (const frame of frames) {
-      const timestampDelta = Date.now() - this._startTime;
+      const timestampDelta = Date.now() - (this._startTime || 0);
 
       await this._sendCallback({
         peerId: this._peerId,
@@ -142,7 +138,7 @@ class AudioSession extends EventEmitter {
 
   /**
    * Gets decoded audio for playback
-   * @returns {Promise<{samples: Int16Array, isPLC: boolean}|null>}
+   * @returns {Promise<any>}
    */
   async getAudio() {
     if (this._state !== AUDIO_SESSION_STATE.ACTIVE) {
@@ -215,6 +211,7 @@ class AudioSession extends EventEmitter {
 
   /**
    * Sets session state
+   * @param {string} newState
    * @private
    */
   _setState(newState) {
@@ -249,7 +246,7 @@ class AudioSession extends EventEmitter {
 
   /**
    * Returns session statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     const bufferStats = this._jitterBuffer.getStats();

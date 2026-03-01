@@ -77,7 +77,7 @@ const POWER_MODE = Object.freeze({
 
 /**
  * Bluetooth adapter states
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const BLUETOOTH_STATE = Object.freeze({
   UNKNOWN: 'unknown',

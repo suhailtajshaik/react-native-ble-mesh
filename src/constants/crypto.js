@@ -35,7 +35,7 @@ const NOISE_PROTOCOL_NAME = 'Noise_XX_25519_ChaChaPoly_SHA256';
 
 /**
  * Noise handshake states
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const NOISE_HANDSHAKE_STATE = Object.freeze({
   INITIAL: 'initial',

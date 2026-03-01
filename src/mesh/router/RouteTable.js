@@ -26,9 +26,9 @@ const { ValidationError } = require('../../errors');
 class RouteTable {
   /**
    * Creates a new RouteTable
-   * @param {Object} [options] - Configuration options
-   * @param {number} [options.routeTimeout] - Route expiration timeout
-   * @param {number} [options.maxRoutes] - Maximum routes to store
+   * @param {any} [options] - Configuration options
+   *
+   *
    */
   constructor(options = {}) {
     /**
@@ -45,7 +45,7 @@ class RouteTable {
 
     /**
      * Routes by destination peer ID
-     * @type {Map<string, RouteEntry>}
+     * @type {Map<string, any>}
      * @private
      */
     this._routes = new Map();
@@ -130,7 +130,7 @@ class RouteTable {
   /**
    * Gets a route to a destination
    * @param {string} destination - Destination peer ID
-   * @returns {RouteEntry|undefined} Route or undefined
+   * @returns {any} Route or undefined
    */
   getRoute(destination) {
     const route = this._routes.get(destination);
@@ -197,7 +197,7 @@ class RouteTable {
 
   /**
    * Gets all valid routes
-   * @returns {RouteEntry[]} Array of routes
+   * @returns {any[]} Array of routes
    */
   getAllRoutes() {
     const now = Date.now();
@@ -244,6 +244,7 @@ class RouteTable {
    * @private
    */
   _evictOldestRoute() {
+    /** @type {string|null} */
     let oldest = null;
     let oldestTime = Infinity;
 
@@ -278,7 +279,7 @@ class RouteTable {
 
   /**
    * Gets routing table statistics
-   * @returns {Object} Statistics
+   * @returns {any} Statistics
    */
   getStats() {
     const now = Date.now();

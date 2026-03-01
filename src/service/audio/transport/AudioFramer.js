@@ -16,7 +16,7 @@ const AUDIO_FRAME_HEADER_SIZE = AUDIO_STREAM_CONFIG.FRAME_HEADER_SIZE;
 
 /**
  * Audio frame flags
- * @constant {Object}
+ * @constant {any}
  */
 const FRAME_FLAGS = Object.freeze({
   NONE: 0x00,
@@ -27,12 +27,7 @@ const FRAME_FLAGS = Object.freeze({
 
 /**
  * Packs an audio frame with header for transmission
- * @param {Object} options - Frame options
- * @param {number} options.type - Message type
- * @param {Uint8Array} options.frame - Audio frame data
- * @param {number} options.sequenceNumber - Sequence number
- * @param {number} [options.timestampDelta=0] - Timestamp delta
- * @param {number} [options.flags=0] - Frame flags
+ * @param {any} options - Frame options
  * @returns {Uint8Array} Packed frame with header
  */
 function packFrame(options) {
@@ -64,7 +59,7 @@ function packFrame(options) {
 /**
  * Unpacks an audio frame from received data
  * @param {Uint8Array} data - Received data
- * @returns {Object} Unpacked frame info
+ * @returns {any} Unpacked frame info
  */
 function unpackFrame(data) {
   if (data.length < AUDIO_FRAME_HEADER_SIZE) {
@@ -99,13 +94,13 @@ function unpackFrame(data) {
 
 /**
  * Packs multiple frames into a single packet
- * @param {Array<Object>} frames - Array of frame objects
+ * @param {any[]} frames - Array of frame objects
  * @returns {Uint8Array} Packed multi-frame data
  */
 function packMultiFrame(frames) {
   // Format: [count(1)][frame1][frame2]...
-  const packedFrames = frames.map(f => packFrame(f));
-  const totalLen = 1 + packedFrames.reduce((sum, p) => sum + p.length, 0);
+  const packedFrames = frames.map((/** @type {any} */ f) => packFrame(f));
+  const totalLen = 1 + packedFrames.reduce((/** @type {number} */ sum, /** @type {any} */ p) => sum + p.length, 0);
 
   const result = new Uint8Array(totalLen);
   result[0] = frames.length;
@@ -122,7 +117,7 @@ function packMultiFrame(frames) {
 /**
  * Unpacks multiple frames from a packet
  * @param {Uint8Array} data - Packed multi-frame data
- * @returns {Array<Object>} Array of unpacked frames
+ * @returns {any[]} Array of unpacked frames
  */
 function unpackMultiFrame(data) {
   if (data.length < 1) {
@@ -130,6 +125,7 @@ function unpackMultiFrame(data) {
   }
 
   const count = data[0];
+  /** @type {any[]} */
   const frames = [];
   let offset = 1;
 

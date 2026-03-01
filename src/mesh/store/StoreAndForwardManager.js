@@ -18,11 +18,11 @@ const { randomBytes } = require('../../utils/bytes');
  * @constant {string[]}
  * @private
  */
-const HEX = Array.from({ length: 256 }, (_, i) => (i < 16 ? '0' : '') + i.toString(16));
+const HEX = Array.from({ length: 256 }, (/** @type {any} */ _, /** @type {number} */ i) => (i < 16 ? '0' : '') + i.toString(16));
 
 /**
  * Default configuration for store and forward
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   /** Maximum number of cached messages per recipient */
@@ -68,26 +68,21 @@ const DEFAULT_CONFIG = Object.freeze({
 class StoreAndForwardManager extends EventEmitter {
   /**
      * Creates a new StoreAndForwardManager instance.
-     * @param {Object} [options={}] - Configuration options
-     * @param {number} [options.maxMessagesPerRecipient=100] - Max messages per recipient
-     * @param {number} [options.maxTotalMessages=1000] - Max total cached messages
-     * @param {number} [options.maxCacheSizeBytes=10485760] - Max cache size (10MB)
-     * @param {number} [options.retentionMs=86400000] - Message retention (24h)
-     * @param {number} [options.cleanupIntervalMs=300000] - Cleanup interval (5min)
+     * @param {any} [options={}] - Configuration options   *
      */
   constructor(options = {}) {
     super();
 
     /**
          * Configuration
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._config = { ...DEFAULT_CONFIG, ...options };
 
     /**
          * Message cache by recipient ID
-         * @type {Map<string, CachedMessage[]>}
+         * @type {Map<string, any[]>}
          * @private
          */
     this._cache = new Map();
@@ -108,14 +103,14 @@ class StoreAndForwardManager extends EventEmitter {
 
     /**
          * Cleanup timer
-         * @type {number|null}
+         * @type {any}
          * @private
          */
     this._cleanupTimer = null;
 
     /**
          * Statistics
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._stats = {
@@ -135,9 +130,9 @@ class StoreAndForwardManager extends EventEmitter {
      * Caches a message for an offline peer.
      * @param {string} recipientId - Recipient peer ID
      * @param {Uint8Array} encryptedPayload - Encrypted message payload
-     * @param {Object} [options={}] - Cache options
-     * @param {string} [options.messageId] - Message ID
-     * @param {number} [options.ttlMs] - Custom TTL in ms
+     * @param {any} [options={}] - Cache options
+   *
+   *
      * @returns {Promise<string>} Cached message ID
      */
   async cacheForOfflinePeer(recipientId, encryptedPayload, options = {}) {
@@ -173,7 +168,7 @@ class StoreAndForwardManager extends EventEmitter {
       this._cache.set(recipientId, []);
     }
 
-    const recipientCache = this._cache.get(recipientId);
+    const recipientCache = /** @type {any[]} */ (this._cache.get(recipientId));
 
     // Check per-recipient limit
     if (recipientCache.length >= this._config.maxMessagesPerRecipient) {
@@ -205,14 +200,15 @@ class StoreAndForwardManager extends EventEmitter {
      * Delivers all cached messages to a peer that came online.
      * @param {string} recipientId - Recipient peer ID
      * @param {Function} sendFn - Async function to send message: (payload) => Promise<void>
-     * @returns {Promise<Object>} Delivery result with counts
+     * @returns {Promise<any>} Delivery result with counts
      */
   async deliverCachedMessages(recipientId, sendFn) {
     if (!this._cache.has(recipientId)) {
       return { delivered: 0, failed: 0 };
     }
 
-    const messages = this._cache.get(recipientId);
+    const messages = /** @type {any[]} */ (this._cache.get(recipientId));
+    /** @type {any} */
     const results = { delivered: 0, failed: 0, remaining: [] };
 
     for (const msg of messages) {
@@ -238,7 +234,7 @@ class StoreAndForwardManager extends EventEmitter {
           messageId: msg.id,
           recipientId
         });
-      } catch (error) {
+      } catch (/** @type {any} */ error) {
         results.failed++;
         this._stats.deliveryFailures++;
         results.remaining.push(msg);
@@ -305,7 +301,7 @@ class StoreAndForwardManager extends EventEmitter {
     }
 
     const count = cache.length;
-    const size = cache.reduce((sum, m) => sum + m.size, 0);
+    const size = cache.reduce((/** @type {number} */ sum, /** @type {any} */ m) => sum + m.size, 0);
 
     this._cache.delete(recipientId);
     this._totalSize -= size;
@@ -323,7 +319,7 @@ class StoreAndForwardManager extends EventEmitter {
     let pruned = 0;
 
     for (const [recipientId, messages] of this._cache) {
-      const validMessages = messages.filter(msg => {
+      const validMessages = messages.filter((/** @type {any} */ msg) => {
         if (msg.expiresAt <= now) {
           this._totalSize -= msg.size;
           this._totalCount--;
@@ -350,7 +346,7 @@ class StoreAndForwardManager extends EventEmitter {
 
   /**
      * Gets store and forward statistics.
-     * @returns {Object} Statistics
+     * @returns {any} Statistics
      */
   getStats() {
     return {
@@ -418,6 +414,7 @@ class StoreAndForwardManager extends EventEmitter {
      */
   _removeOldestMessage() {
     let oldestTime = Infinity;
+    /** @type {string|null} */
     let oldestRecipient = null;
 
     for (const [recipientId, messages] of this._cache) {
@@ -428,7 +425,7 @@ class StoreAndForwardManager extends EventEmitter {
     }
 
     if (oldestRecipient) {
-      const messages = this._cache.get(oldestRecipient);
+      const messages = /** @type {any[]} */ (this._cache.get(oldestRecipient));
       const oldest = messages.shift();
       if (oldest) {
         this._totalSize -= oldest.size;

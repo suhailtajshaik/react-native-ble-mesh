@@ -14,6 +14,10 @@ const { MESH_CONFIG } = require('../constants');
  */
 const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
 function uint8ArrayToBase64(bytes) {
   let result = '';
   const len = bytes.length;
@@ -34,8 +38,12 @@ for (let i = 0; i < BASE64_CHARS.length; i++) {
   BASE64_LOOKUP[BASE64_CHARS.charCodeAt(i)] = i;
 }
 
+/**
+ * @param {string} str
+ * @returns {Uint8Array}
+ */
 function base64ToUint8Array(str) {
-  let len = str.length;
+  const len = str.length;
   let padding = 0;
   if (str[len - 1] === '=') { padding++; }
   if (str[len - 2] === '=') { padding++; }
@@ -63,15 +71,12 @@ function base64ToUint8Array(str) {
 class MessageStore {
   /**
    * Creates a new MessageStore instance
-   * @param {Object} [options={}] - Store options
-   * @param {Object} [options.storage] - Storage backend (defaults to MemoryStorage)
-   * @param {number} [options.maxMessages=1000] - Maximum messages to store
-   * @param {number} [options.messageTtlMs] - Message TTL in milliseconds
+   * @param {any} [options={}] - Store options   *
    */
   constructor(options = {}) {
     /**
      * Storage backend
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._storage = options.storage || new MemoryStorage({
@@ -88,7 +93,7 @@ class MessageStore {
 
     /**
      * Index storage for queries
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._indexStorage = options.indexStorage || new MemoryStorage({
@@ -98,13 +103,7 @@ class MessageStore {
 
   /**
    * Saves a message to storage
-   * @param {Object} message - Message to save
-   * @param {string} message.id - Message ID
-   * @param {number} message.type - Message type
-   * @param {Uint8Array} [message.payload] - Message payload
-   * @param {string} [message.senderId] - Sender peer ID
-   * @param {string} [message.recipientId] - Recipient peer ID
-   * @param {number} [message.timestamp] - Message timestamp
+   * @param {any} message - Message to save   *
    * @returns {Promise<void>}
    */
   async saveMessage(message) {
@@ -132,7 +131,7 @@ class MessageStore {
   /**
    * Gets a message by ID
    * @param {string} id - Message ID
-   * @returns {Promise<Object|null>} Message or null if not found
+   * @returns {Promise<any>} Message or null if not found
    */
   async getMessage(id) {
     const message = await this._storage.get(id);
@@ -157,15 +156,8 @@ class MessageStore {
 
   /**
    * Gets messages matching query options
-   * @param {Object} [options={}] - Query options
-   * @param {string} [options.senderId] - Filter by sender ID
-   * @param {string} [options.recipientId] - Filter by recipient ID
-   * @param {number} [options.type] - Filter by message type
-   * @param {number} [options.since] - Filter messages since timestamp
-   * @param {number} [options.until] - Filter messages until timestamp
-   * @param {number} [options.limit=50] - Maximum messages to return
-   * @param {number} [options.offset=0] - Offset for pagination
-   * @returns {Promise<Object[]>} Array of messages
+   * @param {any} [options={}] - Query options   *
+   * @returns {Promise<any[]>} Array of messages
    */
   async getMessages(options = {}) {
     const {
@@ -270,7 +262,7 @@ class MessageStore {
    * Gets messages by sender
    * @param {string} senderId - Sender peer ID
    * @param {number} [limit=50] - Maximum messages
-   * @returns {Promise<Object[]>} Array of messages
+   * @returns {Promise<any[]>} Array of messages
    */
   async getMessagesBySender(senderId, limit = 50) {
     return this.getMessages({ senderId, limit });
@@ -280,7 +272,7 @@ class MessageStore {
    * Gets messages by recipient
    * @param {string} recipientId - Recipient peer ID
    * @param {number} [limit=50] - Maximum messages
-   * @returns {Promise<Object[]>} Array of messages
+   * @returns {Promise<any[]>} Array of messages
    */
   async getMessagesByRecipient(recipientId, limit = 50) {
     return this.getMessages({ recipientId, limit });
@@ -291,7 +283,7 @@ class MessageStore {
    * @param {string} peerId1 - First peer ID
    * @param {string} peerId2 - Second peer ID
    * @param {number} [limit=50] - Maximum messages
-   * @returns {Promise<Object[]>} Array of messages
+   * @returns {Promise<any[]>} Array of messages
    */
   async getConversation(peerId1, peerId2, limit = 50) {
     const allKeys = await this._storage.keys();
@@ -316,7 +308,7 @@ class MessageStore {
 
   /**
    * Updates indexes for a message
-   * @param {Object} message - Message to index
+   * @param {any} message - Message to index
    * @returns {Promise<void>}
    * @private
    */
@@ -344,7 +336,7 @@ class MessageStore {
 
   /**
    * Removes a message from indexes
-   * @param {Object} message - Message to remove from indexes
+   * @param {any} message - Message to remove from indexes
    * @returns {Promise<void>}
    * @private
    */
@@ -352,14 +344,14 @@ class MessageStore {
     if (message.senderId) {
       const key = `sender:${message.senderId}`;
       const ids = (await this._indexStorage.get(key)) || [];
-      const filtered = ids.filter(id => id !== message.id);
+      const filtered = ids.filter((/** @type {any} */ id) => id !== message.id);
       await this._indexStorage.set(key, filtered);
     }
 
     if (message.recipientId) {
       const key = `recipient:${message.recipientId}`;
       const ids = (await this._indexStorage.get(key)) || [];
-      const filtered = ids.filter(id => id !== message.id);
+      const filtered = ids.filter((/** @type {any} */ id) => id !== message.id);
       await this._indexStorage.set(key, filtered);
     }
   }

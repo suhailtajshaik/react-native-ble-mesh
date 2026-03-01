@@ -7,7 +7,7 @@
 
 /**
  * Text header flags
- * @constant {Object}
+ * @constant {any}
  */
 const TEXT_HEADER_FLAGS = Object.freeze({
   HAS_SENDER: 0x01,
@@ -94,7 +94,7 @@ function createTextHeader(options) {
 /**
  * Parses a text message header
  * @param {Uint8Array} data - Header data
- * @returns {Object}
+ * @returns {any}
  */
 function parseTextHeader(data) {
   if (data.length < TEXT_HEADER_SIZE) {

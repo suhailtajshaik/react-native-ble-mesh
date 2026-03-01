@@ -14,7 +14,7 @@ const EventEmitter = require('../utils/EventEmitter');
 
 /**
  * Battery mode constants
- * @constant {Object}
+ * @constant {any}
  */
 const BATTERY_MODE = Object.freeze({
   HIGH_PERFORMANCE: 'high',
@@ -39,7 +39,7 @@ const BATTERY_MODE_SET = new Set(Object.values(BATTERY_MODE));
 
 /**
  * Default battery profiles
- * @constant {Object.<string, BatteryProfile>}
+ * @constant {Record<string, BatteryProfile>}
  */
 const DEFAULT_PROFILES = Object.freeze({
   [BATTERY_MODE.HIGH_PERFORMANCE]: {
@@ -79,7 +79,7 @@ const DEFAULT_PROFILES = Object.freeze({
 
 /**
  * Battery level thresholds for auto mode
- * @constant {Object}
+ * @constant {any}
  */
 const BATTERY_THRESHOLDS = Object.freeze({
   HIGH: 50, // Above 50%: high performance
@@ -90,7 +90,7 @@ const BATTERY_THRESHOLDS = Object.freeze({
 
 /**
  * Default configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   /** Initial battery mode */
@@ -128,21 +128,21 @@ const DEFAULT_CONFIG = Object.freeze({
 class BatteryOptimizer extends EventEmitter {
   /**
      * Creates a new BatteryOptimizer instance.
-     * @param {Object} [options={}] - Configuration options
+     * @param {any} [options] - Configuration options
      */
   constructor(options = {}) {
     super();
 
     /**
          * Configuration
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._config = { ...DEFAULT_CONFIG, ...options };
 
     /**
          * Battery profiles
-         * @type {Object.<string, BatteryProfile>}
+         * @type {Record<string, any>}
          * @private
          */
     this._profiles = { ...DEFAULT_PROFILES };
@@ -184,21 +184,21 @@ class BatteryOptimizer extends EventEmitter {
 
     /**
          * Battery check timer
-         * @type {number|null}
+         * @type {any}
          * @private
          */
     this._batteryCheckTimer = null;
 
     /**
          * Transport reference for applying settings
-         * @type {Object|null}
+         * @type {any}
          * @private
          */
     this._transport = null;
 
     /**
          * Statistics
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._stats = {
@@ -215,7 +215,7 @@ class BatteryOptimizer extends EventEmitter {
 
   /**
      * Sets the transport to control.
-     * @param {Object} transport - Transport instance
+     * @param {any} transport - Transport instance
      */
   setTransport(transport) {
     this._transport = transport;
@@ -227,6 +227,7 @@ class BatteryOptimizer extends EventEmitter {
      * @returns {Promise<void>}
      */
   async setMode(mode) {
+    // @ts-ignore
     if (!BATTERY_MODE_SET.has(mode)) {
       throw new Error(`Invalid battery mode: ${mode}`);
     }
@@ -262,7 +263,7 @@ class BatteryOptimizer extends EventEmitter {
 
   /**
      * Gets the current active profile.
-     * @returns {BatteryProfile} Active profile
+     * @returns {any} Active profile
      */
   getCurrentProfile() {
     if (this._currentMode === BATTERY_MODE.AUTO) {
@@ -273,7 +274,7 @@ class BatteryOptimizer extends EventEmitter {
 
   /**
      * Gets all available profiles.
-     * @returns {Object.<string, BatteryProfile>} Profiles
+     * @returns {Record<string, any>} Profiles
      */
   getProfiles() {
     return { ...this._profiles };
@@ -350,7 +351,7 @@ class BatteryOptimizer extends EventEmitter {
 
   /**
      * Gets optimizer statistics.
-     * @returns {Object} Statistics
+     * @returns {any} Statistics
      */
   getStats() {
     return {
@@ -374,7 +375,7 @@ class BatteryOptimizer extends EventEmitter {
   /**
      * Gets the appropriate profile for a battery level.
      * @param {number} level - Battery level
-     * @returns {BatteryProfile} Profile
+     * @returns {any} Profile
      * @private
      */
   _getProfileForBatteryLevel(level) {
@@ -414,7 +415,7 @@ class BatteryOptimizer extends EventEmitter {
 
   /**
      * Applies a battery profile to the transport.
-     * @param {BatteryProfile} profile - Profile to apply
+     * @param {any} profile - Profile to apply
      * @returns {Promise<void>}
      * @private
      */
@@ -445,7 +446,7 @@ class BatteryOptimizer extends EventEmitter {
       }
 
       this.emit('profile-applied', { profile });
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this.emit('error', {
         message: 'Failed to apply battery profile',
         error: error.message

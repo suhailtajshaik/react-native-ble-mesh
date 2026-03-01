@@ -7,7 +7,7 @@
 
 /**
  * Event names for the mesh network
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const EVENTS = Object.freeze({
   // Lifecycle events

@@ -18,9 +18,9 @@ const Storage = require('./Storage');
 class MemoryStorage extends Storage {
   /**
    * Creates a new MemoryStorage instance
-   * @param {Object} [options={}] - Storage options
-   * @param {string} [options.prefix=''] - Key prefix for namespacing
-   * @param {number} [options.maxSize=0] - Maximum number of items (0 = unlimited)
+   * @param {any} [options={}] - Storage options
+   *
+   *
    */
   constructor(options = {}) {
     super(options);
@@ -66,8 +66,8 @@ class MemoryStorage extends Storage {
    * Sets a value by key
    * @param {string} key - Key to set
    * @param {any} value - Value to store
-   * @param {Object} [options={}] - Set options
-   * @param {number} [options.ttl] - Time to live in milliseconds
+   * @param {any} [options={}] - Set options
+   *
    * @returns {Promise<void>}
    */
   async set(key, value, options = {}) {
@@ -79,9 +79,12 @@ class MemoryStorage extends Storage {
         this._store.size >= this._maxSize) {
       // Remove oldest entry (first entry in Map)
       const firstKey = this._store.keys().next().value;
-      this._store.delete(firstKey);
+      if (firstKey !== undefined) {
+        this._store.delete(firstKey);
+      }
     }
 
+    /** @type {any} */
     const item = {
       value,
       createdAt: Date.now()
@@ -156,7 +159,7 @@ class MemoryStorage extends Storage {
         const unprefixedKey = prefix ? key.slice(prefix.length) : key;
         // Check expiration before including
         const item = this._store.get(key);
-        if (!item.expiresAt || Date.now() <= item.expiresAt) {
+        if (item && (!item.expiresAt || Date.now() <= item.expiresAt)) {
           result.push(unprefixedKey);
         }
       }
@@ -196,7 +199,7 @@ class MemoryStorage extends Storage {
 
   /**
    * Gets all entries as an array of [key, value] pairs
-   * @returns {Promise<Array>} Array of [key, value] entries
+   * @returns {Promise<any[]>} Array of [key, value] entries
    */
   async entries() {
     const allKeys = await this.keys();

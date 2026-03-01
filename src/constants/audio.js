@@ -7,7 +7,7 @@
 
 /**
  * LC3 codec configuration
- * @constant {Object}
+ * @constant {any}
  */
 const LC3_CONFIG = Object.freeze({
   /** Supported sample rates (Hz) */
@@ -62,7 +62,7 @@ const AUDIO_QUALITY = Object.freeze({
 
 /**
  * Voice message configuration
- * @constant {Object}
+ * @constant {any}
  */
 const VOICE_MESSAGE_CONFIG = Object.freeze({
   /** Maximum voice message duration in seconds */
@@ -79,7 +79,7 @@ const VOICE_MESSAGE_CONFIG = Object.freeze({
 
 /**
  * Audio streaming configuration
- * @constant {Object}
+ * @constant {any}
  */
 const AUDIO_STREAM_CONFIG = Object.freeze({
   /** Default jitter buffer size in frames */
@@ -98,7 +98,7 @@ const AUDIO_STREAM_CONFIG = Object.freeze({
 
 /**
  * Audio session states
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const AUDIO_SESSION_STATE = Object.freeze({
   IDLE: 'idle',

@@ -29,13 +29,10 @@ const DEFAULT_CONFIG = {
 class DedupManager {
   /**
    * Creates a new DedupManager
-   * @param {Object} [options] - Configuration options
-   * @param {number} [options.bloomFilterSize] - Size of Bloom filter in bits
-   * @param {number} [options.bloomHashCount] - Number of hash functions
-   * @param {number} [options.cacheSize] - Maximum LRU cache entries
-   * @param {number} [options.autoResetThreshold] - Fill ratio for auto reset
+   * @param {any} [options] - Configuration options   *
    */
   constructor(options = {}) {
+    /** @type {any} */
     const config = { ...DEFAULT_CONFIG, ...options };
 
     /**
@@ -78,7 +75,7 @@ class DedupManager {
 
     /**
      * Statistics for monitoring
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._stats = {
@@ -200,7 +197,7 @@ class DedupManager {
 
   /**
    * Gets deduplication statistics
-   * @returns {Object} Statistics object
+   * @returns {any} Statistics object
    */
   getStats() {
     return {

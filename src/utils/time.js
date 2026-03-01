@@ -23,8 +23,9 @@ function delay(ms) {
  * @returns {Promise<T>} Promise that rejects on timeout
  */
 function withTimeout(promise, ms, message = 'Operation timed out') {
-  let timeoutId;
+  /** @type {any} */ let timeoutId;
 
+  /** @type {Promise<T>} */
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
       reject(new Error(message));
@@ -32,10 +33,10 @@ function withTimeout(promise, ms, message = 'Operation timed out') {
   });
 
   return Promise.race([
-    promise.then(result => {
+    promise.then((/** @type {T} */ result) => {
       clearTimeout(timeoutId);
       return result;
-    }).catch(error => {
+    }).catch((/** @type {any} */ error) => {
       clearTimeout(timeoutId);
       throw error;
     }),
@@ -57,7 +58,9 @@ function now() {
  * @returns {number} High-resolution timestamp
  */
 function hrTime() {
+  // @ts-ignore - performance may be available in some environments
   if (typeof performance !== 'undefined' && performance.now) {
+    // @ts-ignore
     return performance.now();
   }
   return Date.now();
@@ -119,7 +122,7 @@ function formatDuration(ms) {
  * @returns {function(...*): void} Debounced function
  */
 function debounce(fn, waitMs) {
-  let timeoutId = null;
+  /** @type {any} */ let timeoutId = null;
 
   return function debounced(...args) {
     if (timeoutId !== null) {
@@ -128,6 +131,7 @@ function debounce(fn, waitMs) {
 
     timeoutId = setTimeout(() => {
       timeoutId = null;
+      // @ts-ignore
       fn.apply(this, args);
     }, waitMs);
   };
@@ -148,6 +152,7 @@ function throttle(fn, intervalMs) {
 
     if (currentTime - lastCall >= intervalMs) {
       lastCall = currentTime;
+      // @ts-ignore
       return fn.apply(this, args);
     }
   };

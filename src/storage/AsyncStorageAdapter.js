@@ -20,9 +20,9 @@ const Storage = require('./Storage');
 class AsyncStorageAdapter extends Storage {
   /**
    * Creates a new AsyncStorageAdapter instance
-   * @param {Object} [options={}] - Storage options
-   * @param {string} [options.prefix='mesh'] - Key prefix for namespacing
-   * @param {Object} [options.AsyncStorage] - AsyncStorage instance (optional)
+   * @param {any} [options={}] - Storage options
+   *
+   *
    */
   constructor(options = {}) {
     super({
@@ -32,7 +32,7 @@ class AsyncStorageAdapter extends Storage {
 
     /**
      * AsyncStorage instance
-     * @type {Object|null}
+     * @type {any}
      * @private
      */
     this._storage = options.AsyncStorage || null;
@@ -58,6 +58,7 @@ class AsyncStorageAdapter extends Storage {
     // Try to load AsyncStorage if not provided
     if (!this._storage) {
       try {
+        // @ts-ignore
         const AsyncStorageModule = require('@react-native-async-storage/async-storage');
         this._storage = AsyncStorageModule.default || AsyncStorageModule;
       } catch (error) {
@@ -117,8 +118,8 @@ class AsyncStorageAdapter extends Storage {
    * Sets a value by key
    * @param {string} key - Key to set
    * @param {any} value - Value to store
-   * @param {Object} [options={}] - Set options
-   * @param {number} [options.ttl] - Time to live in milliseconds
+   * @param {any} [options={}] - Set options
+   *
    * @returns {Promise<void>}
    */
   async set(key, value, options = {}) {
@@ -126,6 +127,7 @@ class AsyncStorageAdapter extends Storage {
 
     const prefixedKey = this._getKey(key);
 
+    /** @type {any} */
     const item = {
       value,
       createdAt: Date.now()
@@ -170,7 +172,7 @@ class AsyncStorageAdapter extends Storage {
 
     const allKeys = await this._storage.getAllKeys();
     const prefix = `${this._options.prefix}:`;
-    const keysToRemove = allKeys.filter(key => key.startsWith(prefix));
+    const keysToRemove = allKeys.filter((/** @type {any} */ key) => key.startsWith(prefix));
 
     if (keysToRemove.length > 0) {
       await this._storage.multiRemove(keysToRemove);
@@ -188,8 +190,8 @@ class AsyncStorageAdapter extends Storage {
     const prefix = `${this._options.prefix}:`;
 
     return allKeys
-      .filter(key => key.startsWith(prefix))
-      .map(key => key.slice(prefix.length));
+      .filter((/** @type {any} */ key) => key.startsWith(prefix))
+      .map((/** @type {any} */ key) => key.slice(prefix.length));
   }
 
   /**
@@ -205,7 +207,7 @@ class AsyncStorageAdapter extends Storage {
     const result = new Map();
     const now = Date.now();
 
-    for (const [prefixedKey, jsonValue] of pairs) {
+    for (const [prefixedKey, jsonValue] of /** @type {any[]} */ (pairs)) {
       if (jsonValue !== null) {
         const key = prefixedKey.slice(this._options.prefix.length + 1);
         try {
@@ -224,9 +226,9 @@ class AsyncStorageAdapter extends Storage {
 
   /**
    * Sets multiple key-value pairs
-   * @param {Map<string, any>|Object} entries - Entries to set
-   * @param {Object} [options={}] - Set options
-   * @param {number} [options.ttl] - Time to live in milliseconds
+   * @param {Map<string, any>|any} entries - Entries to set
+   * @param {any} [options={}] - Set options
+   *
    * @returns {Promise<void>}
    */
   async setMany(entries, options = {}) {
@@ -237,7 +239,8 @@ class AsyncStorageAdapter extends Storage {
       : Object.entries(entries);
 
     const now = Date.now();
-    const keyValuePairs = pairs.map(([key, value]) => {
+    const keyValuePairs = pairs.map((/** @type {any} */ [key, value]) => {
+      /** @type {any} */
       const item = {
         value,
         createdAt: now

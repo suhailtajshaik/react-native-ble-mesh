@@ -23,8 +23,10 @@ const CryptoProvider = require('../CryptoProvider');
 class ExpoCryptoProvider extends CryptoProvider {
   constructor(options = {}) {
     super();
-    this._expoCrypto = options.expoCrypto || null;
-    this._nacl = options.nacl || null;
+    /** @type {any} */
+    const opts = options;
+    this._expoCrypto = opts.expoCrypto || null;
+    this._nacl = opts.nacl || null;
   }
 
   get name() {
@@ -34,6 +36,7 @@ class ExpoCryptoProvider extends CryptoProvider {
   _getExpoCrypto() {
     if (!this._expoCrypto) {
       try {
+        // @ts-ignore
         this._expoCrypto = require('expo-crypto');
       } catch (e) {
         throw new Error('expo-crypto is required. Install: npx expo install expo-crypto');
@@ -45,6 +48,7 @@ class ExpoCryptoProvider extends CryptoProvider {
   _getNacl() {
     if (!this._nacl) {
       try {
+        // @ts-ignore
         this._nacl = require('tweetnacl');
       } catch (e) {
         throw new Error('tweetnacl is required with ExpoCryptoProvider. Install: npm install tweetnacl');
@@ -61,13 +65,13 @@ class ExpoCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  sharedSecret(secretKey, publicKey) {
+  sharedSecret(/** @type {any} */ secretKey, /** @type {any} */ publicKey) {
     const nacl = this._getNacl();
     return nacl.box.before(publicKey, secretKey);
   }
 
   /** @inheritdoc */
-  encrypt(key, nonce, plaintext, _ad) {
+  encrypt(/** @type {any} */ key, /** @type {any} */ nonce, /** @type {any} */ plaintext, /** @type {any} */ _ad) {
     const nacl = this._getNacl();
 
     // Ensure 24-byte nonce (pad short nonces with zeros)
@@ -81,7 +85,7 @@ class ExpoCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  decrypt(key, nonce, ciphertext, _ad) {
+  decrypt(/** @type {any} */ key, /** @type {any} */ nonce, /** @type {any} */ ciphertext, /** @type {any} */ _ad) {
     const nacl = this._getNacl();
 
     // Ensure 24-byte nonce (pad short nonces with zeros)
@@ -95,14 +99,14 @@ class ExpoCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  hash(data) {
+  hash(/** @type {any} */ data) {
     // expo-crypto's digestStringAsync is async — for sync compat, use tweetnacl
     const nacl = this._getNacl();
     return nacl.hash(data).subarray(0, 32);
   }
 
   /** @inheritdoc */
-  randomBytes(length) {
+  randomBytes(/** @type {any} */ length) {
     const expoCrypto = this._getExpoCrypto();
     if (expoCrypto.getRandomBytes) {
       const bytes = expoCrypto.getRandomBytes(length);
@@ -115,6 +119,7 @@ class ExpoCryptoProvider extends CryptoProvider {
 
   static isAvailable() {
     try {
+      // @ts-ignore
       require('expo-crypto');
       return true;
     } catch (e) {

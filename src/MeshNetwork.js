@@ -30,7 +30,7 @@ const _decoder = new TextDecoder();
 
 /**
  * Default MeshNetwork configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   /** Display name for this node */
@@ -88,21 +88,21 @@ class MeshNetwork extends EventEmitter {
      * @param {Object} [config.encryption] - Encryption settings
      * @param {Object} [config.routing] - Routing settings
      * @param {Object} [config.compression] - Compression settings
-     * @param {Object} [config.storeAndForward] - Store and forward settings
+     * @param {any} [config.storeAndForward] - Store and forward settings
      */
   constructor(config = {}) {
     super();
 
     /**
          * Configuration
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._config = this._mergeConfig(DEFAULT_CONFIG, config);
 
     /**
          * Underlying MeshService
-         * @type {MeshService}
+         * @type {InstanceType<typeof MeshService>}
          * @private
          */
     this._service = new MeshService({
@@ -111,7 +111,7 @@ class MeshNetwork extends EventEmitter {
 
     /**
          * Transport layer
-         * @type {Transport|null}
+         * @type {any}
          * @private
          */
     this._transport = null;
@@ -180,7 +180,7 @@ class MeshNetwork extends EventEmitter {
 
     /**
          * Channel manager reference
-         * @type {Object|null}
+         * @type {any}
          * @private
          */
     this._channels = null;
@@ -202,7 +202,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Starts the mesh network.
-     * @param {Object} [transport] - Optional custom transport
+     * @param {any} [transport] - Optional custom transport
      * @returns {Promise<void>}
      */
   async start(transport) {
@@ -216,7 +216,7 @@ class MeshNetwork extends EventEmitter {
         const { RNBLEAdapter } = require('./transport/adapters');
         const adapter = new RNBLEAdapter();
         this._transport = new BLETransport(adapter);
-      } catch (e) {
+      } catch (/** @type {any} */ e) {
         throw new MeshError(
           'No transport provided and BLE adapter not available. ' +
           'Either pass a transport to start(), install react-native-ble-plx for BLE, ' +
@@ -252,15 +252,15 @@ class MeshNetwork extends EventEmitter {
     }
 
     // Setup file transfer events
-    this._fileManager.on('sendProgress', (info) => this.emit('fileSendProgress', info));
-    this._fileManager.on('receiveProgress', (info) => this.emit('fileReceiveProgress', info));
-    this._fileManager.on('fileReceived', (info) => this.emit('fileReceived', info));
-    this._fileManager.on('transferFailed', (info) => this.emit('fileTransferFailed', info));
-    this._fileManager.on('transferCancelled', (info) => this.emit('fileTransferCancelled', info));
+    this._fileManager.on('sendProgress', (/** @type {any} */ info) => this.emit('fileSendProgress', info));
+    this._fileManager.on('receiveProgress', (/** @type {any} */ info) => this.emit('fileReceiveProgress', info));
+    this._fileManager.on('fileReceived', (/** @type {any} */ info) => this.emit('fileReceived', info));
+    this._fileManager.on('transferFailed', (/** @type {any} */ info) => this.emit('fileTransferFailed', info));
+    this._fileManager.on('transferCancelled', (/** @type {any} */ info) => this.emit('fileTransferCancelled', info));
 
     // Start connection quality monitoring
     this._connectionQuality.start();
-    this._connectionQuality.on('qualityChanged', (quality) => {
+    this._connectionQuality.on('qualityChanged', (/** @type {any} */ quality) => {
       this.emit('connectionQualityChanged', quality);
     });
 
@@ -352,9 +352,9 @@ class MeshNetwork extends EventEmitter {
       // If peer is offline and store-forward is enabled, cache the message
       if (this._storeForward && this._isPeerOffline(peerId)) {
         const payload = this._encodeMessage(text);
-        await this._storeForward.cacheForOfflinePeer(peerId, payload, {
+        await this._storeForward.cacheForOfflinePeer(peerId, payload, /** @type {any} */ ({
           needsEncryption: true
-        });
+        }));
         this.emit('messageCached', { peerId, text });
         return 'cached';
       }
@@ -410,7 +410,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets list of joined channels.
-     * @returns {Object[]} Channels
+     * @returns {any[]} Channels
      */
   getChannels() {
     return this._service.getChannels();
@@ -422,7 +422,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets all known peers.
-     * @returns {Object[]} Array of peers
+     * @returns {any[]} Array of peers
      */
   getPeers() {
     return this._service.getPeers();
@@ -430,7 +430,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets connected peers.
-     * @returns {Object[]} Connected peers
+     * @returns {any[]} Connected peers
      */
   getConnectedPeers() {
     return this._service.getConnectedPeers();
@@ -438,7 +438,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets peers with secure sessions.
-     * @returns {Object[]} Secured peers
+     * @returns {any[]} Secured peers
      */
   getSecuredPeers() {
     return this._service.getSecuredPeers();
@@ -468,7 +468,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets network health metrics.
-     * @returns {Object} Health report
+     * @returns {any} Health report
      */
   getNetworkHealth() {
     return this._monitor.generateHealthReport();
@@ -477,7 +477,7 @@ class MeshNetwork extends EventEmitter {
   /**
      * Gets detailed health for a specific peer.
      * @param {string} peerId - Peer ID
-     * @returns {Object|null} Node health
+     * @returns {any} Node health
      */
   getPeerHealth(peerId) {
     return this._monitor.getNodeHealth(peerId);
@@ -562,7 +562,7 @@ class MeshNetwork extends EventEmitter {
      * @param {Uint8Array} fileInfo.data - File data
      * @param {string} fileInfo.name - File name
      * @param {string} [fileInfo.mimeType] - MIME type
-     * @returns {Object} Transfer info with id and event emitter
+     * @returns {Promise<any>} Transfer info with id and event emitter
      */
   async sendFile(peerId, fileInfo) {
     this._validateRunning();
@@ -572,6 +572,7 @@ class MeshNetwork extends EventEmitter {
       throw new ValidationError('File must have data and name', 'E800');
     }
 
+    /** @type {any} */
     const transfer = this._fileManager.prepareSend(peerId, fileInfo);
 
     // Send offer (JSON is OK for metadata, but use binary type marker)
@@ -611,14 +612,14 @@ class MeshNetwork extends EventEmitter {
       // Add per-chunk timeout (10 seconds)
       const sendPromise = this._service._sendRaw(peerId, payload);
       let timeoutId;
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise((/** @type {any} */ _, /** @type {any} */ reject) => {
         timeoutId = setTimeout(() => reject(new Error('Chunk send timeout')), 10000);
       });
 
       try {
         await Promise.race([sendPromise, timeoutPromise]);
         clearTimeout(timeoutId);
-      } catch (err) {
+      } catch (/** @type {any} */ err) {
         clearTimeout(timeoutId);
         this._fileManager.cancelTransfer(transfer.id);
         this.emit('fileTransferFailed', {
@@ -635,7 +636,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets active file transfers
-     * @returns {Object} { outgoing: [], incoming: [] }
+     * @returns {any} { outgoing: [], incoming: [] }
      */
   getActiveTransfers() {
     return this._fileManager.getActiveTransfers();
@@ -656,7 +657,7 @@ class MeshNetwork extends EventEmitter {
   /**
      * Gets connection quality for a specific peer.
      * @param {string} peerId - Peer ID
-     * @returns {Object|null} Quality report
+     * @returns {any} Quality report
      */
   getConnectionQuality(peerId) {
     return this._connectionQuality.getQuality(peerId);
@@ -664,7 +665,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets connection quality for all peers.
-     * @returns {Object[]} Array of quality reports
+     * @returns {any[]} Array of quality reports
      */
   getAllConnectionQuality() {
     return this._connectionQuality.getAllQuality();
@@ -676,7 +677,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets the network status.
-     * @returns {Object} Status
+     * @returns {any} Status
      */
   getStatus() {
     const identity = this._state === 'running' ? this._service.getIdentity() : null;
@@ -693,7 +694,7 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Gets the identity information.
-     * @returns {Object} Identity
+     * @returns {any} Identity
      */
   getIdentity() {
     return this._service.getIdentity();
@@ -714,9 +715,9 @@ class MeshNetwork extends EventEmitter {
 
   /**
      * Merges configuration with defaults.
-     * @param {Object} defaults - Default config
-     * @param {Object} custom - Custom config
-     * @returns {Object} Merged config
+     * @param {any} defaults - Default config
+     * @param {any} custom - Custom config
+     * @returns {any} Merged config
      * @private
      */
   _mergeConfig(defaults, custom) {
@@ -738,12 +739,12 @@ class MeshNetwork extends EventEmitter {
      */
   _setupEventForwarding() {
     // Forward service events with PRD-style naming
-    this._service.on(EVENTS.PEER_DISCOVERED, (peer) => {
+    this._service.on(EVENTS.PEER_DISCOVERED, (/** @type {any} */ peer) => {
       this._monitor.trackPeerDiscovered(peer.id);
       this.emit('peerDiscovered', peer);
     });
 
-    this._service.on(EVENTS.PEER_CONNECTED, (peer) => {
+    this._service.on(EVENTS.PEER_CONNECTED, (/** @type {any} */ peer) => {
       if (peer.rssi) {
         this._connectionQuality.recordRssi(peer.id, peer.rssi);
       }
@@ -754,13 +755,13 @@ class MeshNetwork extends EventEmitter {
       }
     });
 
-    this._service.on(EVENTS.PEER_DISCONNECTED, (peer) => {
+    this._service.on(EVENTS.PEER_DISCONNECTED, (/** @type {any} */ peer) => {
       this._monitor.trackPeerDisconnected(peer.id);
       this._connectionQuality.removePeer(peer.id);
       this.emit('peerDisconnected', peer);
     });
 
-    this._service.on('message', (message) => {
+    this._service.on('message', (/** @type {any} */ message) => {
       this._monitor.trackMessageReceived(message.senderId);
       this.emit('messageReceived', {
         from: message.senderId,
@@ -770,7 +771,7 @@ class MeshNetwork extends EventEmitter {
       });
     });
 
-    this._service.on('private-message', (message) => {
+    this._service.on('private-message', (/** @type {any} */ message) => {
       this.emit('directMessage', {
         from: message.senderId,
         text: message.content,
@@ -778,7 +779,7 @@ class MeshNetwork extends EventEmitter {
       });
     });
 
-    this._service.on('channel-message', (message) => {
+    this._service.on('channel-message', (/** @type {any} */ message) => {
       this.emit('channelMessage', {
         channel: message.channelId,
         from: message.senderId,
@@ -787,22 +788,22 @@ class MeshNetwork extends EventEmitter {
       });
     });
 
-    this._service.on('message-delivered', (info) => {
+    this._service.on('message-delivered', (/** @type {any} */ info) => {
       this._monitor.trackMessageDelivered(info.messageId);
       this.emit('messageDelivered', info);
     });
 
-    this._service.on('error', (error) => {
+    this._service.on('error', (/** @type {any} */ error) => {
       this.emit('error', error);
     });
 
     // Forward monitor events
-    this._monitor.on('health-changed', (info) => {
+    this._monitor.on('health-changed', (/** @type {any} */ info) => {
       this.emit('networkHealthChanged', info);
     });
 
     // Forward emergency events
-    this._emergencyManager.on('panic-wipe-completed', (result) => {
+    this._emergencyManager.on('panic-wipe-completed', (/** @type {any} */ result) => {
       this.emit('dataWiped', result);
     });
   }
@@ -823,17 +824,18 @@ class MeshNetwork extends EventEmitter {
   async _deliverCachedMessages(peerId) {
     if (!this._storeForward) { return; }
 
-    const sendFn = async (payload) => {
+    const sendFn = async (/** @type {any} */ payload) => {
       // Re-encrypt and send via the proper encrypted channel
       try {
         const text = _decoder.decode(payload);
         await this._service.sendPrivateMessage(peerId, text);
-      } catch (e) {
+      } catch (/** @type {any} */ e) {
         // Fallback to raw send if encryption fails
         await this._service._sendRaw(peerId, payload);
       }
     };
 
+    /** @type {any} */
     const result = await this._storeForward.deliverCachedMessages(peerId, sendFn);
 
     if (result.delivered > 0) {
@@ -857,7 +859,7 @@ class MeshNetwork extends EventEmitter {
     // Clear store and forward cache
     if (this._storeForward) {
       this._emergencyManager.registerClearer(async () => {
-        this._storeForward.clear();
+        this._storeForward?.clear();
       });
     }
 

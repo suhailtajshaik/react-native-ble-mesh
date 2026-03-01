@@ -15,7 +15,7 @@ const { ValidationError, MeshError } = require('../errors');
 
 /**
  * Default compression configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   /** Minimum payload size to compress (bytes) */
@@ -45,8 +45,8 @@ const DEFAULT_CONFIG = Object.freeze({
 class MessageCompressor {
   /**
      * Creates a new MessageCompressor instance.
-     * @param {Object} [options={}] - Compression options
-     * @param {number} [options.threshold=100] - Min size to compress
+     * @param {any} [options={}] - Compression options
+   *
      */
   constructor(options = {}) {
     this._config = { ...DEFAULT_CONFIG, ...options };
@@ -89,7 +89,7 @@ class MessageCompressor {
         this._stats.bytesOut += compressed.length;
         return { data: compressed, compressed: true };
       }
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       // Log compression error at debug level for troubleshooting
       if (typeof console !== 'undefined' && console.debug) {
         console.debug('Compression failed, using uncompressed:', error.message);
@@ -132,7 +132,7 @@ class MessageCompressor {
 
   /**
      * Gets compression statistics.
-     * @returns {Object} Statistics
+     * @returns {any} Statistics
      */
   getStats() {
     const ratio = this._stats.bytesIn > 0

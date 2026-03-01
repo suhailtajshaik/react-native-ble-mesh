@@ -14,38 +14,31 @@ const { generateUUID } = require('../../../utils');
 class TextMessage {
   /**
    * Creates a new TextMessage
-   * @param {Object} options - Message options
-   * @param {string} [options.id] - Message ID
-   * @param {string} options.content - Message content
-   * @param {string} [options.senderId] - Sender peer ID
-   * @param {string} [options.recipientId] - Recipient peer ID (for private messages)
-   * @param {string} [options.channelId] - Channel ID (for channel messages)
-   * @param {number} [options.timestamp] - Message timestamp
-   * @param {boolean} [options.isRead] - Whether message has been read
+   * @param {any} options - Message options
    */
   constructor(options) {
     const { id, content, senderId, recipientId, channelId, timestamp, isRead } = options;
 
-    /** @private */
+    /** @type {string} @private */
     this._id = id || generateUUID();
-    /** @private */
+    /** @type {string} @private */
     this._content = content || '';
-    /** @private */
+    /** @type {string | null} @private */
     this._senderId = senderId || null;
-    /** @private */
+    /** @type {string | null} @private */
     this._recipientId = recipientId || null;
-    /** @private */
+    /** @type {string | null} @private */
     this._channelId = channelId || null;
-    /** @private */
+    /** @type {number} @private */
     this._timestamp = timestamp || Date.now();
-    /** @private */
+    /** @type {boolean} @private */
     this._isRead = isRead || false;
   }
 
   /**
    * Creates a TextMessage from a string
    * @param {string} content - Message content
-   * @param {Object} [options] - Additional options
+   * @param {any} [options] - Additional options
    * @returns {TextMessage}
    */
   static fromString(content, options = {}) {
@@ -253,7 +246,7 @@ class TextMessage {
 
   /**
    * Returns message metadata
-   * @returns {Object}
+   * @returns {any}
    */
   getMetadata() {
     return {
@@ -269,7 +262,7 @@ class TextMessage {
 
   /**
    * Converts to JSON representation
-   * @returns {Object}
+   * @returns {any}
    */
   toJSON() {
     return {
@@ -285,7 +278,7 @@ class TextMessage {
 
   /**
    * Creates a TextMessage from JSON
-   * @param {Object} json - JSON object
+   * @param {any} json - JSON object
    * @returns {TextMessage}
    */
   static fromJSON(json) {

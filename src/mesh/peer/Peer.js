@@ -18,12 +18,7 @@ const CONNECTION_STATE_SET = new Set(Object.values(CONNECTION_STATE));
 class Peer {
   /**
    * Creates a new Peer
-   * @param {Object} options - Peer options
-   * @param {string} options.id - Unique peer identifier
-   * @param {Uint8Array} [options.publicKey] - Peer's public key
-   * @param {string} [options.name] - Display name
-   * @param {number} [options.rssi] - Signal strength
-   * @param {number} [options.hopCount] - Distance in hops
+   * @param {any} options - Peer options   *
    */
   constructor(options) {
     if (!options || typeof options.id !== 'string' || options.id.length === 0) {
@@ -88,7 +83,7 @@ class Peer {
 
     /**
      * Additional metadata
-     * @type {Object}
+     * @type {any}
      */
     this.metadata = options.metadata || {};
   }
@@ -201,7 +196,7 @@ class Peer {
 
   /**
    * Converts peer to a JSON-serializable object
-   * @returns {Object} JSON representation
+   * @returns {any} JSON representation
    */
   toJSON() {
     return {
@@ -222,7 +217,7 @@ class Peer {
 
   /**
    * Creates a Peer from JSON data
-   * @param {Object} data - JSON data
+   * @param {any} data - JSON data
    * @returns {Peer} New Peer instance
    */
   static fromJSON(data) {

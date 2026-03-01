@@ -40,7 +40,7 @@ class MessageError extends MeshError {
    * @returns {MessageError} New MessageError instance
    */
   static fromCode(code, messageId = null, details = null) {
-    const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.E500;
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || /** @type {Record<string, string>} */ (ERROR_MESSAGES).E500;
     return new MessageError(message, code, messageId, details);
   }
 
@@ -116,7 +116,7 @@ class MessageError extends MeshError {
 
   /**
    * Converts error to a JSON-serializable object
-   * @returns {Object} JSON representation of the error
+   * @returns {any} JSON representation of the error
    */
   toJSON() {
     return {

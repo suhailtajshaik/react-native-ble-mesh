@@ -17,12 +17,12 @@ const { BLUETOOTH_STATE } = require('../../constants');
 class BLEAdapter {
   /**
    * Creates a new BLEAdapter instance
-   * @param {Object} [options={}] - Adapter options
+   * @param {any} [options={}] - Adapter options
    */
   constructor(options = {}) {
     /**
      * Adapter options
-     * @type {Object}
+     * @type {any}
      * @protected
      */
     this._options = options;
@@ -73,12 +73,12 @@ class BLEAdapter {
   /**
    * Starts scanning for BLE devices
    * @abstract
-   * @param {string[]} serviceUUIDs - Service UUIDs to filter by
-   * @param {Function} callback - Callback for discovered devices
+   * @param {string[]} _serviceUUIDs - Service UUIDs to filter by
+   * @param {Function} _callback - Callback for discovered devices
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async startScan(_serviceUUIDs, _callback) {
+  async startScan(/** @type {any} */ _serviceUUIDs, _callback) {
     throw new Error('BLEAdapter.startScan() must be implemented by subclass');
   }
 
@@ -94,50 +94,50 @@ class BLEAdapter {
   /**
    * Connects to a BLE device
    * @abstract
-   * @param {string} deviceId - Device ID to connect to
+   * @param {string} _deviceId - Device ID to connect to
    * @returns {Promise<Object>} Connected device info
    * @throws {Error} If not implemented by subclass
    */
-  async connect(_deviceId) {
+  async connect(/** @type {any} */ _deviceId) {
     throw new Error('BLEAdapter.connect() must be implemented by subclass');
   }
 
   /**
    * Disconnects from a BLE device
    * @abstract
-   * @param {string} deviceId - Device ID to disconnect from
+   * @param {string} _deviceId - Device ID to disconnect from
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async disconnect(_deviceId) {
+  async disconnect(/** @type {any} */ _deviceId) {
     throw new Error('BLEAdapter.disconnect() must be implemented by subclass');
   }
 
   /**
    * Writes data to a characteristic
    * @abstract
-   * @param {string} deviceId - Target device ID
-   * @param {string} serviceUUID - Service UUID
-   * @param {string} charUUID - Characteristic UUID
-   * @param {Uint8Array} data - Data to write
+   * @param {string} _deviceId - Target device ID
+   * @param {string} _serviceUUID - Service UUID
+   * @param {string} _charUUID - Characteristic UUID
+   * @param {Uint8Array} _data - Data to write
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async write(_deviceId, _serviceUUID, _charUUID, _data) {
+  async write(/** @type {any} */ _deviceId, _serviceUUID, _charUUID, _data) {
     throw new Error('BLEAdapter.write() must be implemented by subclass');
   }
 
   /**
    * Subscribes to characteristic notifications
    * @abstract
-   * @param {string} deviceId - Target device ID
-   * @param {string} serviceUUID - Service UUID
-   * @param {string} charUUID - Characteristic UUID
-   * @param {Function} callback - Notification callback
+   * @param {string} _deviceId - Target device ID
+   * @param {string} _serviceUUID - Service UUID
+   * @param {string} _charUUID - Characteristic UUID
+   * @param {Function} _callback - Notification callback
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async subscribe(_deviceId, _serviceUUID, _charUUID, _callback) {
+  async subscribe(/** @type {any} */ _deviceId, _serviceUUID, _charUUID, _callback) {
     throw new Error('BLEAdapter.subscribe() must be implemented by subclass');
   }
 

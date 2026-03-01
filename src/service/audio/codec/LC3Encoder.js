@@ -16,7 +16,7 @@ const AudioError = require('../../../errors/AudioError');
 class LC3Encoder extends EventEmitter {
   /**
    * Creates a new LC3Encoder
-   * @param {LC3Codec} codec - Initialized LC3 codec instance
+   * @param {any} codec - Initialized LC3 codec instance
    */
   constructor(codec) {
     super();
@@ -25,17 +25,17 @@ class LC3Encoder extends EventEmitter {
       throw AudioError.codecInitFailed({ reason: 'Codec must be initialized' });
     }
 
-    /** @private */
+    /** @type {any} @private */
     this._codec = codec;
-    /** @private */
+    /** @type {number} @private */
     this._frameSamples = codec.getFrameSamples();
     /** @private */
     this._sampleBuffer = new Int16Array(this._frameSamples * 2);
-    /** @private */
+    /** @type {number} @private */
     this._bufferOffset = 0;
-    /** @private */
+    /** @type {number} @private */
     this._framesEncoded = 0;
-    /** @private */
+    /** @type {number} @private */
     this._errors = 0;
   }
 
@@ -45,6 +45,7 @@ class LC3Encoder extends EventEmitter {
    * @returns {Promise<Uint8Array[]>} Array of encoded LC3 frames
    */
   async pushSamples(samples) {
+    /** @type {Uint8Array[]} */
     const frames = [];
     let offset = 0;
 
@@ -68,7 +69,7 @@ class LC3Encoder extends EventEmitter {
           frames.push(encoded);
           this._framesEncoded++;
           this.emit('frame', { frame: encoded, index: this._framesEncoded });
-        } catch (error) {
+        } catch (/** @type {any} */ error) {
           this._errors++;
           this.emit('error', error);
         }
@@ -84,6 +85,7 @@ class LC3Encoder extends EventEmitter {
    * @returns {Promise<Uint8Array[]>} Array of encoded LC3 frames
    */
   async flush() {
+    /** @type {Uint8Array[]} */
     const frames = [];
 
     if (this._bufferOffset > 0) {
@@ -96,7 +98,7 @@ class LC3Encoder extends EventEmitter {
         frames.push(encoded);
         this._framesEncoded++;
         this.emit('frame', { frame: encoded, index: this._framesEncoded, padded: true });
-      } catch (error) {
+      } catch (/** @type {any} */ error) {
         this._errors++;
         this.emit('error', error);
       }
@@ -117,7 +119,7 @@ class LC3Encoder extends EventEmitter {
 
   /**
    * Returns encoder statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     return {

@@ -17,7 +17,7 @@ const { randomBytes } = require('../../utils/bytes');
  * @constant {string[]}
  * @private
  */
-const HEX = Array.from({ length: 256 }, (_, i) => (i < 16 ? '0' : '') + i.toString(16));
+const HEX = Array.from({ length: 256 }, (/** @type {any} */ _, /** @type {number} */ i) => (i < 16 ? '0' : '') + i.toString(16));
 
 /**
  * Generates a UUID v4 string
@@ -28,10 +28,10 @@ function generateUUID() {
   const b = randomBytes(16);
   b[6] = (b[6] & 0x0f) | 0x40;
   b[8] = (b[8] & 0x3f) | 0x80;
-  return HEX[b[0]] + HEX[b[1]] + HEX[b[2]] + HEX[b[3]] + '-' +
-    HEX[b[4]] + HEX[b[5]] + '-' + HEX[b[6]] + HEX[b[7]] + '-' +
-    HEX[b[8]] + HEX[b[9]] + '-' + HEX[b[10]] + HEX[b[11]] +
-    HEX[b[12]] + HEX[b[13]] + HEX[b[14]] + HEX[b[15]];
+  return `${HEX[b[0]]}${HEX[b[1]]}${HEX[b[2]]}${HEX[b[3]]}-${
+    HEX[b[4]]}${HEX[b[5]]}-${HEX[b[6]]}${HEX[b[7]]}-${
+    HEX[b[8]]}${HEX[b[9]]}-${HEX[b[10]]}${HEX[b[11]]}${
+    HEX[b[12]]}${HEX[b[13]]}${HEX[b[14]]}${HEX[b[15]]}`;
 }
 
 /**
@@ -42,8 +42,8 @@ function generateUUID() {
 class MessageRouter extends EventEmitter {
   /**
    * Creates a new MessageRouter
-   * @param {Object} options - Configuration options
-   * @param {string} options.localPeerId - Local peer ID
+   * @param {any} options - Configuration options
+   *
    */
   constructor(options = {}) {
     super();
@@ -77,7 +77,7 @@ class MessageRouter extends EventEmitter {
 
     /**
      * Statistics
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._stats = {
@@ -134,9 +134,9 @@ class MessageRouter extends EventEmitter {
 
   /**
    * Processes an incoming message
-   * @param {Object} message - Message object
+   * @param {any} message - Message object
    * @param {string} sourcePeerId - Peer ID that sent the message
-   * @returns {Object|null} Processed message or null if dropped
+   * @returns {any} Processed message or null if dropped
    */
   processIncoming(message, sourcePeerId) {
     this._stats.messagesReceived++;
@@ -196,7 +196,7 @@ class MessageRouter extends EventEmitter {
 
   /**
    * Relays a message to other peers
-   * @param {Object} message - Message to relay
+   * @param {any} message - Message to relay
    * @param {string} excludePeerId - Peer to exclude from relay
    * @private
    */
@@ -214,7 +214,7 @@ class MessageRouter extends EventEmitter {
         try {
           sendFn(relayedMessage);
           this._stats.messagesRelayed++;
-        } catch (err) {
+        } catch (/** @type {any} */ err) {
           this.emit(EVENTS.ERROR, err);
         }
       }
@@ -230,7 +230,7 @@ class MessageRouter extends EventEmitter {
 
   /**
    * Gets relay targets for a message
-   * @param {Object} message - Message
+   * @param {any} message - Message
    * @param {string} excludePeerId - Peer to exclude
    * @returns {string[]} Array of peer IDs
    * @private
@@ -238,7 +238,7 @@ class MessageRouter extends EventEmitter {
   _getRelayTargets(message, excludePeerId) {
     if (message.flags & MESSAGE_FLAGS.IS_BROADCAST) {
       // Broadcast: send to all except source
-      return Array.from(this._peers.keys()).filter(id => id !== excludePeerId);
+      return Array.from(this._peers.keys()).filter((/** @type {string} */ id) => id !== excludePeerId);
     }
 
     // Unicast: find route to recipient
@@ -248,7 +248,7 @@ class MessageRouter extends EventEmitter {
     }
 
     // No known route - use limited flooding (max 3 peers, prefer recently active)
-    const allPeers = Array.from(this._peers.keys()).filter(id => id !== excludePeerId);
+    const allPeers = Array.from(this._peers.keys()).filter((/** @type {string} */ id) => id !== excludePeerId);
     // Limit flood scope to prevent network storms
     const maxFloodPeers = Math.min(3, allPeers.length);
     return allPeers.slice(0, maxFloodPeers);
@@ -256,7 +256,7 @@ class MessageRouter extends EventEmitter {
 
   /**
    * Sends a message
-   * @param {Object} options - Send options
+   * @param {any} options - Send options
    * @returns {string} Message ID
    */
   send(options) {
@@ -296,7 +296,7 @@ class MessageRouter extends EventEmitter {
         try {
           sendFn(message);
           anySent = true;
-        } catch (err) {
+        } catch (/** @type {any} */ err) {
           this.emit(EVENTS.ERROR, err);
         }
       }
@@ -314,7 +314,7 @@ class MessageRouter extends EventEmitter {
 
   /**
    * Broadcasts a message to all peers
-   * @param {Object} options - Broadcast options
+   * @param {any} options - Broadcast options
    * @returns {string} Message ID
    */
   broadcast(options) {
@@ -327,7 +327,7 @@ class MessageRouter extends EventEmitter {
 
   /**
    * Gets router statistics
-   * @returns {Object} Statistics
+   * @returns {any} Statistics
    */
   getStats() {
     return {

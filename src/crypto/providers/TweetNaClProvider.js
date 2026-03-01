@@ -20,7 +20,7 @@ const CryptoProvider = require('../CryptoProvider');
 class TweetNaClProvider extends CryptoProvider {
   /**
    * @param {Object} [options={}]
-   * @param {Object} [options.nacl] - Injected tweetnacl instance (for testing)
+   * @param {any} [options.nacl] - Injected tweetnacl instance (for testing)
    */
   constructor(options = {}) {
     super();
@@ -33,12 +33,13 @@ class TweetNaClProvider extends CryptoProvider {
 
   /**
    * Lazily loads tweetnacl
-   * @returns {Object} nacl module
+   * @returns {any} nacl module
    * @private
    */
   _getNacl() {
     if (!this._nacl) {
       try {
+        // @ts-ignore
         this._nacl = require('tweetnacl');
       } catch (e) {
         throw new Error(
@@ -57,13 +58,13 @@ class TweetNaClProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  sharedSecret(secretKey, publicKey) {
+  sharedSecret(/** @type {any} */ secretKey, /** @type {any} */ publicKey) {
     const nacl = this._getNacl();
     return nacl.box.before(publicKey, secretKey);
   }
 
   /** @inheritdoc */
-  encrypt(key, nonce, plaintext, _ad) {
+  encrypt(/** @type {any} */ key, /** @type {any} */ nonce, /** @type {any} */ plaintext, /** @type {any} */ _ad) {
     const nacl = this._getNacl();
     // tweetnacl uses XSalsa20-Poly1305 with 24-byte nonce
     // nacl.secretbox includes authentication
@@ -79,7 +80,7 @@ class TweetNaClProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  decrypt(key, nonce, ciphertext, _ad) {
+  decrypt(/** @type {any} */ key, /** @type {any} */ nonce, /** @type {any} */ ciphertext, /** @type {any} */ _ad) {
     const nacl = this._getNacl();
 
     // Ensure 24-byte nonce (pad short nonces with zeros)
@@ -94,7 +95,7 @@ class TweetNaClProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  hash(data) {
+  hash(/** @type {any} */ data) {
     const nacl = this._getNacl();
     // tweetnacl provides SHA-512; we return first 32 bytes for SHA-256 compatibility
     const full = nacl.hash(data);
@@ -102,7 +103,7 @@ class TweetNaClProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  randomBytes(length) {
+  randomBytes(/** @type {any} */ length) {
     const nacl = this._getNacl();
     return nacl.randomBytes(length);
   }
@@ -113,6 +114,7 @@ class TweetNaClProvider extends CryptoProvider {
    */
   static isAvailable() {
     try {
+      // @ts-ignore
       require('tweetnacl');
       return true;
     } catch (e) {

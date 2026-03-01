@@ -84,8 +84,10 @@ class FileAssembler {
 
     for (let i = 0; i < this._totalChunks; i++) {
       const chunk = this._chunks.get(i);
-      result.set(chunk, offset);
-      offset += chunk.length;
+      if (chunk) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
     }
 
     // Free chunk memory immediately after assembly

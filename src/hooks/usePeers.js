@@ -9,8 +9,8 @@
  * React hook for managing and observing peers in the mesh network.
  * Automatically updates when peers connect, disconnect, or change state.
  *
- * @param {MeshService} mesh - MeshService instance
- * @returns {Object} Peers state and utilities
+ * @param {any} mesh - MeshService instance
+ * @returns {any} Peers state and utilities
  *
  * @example
  * function PeerList({ mesh }) {
@@ -30,6 +30,7 @@ function usePeers(mesh) {
   // This hook requires React
   let React;
   try {
+    // @ts-ignore
     React = require('react');
   } catch (e) {
     throw new Error('usePeers requires React. Install react as a dependency.');
@@ -45,8 +46,8 @@ function usePeers(mesh) {
     if (mesh) {
       try {
         const allPeers = mesh.getPeers();
-        setPeers(prev => {
-          if (prev.length === allPeers.length && prev.every((p, i) => p.id === allPeers[i]?.id && p.connectionState === allPeers[i]?.connectionState)) {
+        setPeers((/** @type {any} */ prev) => {
+          if (prev.length === allPeers.length && prev.every((/** @type {any} */ p, /** @type {any} */ i) => p.id === allPeers[i]?.id && p.connectionState === allPeers[i]?.connectionState)) {
             return prev;
           }
           return allPeers;
@@ -82,19 +83,19 @@ function usePeers(mesh) {
 
   // Computed values
   const connectedPeers = useMemo(() => {
-    return peers.filter(p => p.connectionState === 'connected' || p.connectionState === 'secured');
+    return peers.filter((/** @type {any} */ p) => p.connectionState === 'connected' || p.connectionState === 'secured');
   }, [peers]);
 
   const securedPeers = useMemo(() => {
-    return peers.filter(p => p.connectionState === 'secured');
+    return peers.filter((/** @type {any} */ p) => p.connectionState === 'secured');
   }, [peers]);
 
   // Get single peer by ID (O(1) lookup via peerMap)
-  const peerMap = useMemo(() => new Map(peers.map(p => [p.id, p])), [peers]);
-  const getPeer = useCallback((peerId) => peerMap.get(peerId), [peerMap]);
+  const peerMap = useMemo(() => new Map(peers.map((/** @type {any} */ p) => [p.id, p])), [peers]);
+  const getPeer = useCallback((/** @type {any} */ peerId) => peerMap.get(peerId), [peerMap]);
 
   // Check if peer is connected
-  const isConnected = useCallback((peerId) => {
+  const isConnected = useCallback((/** @type {any} */ peerId) => {
     const peer = getPeer(peerId);
     return peer && (peer.connectionState === 'connected' || peer.connectionState === 'secured');
   }, [getPeer]);

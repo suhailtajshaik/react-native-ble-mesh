@@ -9,10 +9,8 @@
  * React hook for managing MeshService lifecycle in React Native apps.
  * Handles initialization, cleanup, and state management.
  *
- * @param {Object} [config] - MeshService configuration
- * @param {string} [config.displayName] - Display name for this node
- * @param {Object} [config.storage] - Storage adapter
- * @returns {Object} Mesh state and controls
+ * @param {any} [config] - MeshService configuration
+ * @returns {any} Mesh state and controls
  *
  * @example
  * function App() {
@@ -35,6 +33,7 @@ function useMesh(config = {}) {
   // This hook requires React - check if available
   let React;
   try {
+    // @ts-ignore
     React = require('react');
   } catch (e) {
     throw new Error('useMesh requires React. Install react as a dependency.');
@@ -65,7 +64,7 @@ function useMesh(config = {}) {
   }, [config.displayName]);
 
   // Initialize mesh
-  const initialize = useCallback(async (transport) => {
+  const initialize = useCallback(async (/** @type {any} */ transport) => {
     try {
       if (!mountedRef.current) { return; }
       setState('initializing');
@@ -82,13 +81,14 @@ function useMesh(config = {}) {
       }
 
       // Setup state change listener
+      // @ts-ignore
       stateHandlerRef.current = ({ newState }) => {
         if (mountedRef.current) {
           setState(newState);
         }
       };
 
-      errorHandlerRef.current = (err) => {
+      errorHandlerRef.current = (/** @type {any} */ err) => {
         if (mountedRef.current) {
           setError(err);
         }
@@ -118,7 +118,7 @@ function useMesh(config = {}) {
   }, [getMesh, config.storage]);
 
   // Start with transport
-  const start = useCallback(async (transport) => {
+  const start = useCallback(async (/** @type {any} */ transport) => {
     const mesh = getMesh();
     try {
       await mesh.start(transport);

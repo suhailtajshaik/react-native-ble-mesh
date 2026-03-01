@@ -87,7 +87,7 @@ class ValidationError extends MeshError {
    * @returns {ValidationError} New ValidationError instance
    */
   static fromCode(code, field = null, value = undefined, details = null) {
-    const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.E800;
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || /** @type {Record<string, string>} */ (ERROR_MESSAGES).E800;
     return new ValidationError(message, code, field, value, details);
   }
 
@@ -127,7 +127,7 @@ class ValidationError extends MeshError {
    * Creates an out of range error
    * @param {string} field - Name of the field
    * @param {*} value - The invalid value
-   * @param {Object} range - Expected range { min, max }
+   * @param {any} range - Expected range { min, max }
    * @returns {ValidationError} New ValidationError instance
    */
   static outOfRange(field, value, range) {
@@ -136,7 +136,7 @@ class ValidationError extends MeshError {
 
   /**
    * Converts error to a JSON-serializable object
-   * @returns {Object} JSON representation of the error
+   * @returns {any} JSON representation of the error
    */
   toJSON() {
     return {

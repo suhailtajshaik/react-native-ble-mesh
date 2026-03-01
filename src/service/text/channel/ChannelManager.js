@@ -18,7 +18,7 @@ const Channel = require('./Channel');
 class ChannelManager extends EventEmitter {
   constructor() {
     super();
-    /** @private */
+    /** @type {Map<string, any>} @private */
     this._channels = new Map();
   }
 
@@ -26,7 +26,7 @@ class ChannelManager extends EventEmitter {
    * Joins a channel
    * @param {string} channelId - Channel ID
    * @param {string} [password] - Optional password
-   * @returns {Channel}
+   * @returns {any}
    */
   joinChannel(channelId, password) {
     if (!channelId || typeof channelId !== 'string') {
@@ -57,21 +57,21 @@ class ChannelManager extends EventEmitter {
     }
     const channel = this._channels.get(channelId);
     this._channels.delete(channelId);
-    this.emit(EVENTS.CHANNEL_LEFT, { channelId, memberCount: channel.getMemberCount() });
+    this.emit(EVENTS.CHANNEL_LEFT, { channelId, memberCount: channel?.getMemberCount() });
   }
 
   /**
    * Gets all joined channels
-   * @returns {Object[]}
+   * @returns {any[]}
    */
   getChannels() {
-    return Array.from(this._channels.values()).map(c => c.toJSON());
+    return Array.from(this._channels.values()).map((/** @type {any} */ c) => c.toJSON());
   }
 
   /**
    * Gets a specific channel
    * @param {string} channelId - Channel ID
-   * @returns {Channel|undefined}
+   * @returns {any}
    */
   getChannel(channelId) {
     return this._channels.get(channelId);
@@ -122,14 +122,14 @@ class ChannelManager extends EventEmitter {
 
   /**
    * Handles an incoming channel message
-   * @param {Object} message - Message data
+   * @param {any} message - Message data
    */
   handleChannelMessage(message) {
     const { channelId, senderId, content, timestamp } = message;
     if (!this._channels.has(channelId)) { return; }
 
     const channel = this._channels.get(channelId);
-    if (senderId && !channel.hasMember(senderId)) {
+    if (senderId && channel && !channel.hasMember(senderId)) {
       channel.addMember(senderId);
       this.emit(EVENTS.CHANNEL_MEMBER_JOINED, { channelId, peerId: senderId });
     }
@@ -158,12 +158,12 @@ class ChannelManager extends EventEmitter {
 
   /**
    * Gets channel statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     return {
       channelCount: this._channels.size,
-      totalMembers: Array.from(this._channels.values()).reduce((s, c) => s + c.getMemberCount(), 0)
+      totalMembers: Array.from(this._channels.values()).reduce((/** @type {number} */ s, /** @type {any} */ c) => s + c.getMemberCount(), 0)
     };
   }
 }

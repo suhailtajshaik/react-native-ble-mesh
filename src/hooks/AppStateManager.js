@@ -22,7 +22,7 @@
 class AppStateManager {
   /**
    * Creates a new AppStateManager
-   * @param {MeshService} mesh - MeshService instance to manage
+   * @param {any} mesh - MeshService instance to manage
    * @param {Object} [options] - Configuration options
    * @param {string} [options.backgroundMode='ULTRA_POWER_SAVER'] - Power mode for background
    * @param {string} [options.foregroundMode='BALANCED'] - Power mode for foreground
@@ -58,6 +58,7 @@ class AppStateManager {
 
     // Try to get AppState from React Native
     try {
+      // @ts-ignore
       const { AppState } = require('react-native');
       this._AppState = AppState;
     } catch (e) {

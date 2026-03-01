@@ -32,7 +32,7 @@ class AudioError extends MeshError {
    * @returns {AudioError}
    */
   static fromCode(code, details = null) {
-    const message = ERROR_MESSAGES[code] || 'Audio operation failed';
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || 'Audio operation failed';
     return new AudioError(message, code, details);
   }
 
@@ -73,6 +73,7 @@ class AudioError extends MeshError {
     return new AudioError(
       `Audio session failed with peer ${peerId}`,
       'EA04',
+      // @ts-ignore
       { peerId, ...details }
     );
   }

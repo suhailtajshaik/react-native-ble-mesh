@@ -17,30 +17,27 @@ const { LC3_CONFIG, AUDIO_QUALITY } = require('../../../constants/audio');
 class LC3Codec extends EventEmitter {
   /**
    * Creates a new LC3Codec instance
-   * @param {Object} [options] - Codec configuration
-   * @param {number} [options.sampleRate=16000] - Sample rate in Hz
-   * @param {number} [options.frameMs=10] - Frame duration in milliseconds
-   * @param {number} [options.bitRate=24000] - Bit rate in bps
-   * @param {number} [options.channels=1] - Number of audio channels
+   * @param {any} [options] - Codec configuration
    */
   constructor(options = {}) {
     super();
 
-    const quality = options.quality ? AUDIO_QUALITY[options.quality] : null;
+    /** @type {any} */
+    const quality = options.quality ? /** @type {any} */ (AUDIO_QUALITY)[options.quality] : null;
 
-    /** @private */
+    /** @type {number} @private */
     this._sampleRate = quality?.sampleRate || options.sampleRate || LC3_CONFIG.DEFAULT_SAMPLE_RATE;
-    /** @private */
+    /** @type {number} @private */
     this._frameMs = quality?.frameMs || options.frameMs || LC3_CONFIG.DEFAULT_FRAME_DURATION_MS;
-    /** @private */
+    /** @type {number} @private */
     this._bitRate = quality?.bitRate || options.bitRate || LC3_CONFIG.DEFAULT_BIT_RATE;
-    /** @private */
+    /** @type {number} @private */
     this._channels = quality?.channels || options.channels || LC3_CONFIG.DEFAULT_CHANNELS;
-    /** @private */
+    /** @type {boolean} @private */
     this._initialized = false;
-    /** @private */
+    /** @type {any} @private */
     this._nativeModule = null;
-    /** @private */
+    /** @type {boolean} @private */
     this._useMock = false;
 
     this._validateConfig();
@@ -87,7 +84,7 @@ class LC3Codec extends EventEmitter {
 
       this._initialized = true;
       this.emit('initialized', this.getConfig());
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw AudioError.codecInitFailed({ reason: error.message });
     }
   }
@@ -95,7 +92,7 @@ class LC3Codec extends EventEmitter {
   /**
    * Attempts to load the native LC3 module
    * @private
-   * @returns {Object|null}
+   * @returns {any}
    */
   _loadNativeModule() {
     try {
@@ -150,7 +147,7 @@ class LC3Codec extends EventEmitter {
     try {
       const result = await this._nativeModule.encode(Array.from(pcmSamples));
       return new Uint8Array(result);
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw AudioError.encodingFailed({ reason: error.message });
     }
   }
@@ -172,7 +169,7 @@ class LC3Codec extends EventEmitter {
     try {
       const result = await this._nativeModule.decode(Array.from(lc3Frame));
       return new Int16Array(result);
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw AudioError.decodingFailed({ reason: error.message });
     }
   }
@@ -193,13 +190,14 @@ class LC3Codec extends EventEmitter {
     try {
       const result = await this._nativeModule.decodePLC();
       return new Int16Array(result);
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw AudioError.decodingFailed({ reason: error.message });
     }
   }
 
   /**
    * Mock encode implementation for testing
+   * @param {Int16Array} pcmSamples
    * @private
    */
   _mockEncode(pcmSamples) {
@@ -217,6 +215,7 @@ class LC3Codec extends EventEmitter {
 
   /**
    * Mock decode implementation for testing
+   * @param {Uint8Array} lc3Frame
    * @private
    */
   _mockDecode(lc3Frame) {
@@ -261,7 +260,7 @@ class LC3Codec extends EventEmitter {
 
   /**
    * Returns the current codec configuration
-   * @returns {Object}
+   * @returns {any}
    */
   getConfig() {
     return {

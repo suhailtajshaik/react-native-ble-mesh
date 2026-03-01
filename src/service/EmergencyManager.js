@@ -13,7 +13,7 @@ const EventEmitter = require('../utils/EventEmitter');
 
 /**
  * Panic trigger types
- * @constant {Object}
+ * @constant {any}
  */
 const PANIC_TRIGGER = Object.freeze({
   TRIPLE_TAP: 'triple_tap',
@@ -24,7 +24,7 @@ const PANIC_TRIGGER = Object.freeze({
 
 /**
  * Default configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   /** Trigger type for panic mode */
@@ -63,18 +63,14 @@ const DEFAULT_CONFIG = Object.freeze({
 class EmergencyManager extends EventEmitter {
   /**
      * Creates a new EmergencyManager instance.
-     * @param {Object} [options={}] - Configuration options
-     * @param {string} [options.trigger='triple_tap'] - Panic trigger type
-     * @param {number} [options.tapWindowMs=500] - Time window for taps
-     * @param {number} [options.tapCount=3] - Required tap count
-     * @param {boolean} [options.requireConfirmation=false] - Require confirmation
+     * @param {any} [options] - Configuration options
      */
   constructor(options = {}) {
     super();
 
     /**
          * Configuration
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._config = { ...DEFAULT_CONFIG, ...options };
@@ -88,7 +84,7 @@ class EmergencyManager extends EventEmitter {
 
     /**
          * Tap tracking
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._tapState = {
@@ -98,7 +94,7 @@ class EmergencyManager extends EventEmitter {
 
     /**
          * Shake tracking
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._shakeState = {
@@ -122,7 +118,7 @@ class EmergencyManager extends EventEmitter {
 
     /**
          * Statistics
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._stats = {
@@ -134,9 +130,7 @@ class EmergencyManager extends EventEmitter {
 
   /**
      * Enables panic mode.
-     * @param {Object} [options={}] - Enable options
-     * @param {Function} [options.onWipe] - Callback after wipe
-     * @param {string} [options.trigger] - Override trigger type
+     * @param {any} [options] - Enable options
      */
   enablePanicMode(options = {}) {
     this._enabled = true;
@@ -208,10 +202,7 @@ class EmergencyManager extends EventEmitter {
 
   /**
      * Registers accelerometer data for shake detection.
-     * @param {Object} data - Accelerometer data
-     * @param {number} data.x - X acceleration
-     * @param {number} data.y - Y acceleration
-     * @param {number} data.z - Z acceleration
+     * @param {any} data - Accelerometer data
      */
   registerAccelerometer(data) {
     if (!this._enabled || this._config.trigger !== PANIC_TRIGGER.SHAKE) {
@@ -236,7 +227,7 @@ class EmergencyManager extends EventEmitter {
 
   /**
      * Manually triggers panic wipe.
-     * @returns {Promise<Object>} Wipe result
+     * @returns {Promise<any>} Wipe result
      */
   async triggerManualWipe() {
     return this._executeWipe(PANIC_TRIGGER.MANUAL);
@@ -244,7 +235,7 @@ class EmergencyManager extends EventEmitter {
 
   /**
      * Wipes all registered data.
-     * @returns {Promise<Object>} Wipe result with timing
+     * @returns {Promise<any>} Wipe result with timing
      */
   async wipeAllData() {
     return this._executeWipe(PANIC_TRIGGER.MANUAL);
@@ -252,7 +243,7 @@ class EmergencyManager extends EventEmitter {
 
   /**
      * Gets emergency statistics.
-     * @returns {Object} Statistics
+     * @returns {any} Statistics
      */
   getStats() {
     return { ...this._stats };
@@ -280,7 +271,7 @@ class EmergencyManager extends EventEmitter {
 
     try {
       await this._executeWipe(trigger);
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this.emit('error', {
         message: 'Panic wipe failed',
         error: error.message,
@@ -292,7 +283,7 @@ class EmergencyManager extends EventEmitter {
   /**
      * Executes the data wipe.
      * @param {string} trigger - Trigger type
-     * @returns {Promise<Object>} Wipe result
+     * @returns {Promise<any>} Wipe result
      * @private
      */
   async _executeWipe(trigger) {
@@ -300,6 +291,7 @@ class EmergencyManager extends EventEmitter {
 
     this.emit('panic-wipe-started', { trigger, timestamp: startTime });
 
+    /** @type {any} */
     const results = {
       trigger,
       startTime,
@@ -308,12 +300,13 @@ class EmergencyManager extends EventEmitter {
     };
 
     // Execute all clearers in parallel for speed
+    /** @type {any[]} */
     const clearerResults = new Array(this._clearers.length);
     const promises = this._clearers.map(async (clearer, index) => {
       try {
         await clearer();
         clearerResults[index] = { index, success: true };
-      } catch (error) {
+      } catch (/** @type {any} */ error) {
         results.errors.push({ index, error: error.message });
         clearerResults[index] = { index, success: false, error: error.message };
       }
@@ -344,7 +337,7 @@ class EmergencyManager extends EventEmitter {
     if (this._onWipe) {
       try {
         this._onWipe(results);
-      } catch (error) {
+      } catch (/** @type {any} */ error) {
         // Ignore callback errors
       }
     }

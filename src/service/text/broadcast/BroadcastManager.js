@@ -10,7 +10,7 @@ const TextMessage = require('../message/TextMessage');
 
 /**
  * Broadcast configuration
- * @constant {Object}
+ * @constant {any}
  */
 const BROADCAST_CONFIG = Object.freeze({
   MAX_MESSAGE_SIZE: 1000,
@@ -26,26 +26,24 @@ const BROADCAST_CONFIG = Object.freeze({
 class BroadcastManager extends EventEmitter {
   /**
    * Creates a new BroadcastManager
-   * @param {Object} [options] - Manager options
-   * @param {number} [options.maxRecentBroadcasts] - Max broadcasts to keep
-   * @param {number} [options.dedupWindowMs] - Deduplication window
+   * @param {any} [options] - Manager options
    */
   constructor(options = {}) {
     super();
 
-    /** @private */
+    /** @type {number} @private */
     this._maxRecentBroadcasts = options.maxRecentBroadcasts || BROADCAST_CONFIG.MAX_RECENT_BROADCASTS;
-    /** @private */
+    /** @type {number} @private */
     this._dedupWindowMs = options.dedupWindowMs || BROADCAST_CONFIG.DEDUP_WINDOW_MS;
-    /** @private */
+    /** @type {any[]} @private */
     this._recentBroadcasts = [];
-    /** @private */
+    /** @type {Map<string, number>} @private */
     this._seenMessageIds = new Map(); // messageId -> timestamp
-    /** @private */
+    /** @type {string | null} @private */
     this._senderId = null;
-    /** @private */
+    /** @type {Function | null} @private */
     this._sendCallback = null;
-    /** @private */
+    /** @type {ReturnType<typeof setInterval> | null} @private */
     this._cleanupTimer = null;
 
     // Auto-cleanup every 5 minutes
@@ -60,9 +58,7 @@ class BroadcastManager extends EventEmitter {
 
   /**
    * Initializes the broadcast manager
-   * @param {Object} options - Init options
-   * @param {string} options.senderId - Local sender ID
-   * @param {Function} options.sendCallback - Callback to send broadcast
+   * @param {any} options - Init options
    */
   initialize(options) {
     this._senderId = options.senderId;
@@ -155,7 +151,7 @@ class BroadcastManager extends EventEmitter {
   /**
    * Gets recent broadcasts
    * @param {number} [limit] - Maximum number to return
-   * @returns {TextMessage[]}
+   * @returns {any[]}
    */
   getRecentBroadcasts(limit) {
     const broadcasts = [...this._recentBroadcasts];
@@ -180,7 +176,7 @@ class BroadcastManager extends EventEmitter {
 
   /**
    * Gets broadcast statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     return {
@@ -221,7 +217,7 @@ class BroadcastManager extends EventEmitter {
   /**
    * Adds a message to recent broadcasts
    * @private
-   * @param {TextMessage} message - Message to add
+   * @param {any} message - Message to add
    */
   _addToRecent(message) {
     this._recentBroadcasts.push(message);
@@ -233,6 +229,7 @@ class BroadcastManager extends EventEmitter {
   }
 }
 
+/** @type {any} */
 BroadcastManager.CONFIG = BROADCAST_CONFIG;
 
 module.exports = BroadcastManager;

@@ -17,15 +17,15 @@ class AudioFragmenter {
   /**
    * Fragments voice message data
    * @param {Uint8Array} voiceData - Serialized voice message
-   * @param {Object} metadata - Voice message metadata
-   * @param {string} metadata.messageId - Unique message ID
+   * @param {any} metadata - Voice message metadata
    * @param {number} [chunkSize] - Chunk size (default from config)
    * @returns {Uint8Array[]} Array of fragments
    */
   static fragment(voiceData, metadata, chunkSize = VOICE_MESSAGE_CONFIG.CHUNK_SIZE) {
     const { messageId } = metadata;
-    const messageIdBytes = this._stringToBytes(messageId, 16);
+    const messageIdBytes = AudioFragmenter._stringToBytes(messageId, 16);
     const totalChunks = Math.ceil(voiceData.length / chunkSize);
+    /** @type {Uint8Array[]} */
     const fragments = [];
 
     for (let i = 0; i < totalChunks; i++) {
@@ -77,12 +77,15 @@ class AudioFragmenter {
 
   /**
    * Converts string to fixed-length bytes
+   * @param {string} str - String to convert
+   * @param {number} length - Target byte length
+   * @returns {Uint8Array}
    * @private
    */
   static _stringToBytes(str, length) {
     const bytes = new Uint8Array(length);
     const encoder = new TextEncoder();
-    const encoded = encoder.encode(str.slice(0, length));
+    const encoded = encoder.encode(String(str).slice(0, length));
     bytes.set(encoded.slice(0, length));
     return bytes;
   }
@@ -96,15 +99,14 @@ class AudioFragmenter {
 class AudioAssembler extends EventEmitter {
   /**
    * Creates a new AudioAssembler
-   * @param {Object} [options] - Assembler options
-   * @param {number} [options.timeout=120000] - Assembly timeout in ms
+   * @param {any} [options] - Assembler options
    */
   constructor(options = {}) {
     super();
 
-    /** @private */
+    /** @type {number} @private */
     this._timeout = options.timeout || VOICE_MESSAGE_CONFIG.TIMEOUT_MS;
-    /** @private */
+    /** @type {Map<string, any>} @private */
     this._pending = new Map(); // messageId -> { fragments, totalSize, receivedSize, timer }
   }
 
@@ -120,6 +122,7 @@ class AudioAssembler extends EventEmitter {
     const index = view.getUint16(17, false);
     const total = view.getUint16(19, false);
 
+    /** @type {Uint8Array} */
     let chunkData;
     let totalSize = 0;
 
@@ -171,6 +174,8 @@ class AudioAssembler extends EventEmitter {
 
   /**
    * Assembles complete voice message
+   * @param {string} messageId - Message ID
+   * @returns {Uint8Array|null}
    * @private
    */
   _assemble(messageId) {
@@ -199,6 +204,7 @@ class AudioAssembler extends EventEmitter {
 
   /**
    * Handles assembly timeout
+   * @param {string} messageId - Message ID
    * @private
    */
   _handleTimeout(messageId) {
@@ -209,7 +215,7 @@ class AudioAssembler extends EventEmitter {
   /**
    * Gets assembly progress
    * @param {string} messageId - Message ID
-   * @returns {Object|null}
+   * @returns {any}
    */
   getProgress(messageId) {
     const entry = this._pending.get(messageId);
@@ -245,6 +251,8 @@ class AudioAssembler extends EventEmitter {
 
   /**
    * Converts bytes to string
+   * @param {Uint8Array} bytes - Bytes to convert
+   * @returns {string}
    * @private
    */
   _bytesToString(bytes) {

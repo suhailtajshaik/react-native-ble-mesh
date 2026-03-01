@@ -9,7 +9,7 @@ const EventEmitter = require('../utils/EventEmitter');
 
 /**
  * Transport states
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const TRANSPORT_STATE = Object.freeze({
   STOPPED: 'stopped',
@@ -44,7 +44,7 @@ class Transport extends EventEmitter {
 
     /**
      * Transport options
-     * @type {Object}
+     * @type {any}
      * @protected
      */
     this._options = {
@@ -61,7 +61,7 @@ class Transport extends EventEmitter {
 
     /**
      * Connected peers map (peerId -> connection info)
-     * @type {Map<string, Object>}
+     * @type {Map<string, any>}
      * @protected
      */
     this._peers = new Map();
@@ -119,23 +119,23 @@ class Transport extends EventEmitter {
   /**
    * Sends data to a specific peer
    * @abstract
-   * @param {string} peerId - Target peer ID
-   * @param {Uint8Array} data - Data to send
+   * @param {string} _peerId - Target peer ID
+   * @param {Uint8Array} _data - Data to send
    * @returns {Promise<void>}
    * @throws {Error} If not implemented by subclass
    */
-  async send(_peerId, _data) {
+  async send(/** @type {any} */ _peerId, _data) {
     throw new Error('Transport.send() must be implemented by subclass');
   }
 
   /**
    * Broadcasts data to all connected peers
    * @abstract
-   * @param {Uint8Array} data - Data to broadcast
+   * @param {Uint8Array} _data - Data to broadcast
    * @returns {Promise<string[]>} Array of peer IDs that received the broadcast
    * @throws {Error} If not implemented by subclass
    */
-  async broadcast(_data) {
+  async broadcast(/** @type {any} */ _data) {
     throw new Error('Transport.broadcast() must be implemented by subclass');
   }
 
@@ -159,7 +159,7 @@ class Transport extends EventEmitter {
   /**
    * Gets connection info for a peer
    * @param {string} peerId - Peer ID
-   * @returns {Object|undefined} Connection info or undefined
+   * @returns {any} Connection info or undefined
    */
   getPeerInfo(peerId) {
     return this._peers.get(peerId);

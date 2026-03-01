@@ -28,10 +28,7 @@ const { ValidationError } = require('../../errors');
 class PathFinder extends EventEmitter {
   /**
    * Creates a new PathFinder
-   * @param {Object} options - Configuration options
-   * @param {string} options.localPeerId - Local peer ID
-   * @param {Object} options.routeTable - RouteTable instance
-   * @param {number} [options.discoveryTimeout] - Route discovery timeout
+   * @param {any} options - Configuration options   *
    */
   constructor(options = {}) {
     super();
@@ -51,7 +48,7 @@ class PathFinder extends EventEmitter {
 
     /**
      * Route table reference
-     * @type {Object}
+     * @type {any}
      */
     this.routeTable = options.routeTable;
 
@@ -63,7 +60,7 @@ class PathFinder extends EventEmitter {
 
     /**
      * Pending route requests
-     * @type {Map<string, RouteRequest>}
+     * @type {Map<string, any>}
      * @private
      */
     this._pendingRequests = new Map();
@@ -77,7 +74,7 @@ class PathFinder extends EventEmitter {
 
     /**
      * Statistics
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._stats = {
@@ -93,7 +90,7 @@ class PathFinder extends EventEmitter {
   /**
    * Finds a route to a destination
    * @param {string} destination - Target peer ID
-   * @returns {Promise<Object|null>} Route or null if not found
+   * @returns {Promise<any>} Route or null if not found
    */
   async findRoute(destination) {
     if (!destination || typeof destination !== 'string') {
@@ -113,7 +110,7 @@ class PathFinder extends EventEmitter {
   /**
    * Initiates route discovery for a destination
    * @param {string} destination - Target peer ID
-   * @returns {Promise<Object|null>} Discovered route or null
+   * @returns {Promise<any>} Discovered route or null
    * @private
    */
   _initiateDiscovery(destination) {
@@ -164,9 +161,9 @@ class PathFinder extends EventEmitter {
 
   /**
    * Processes an incoming route request
-   * @param {Object} request - Route request data
+   * @param {any} request - Route request data
    * @param {string} sourcePeerId - Source peer ID
-   * @returns {Object|null} Reply to send or null
+   * @returns {any} Reply to send or null
    */
   processRouteRequest(request, sourcePeerId) {
     this._stats.requestsReceived++;
@@ -219,7 +216,7 @@ class PathFinder extends EventEmitter {
 
   /**
    * Processes an incoming route reply
-   * @param {Object} reply - Route reply data
+   * @param {any} reply - Route reply data
    * @param {string} sourcePeerId - Source peer ID
    */
   processRouteReply(reply, sourcePeerId) {
@@ -295,7 +292,7 @@ class PathFinder extends EventEmitter {
 
   /**
    * Gets path finder statistics
-   * @returns {Object} Statistics
+   * @returns {any} Statistics
    */
   getStats() {
     return {

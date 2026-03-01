@@ -25,7 +25,9 @@ const SPKI_HEADER = Buffer.from('302a300506032b656e032100', 'hex');
 class QuickCryptoProvider extends CryptoProvider {
   constructor(options = {}) {
     super();
-    this._crypto = options.crypto || null;
+    /** @type {any} */
+    const opts = options;
+    this._crypto = opts.crypto || null;
     this._nacl = null;
   }
 
@@ -36,6 +38,7 @@ class QuickCryptoProvider extends CryptoProvider {
   _getCrypto() {
     if (!this._crypto) {
       try {
+        // @ts-ignore
         this._crypto = require('react-native-quick-crypto');
       } catch (e) {
         throw new Error(
@@ -57,7 +60,7 @@ class QuickCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  sharedSecret(secretKey, publicKey) {
+  sharedSecret(/** @type {any} */ secretKey, /** @type {any} */ publicKey) {
     const crypto = this._getCrypto();
     const privKey = crypto.createPrivateKey({
       key: Buffer.concat([
@@ -81,12 +84,13 @@ class QuickCryptoProvider extends CryptoProvider {
 
   /**
    * Lazily loads tweetnacl (cached)
-   * @returns {Object} nacl module
+   * @returns {any} nacl module
    * @private
    */
   _getNacl() {
     if (!this._nacl) {
       try {
+        // @ts-ignore
         this._nacl = require('tweetnacl');
       } catch (e) {
         throw new Error(
@@ -98,7 +102,7 @@ class QuickCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  encrypt(key, nonce, plaintext, _ad) {
+  encrypt(/** @type {any} */ key, /** @type {any} */ nonce, /** @type {any} */ plaintext, /** @type {any} */ _ad) {
     // Use tweetnacl for encryption to ensure cross-provider compatibility
     // QuickCrypto's advantage is in fast native key generation (X25519), not AEAD
     const nacl = this._getNacl();
@@ -114,7 +118,7 @@ class QuickCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  decrypt(key, nonce, ciphertext, _ad) {
+  decrypt(/** @type {any} */ key, /** @type {any} */ nonce, /** @type {any} */ ciphertext, /** @type {any} */ _ad) {
     const nacl = this._getNacl();
 
     // Ensure 24-byte nonce for XSalsa20-Poly1305
@@ -132,7 +136,7 @@ class QuickCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  hash(data) {
+  hash(/** @type {any} */ data) {
     // Use SHA-512 truncated to 32 bytes for cross-provider compatibility
     const nacl = this._getNacl();
     const full = nacl.hash(data); // SHA-512
@@ -140,13 +144,14 @@ class QuickCryptoProvider extends CryptoProvider {
   }
 
   /** @inheritdoc */
-  randomBytes(length) {
+  randomBytes(/** @type {any} */ length) {
     const crypto = this._getCrypto();
     return new Uint8Array(crypto.randomBytes(length));
   }
 
   static isAvailable() {
     try {
+      // @ts-ignore
       require('react-native-quick-crypto');
       return true;
     } catch (e) {

@@ -16,9 +16,14 @@ const MAX_MESSAGE_COUNT = 1000000; // 1 million messages before nonce exhaustion
  */
 class SessionManager {
   constructor() {
+    /** @type {Map<string, any>} */
     this._sessions = new Map();
   }
 
+  /**
+   * @param {string} peerId
+   * @param {any} session
+   */
   createSession(peerId, session) {
     if (!peerId || typeof peerId !== 'string') {
       throw new Error('Invalid peerId: must be a non-empty string');
@@ -31,14 +36,29 @@ class SessionManager {
     });
   }
 
+  /**
+   * @param {string} peerId
+   * @returns {any}
+   */
   getSession(peerId) {
     const entry = this._sessions.get(peerId);
     return entry ? entry.session : undefined;
   }
 
+  /**
+   * @param {string} peerId
+   * @returns {boolean}
+   */
   hasSession(peerId) { return this._sessions.has(peerId); }
+  /**
+   * @param {string} peerId
+   */
   removeSession(peerId) { this._sessions.delete(peerId); }
 
+  /**
+   * @param {string} peerId
+   * @param {Uint8Array} plaintext
+   */
   encryptFor(peerId, plaintext) {
     const entry = this._sessions.get(peerId);
     if (!entry) { throw CryptoError.encryptionFailed({ reason: 'Session not found', peerId }); }
@@ -60,11 +80,15 @@ class SessionManager {
       entry.lastUsedAt = Date.now();
       entry.messageCount++;
       return ciphertext;
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw CryptoError.encryptionFailed({ reason: error.message, peerId });
     }
   }
 
+  /**
+   * @param {string} peerId
+   * @param {Uint8Array} ciphertext
+   */
   decryptFrom(peerId, ciphertext) {
     const entry = this._sessions.get(peerId);
     if (!entry) { throw CryptoError.decryptionFailed({ reason: 'Session not found', peerId }); }
@@ -75,11 +99,14 @@ class SessionManager {
         entry.messageCount++;
       }
       return plaintext;
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       throw CryptoError.decryptionFailed({ reason: error.message, peerId });
     }
   }
 
+  /**
+   * @param {string} peerId
+   */
   exportSession(peerId) {
     const entry = this._sessions.get(peerId);
     if (!entry || typeof entry.session.export !== 'function') { return null; }
@@ -89,6 +116,10 @@ class SessionManager {
     };
   }
 
+  /**
+   * @param {string} peerId
+   * @param {any} state
+   */
   importSession(peerId, state) {
     if (!state || !state.sessionData) { throw new Error('Invalid session state'); }
 
@@ -112,11 +143,12 @@ class SessionManager {
     let recvNonce = data.recvNonce || 0;
 
     // Try to get crypto provider for real encrypt/decrypt
+    /** @type {any} */
     let provider = null;
     try {
       const { createProvider } = require('../crypto/AutoCrypto');
       provider = createProvider('auto');
-    } catch (e) {
+    } catch (/** @type {any} */ e) {
       // No crypto provider available
     }
 
@@ -127,6 +159,7 @@ class SessionManager {
     const recvNonceView = new DataView(recvNonceBuf.buffer);
 
     const session = {
+      /** @param {Uint8Array} plaintext */
       encrypt: (plaintext) => {
         if (provider && typeof provider.encrypt === 'function') {
           sendNonceView.setUint32(16, 0, true);
@@ -135,6 +168,7 @@ class SessionManager {
         }
         return plaintext;
       },
+      /** @param {Uint8Array} ciphertext */
       decrypt: (ciphertext) => {
         if (provider && typeof provider.decrypt === 'function') {
           recvNonceView.setUint32(16, 0, true);
@@ -160,6 +194,7 @@ class SessionManager {
     });
   }
 
+  /** @returns {string[]} */
   getAllSessionPeerIds() { return Array.from(this._sessions.keys()); }
   clear() { this._sessions.clear(); }
 

@@ -115,7 +115,7 @@ const MESH_CONFIG = Object.freeze({
 
 /**
  * Connection states
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const CONNECTION_STATE = Object.freeze({
   DISCONNECTED: 'disconnected',
@@ -129,7 +129,7 @@ const CONNECTION_STATE = Object.freeze({
 
 /**
  * Service states
- * @constant {Object.<string, string>}
+ * @type {Record<string, string>}
  */
 const SERVICE_STATE = Object.freeze({
   UNINITIALIZED: 'uninitialized',

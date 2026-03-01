@@ -162,7 +162,7 @@ class RateLimiter {
 
   /**
    * Gets rate limiter configuration
-   * @returns {Object} Configuration object
+   * @returns {any} Configuration object
    */
   getConfig() {
     return {

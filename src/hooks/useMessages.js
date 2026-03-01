@@ -9,10 +9,10 @@
  * React hook for sending and receiving messages in the mesh network.
  * Manages message state and provides send functions.
  *
- * @param {MeshService} mesh - MeshService instance
- * @param {Object} [options] - Options
- * @param {number} [options.maxMessages=100] - Maximum messages to keep in state
- * @returns {Object} Messages state and send functions
+ * @param {any} mesh - MeshService instance
+ * @param {any} [options] - Options
+   *
+ * @returns {any} Messages state and send functions
  *
  * @example
  * function Chat({ mesh, peerId }) {
@@ -38,6 +38,7 @@ function useMessages(mesh, options = {}) {
   // This hook requires React
   let React;
   try {
+    // @ts-ignore
     React = require('react');
   } catch (e) {
     throw new Error('useMessages requires React. Install react as a dependency.');
@@ -52,11 +53,11 @@ function useMessages(mesh, options = {}) {
   const messageIdRef = useRef(new Set());
 
   // Add message to state (with dedup)
-  const addMessage = useCallback((msg) => {
+  const addMessage = useCallback((/** @type {any} */ msg) => {
     if (messageIdRef.current.has(msg.id)) { return; }
     messageIdRef.current.add(msg.id);
 
-    setMessages(prev => {
+    setMessages((/** @type {any} */ prev) => {
       const updated = [msg, ...prev];
       if (updated.length > maxMessages) {
         for (let i = maxMessages; i < updated.length; i++) {
@@ -72,7 +73,7 @@ function useMessages(mesh, options = {}) {
   useEffect(() => {
     if (!mesh) { return; }
 
-    const handleBroadcast = (data) => {
+    const handleBroadcast = (/** @type {any} */ data) => {
       addMessage({
         id: data.messageId,
         type: 'broadcast',
@@ -83,7 +84,7 @@ function useMessages(mesh, options = {}) {
       });
     };
 
-    const handlePrivate = (data) => {
+    const handlePrivate = (/** @type {any} */ data) => {
       addMessage({
         id: data.messageId,
         type: 'private',
@@ -94,7 +95,7 @@ function useMessages(mesh, options = {}) {
       });
     };
 
-    const handleChannel = (data) => {
+    const handleChannel = (/** @type {any} */ data) => {
       addMessage({
         id: data.messageId,
         type: 'channel',
@@ -120,7 +121,7 @@ function useMessages(mesh, options = {}) {
   }, [mesh, addMessage]);
 
   // Send broadcast message
-  const sendBroadcast = useCallback((content) => {
+  const sendBroadcast = useCallback((/** @type {any} */ content) => {
     if (!mesh) { throw new Error('Mesh not initialized'); }
     setError(null);
 
@@ -142,7 +143,7 @@ function useMessages(mesh, options = {}) {
   }, [mesh, addMessage]);
 
   // Send private message
-  const sendPrivate = useCallback(async (peerId, content) => {
+  const sendPrivate = useCallback(async (/** @type {any} */ peerId, /** @type {any} */ content) => {
     if (!mesh) { throw new Error('Mesh not initialized'); }
     setError(null);
     setSending(true);
@@ -168,7 +169,7 @@ function useMessages(mesh, options = {}) {
   }, [mesh, addMessage]);
 
   // Send channel message
-  const sendToChannel = useCallback((channelId, content) => {
+  const sendToChannel = useCallback((/** @type {any} */ channelId, /** @type {any} */ content) => {
     if (!mesh) { throw new Error('Mesh not initialized'); }
     setError(null);
 

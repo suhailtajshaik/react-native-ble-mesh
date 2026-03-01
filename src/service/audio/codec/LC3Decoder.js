@@ -16,7 +16,7 @@ const AudioError = require('../../../errors/AudioError');
 class LC3Decoder extends EventEmitter {
   /**
    * Creates a new LC3Decoder
-   * @param {LC3Codec} codec - Initialized LC3 codec instance
+   * @param {any} codec - Initialized LC3 codec instance
    */
   constructor(codec) {
     super();
@@ -25,17 +25,17 @@ class LC3Decoder extends EventEmitter {
       throw AudioError.codecInitFailed({ reason: 'Codec must be initialized' });
     }
 
-    /** @private */
+    /** @type {any} @private */
     this._codec = codec;
-    /** @private */
+    /** @type {number} @private */
     this._frameSamples = codec.getFrameSamples();
-    /** @private */
+    /** @type {number} @private */
     this._framesDecoded = 0;
-    /** @private */
+    /** @type {number} @private */
     this._plcFrames = 0;
-    /** @private */
+    /** @type {number} @private */
     this._errors = 0;
-    /** @private */
+    /** @type {number} @private */
     this._lastSequence = -1;
   }
 
@@ -63,7 +63,7 @@ class LC3Decoder extends EventEmitter {
       this._framesDecoded++;
       this.emit('samples', { samples, index: this._framesDecoded });
       return samples;
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this._errors++;
       this.emit('error', error);
       throw error;
@@ -80,7 +80,7 @@ class LC3Decoder extends EventEmitter {
       this._plcFrames++;
       this.emit('plc', { samples, plcCount: this._plcFrames });
       return samples;
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       this._errors++;
       this.emit('error', error);
       // Return silence on PLC failure
@@ -106,7 +106,7 @@ class LC3Decoder extends EventEmitter {
 
   /**
    * Returns decoder statistics
-   * @returns {Object}
+   * @returns {any}
    */
   getStats() {
     return {

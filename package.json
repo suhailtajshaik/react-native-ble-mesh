@@ -1,6 +1,6 @@
 {
   "name": "react-native-ble-mesh",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "description": "React Native Bluetooth Low Energy (BLE) mesh networking library with end-to-end encryption, offline messaging, peer-to-peer communication, and Noise Protocol security for iOS and Android",
   "main": "src/index.js",
   "types": "src/index.d.ts",

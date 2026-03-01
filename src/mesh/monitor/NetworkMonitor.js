@@ -12,7 +12,7 @@ const EventEmitter = require('../../utils/EventEmitter');
 
 /**
  * Health status levels
- * @constant {Object}
+ * @constant {any}
  */
 const HEALTH_STATUS = Object.freeze({
   GOOD: 'good',
@@ -23,7 +23,7 @@ const HEALTH_STATUS = Object.freeze({
 
 /**
  * Default monitoring configuration
- * @constant {Object}
+ * @constant {any}
  */
 const DEFAULT_CONFIG = Object.freeze({
   /** Sample window size for latency calculations */
@@ -90,21 +90,21 @@ const DEFAULT_CONFIG = Object.freeze({
 class NetworkMonitor extends EventEmitter {
   /**
      * Creates a new NetworkMonitor instance.
-     * @param {Object} [options={}] - Configuration options
+     * @param {any} [options={}] - Configuration options
      */
   constructor(options = {}) {
     super();
 
     /**
          * Configuration
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._config = { ...DEFAULT_CONFIG, ...options };
 
     /**
          * Node health tracking
-         * @type {Map<string, NodeHealth>}
+         * @type {Map<string, any>}
          * @private
          */
     this._nodes = new Map();
@@ -146,7 +146,7 @@ class NetworkMonitor extends EventEmitter {
 
     /**
          * Global statistics
-         * @type {Object}
+         * @type {any}
          * @private
          */
     this._stats = {
@@ -158,7 +158,7 @@ class NetworkMonitor extends EventEmitter {
 
     /**
          * Health check timer
-         * @type {number|null}
+         * @type {any}
          * @private
          */
     this._healthCheckTimer = null;
@@ -169,6 +169,13 @@ class NetworkMonitor extends EventEmitter {
          * @private
          */
     this._lastHealthReport = null;
+
+    /**
+         * Previous health status for change detection
+         * @type {string|null}
+         * @private
+         */
+    this._previousHealth = null;
 
     // Start health check timer
     this._startHealthCheck();
@@ -351,7 +358,7 @@ class NetworkMonitor extends EventEmitter {
   /**
      * Gets detailed health for a specific node.
      * @param {string} peerId - Peer ID
-     * @returns {NodeHealth|null} Node health or null
+     * @returns {any} Node health or null
      */
   getNodeHealth(peerId) {
     const node = this._nodes.get(peerId);
@@ -368,13 +375,13 @@ class NetworkMonitor extends EventEmitter {
 
   /**
      * Gets health information for all nodes.
-     * @returns {NodeHealth[]} Array of node health
+     * @returns {any[]} Array of node health
      */
   getAllNodeHealth() {
     const now = Date.now();
     const timeout = this._config.nodeTimeoutMs;
 
-    return Array.from(this._nodes.values()).map(node => ({
+    return Array.from(this._nodes.values()).map((/** @type {any} */ node) => ({
       ...node,
       isActive: (now - node.lastSeen) < timeout
     }));
@@ -390,7 +397,7 @@ class NetworkMonitor extends EventEmitter {
 
   /**
      * Gets monitoring statistics.
-     * @returns {Object} Statistics
+     * @returns {any} Statistics
      */
   getStats() {
     return {
@@ -433,7 +440,7 @@ class NetworkMonitor extends EventEmitter {
   /**
      * Gets or creates a node entry.
      * @param {string} peerId - Peer ID
-     * @returns {NodeHealth} Node entry
+     * @returns {any} Node entry
      * @private
      */
   _getOrCreateNode(peerId) {
@@ -474,7 +481,7 @@ class NetworkMonitor extends EventEmitter {
 
   /**
      * Updates node latency with exponential moving average.
-     * @param {NodeHealth} node - Node to update
+     * @param {any} node - Node to update
      * @param {number} latency - New latency sample
      * @private
      */
@@ -489,7 +496,7 @@ class NetworkMonitor extends EventEmitter {
 
   /**
      * Updates node packet loss rate.
-     * @param {NodeHealth} node - Node to update
+     * @param {any} node - Node to update
      * @private
      */
   _updateNodePacketLoss(node) {
@@ -567,7 +574,7 @@ class NetworkMonitor extends EventEmitter {
           this._cleanupPendingMessages();
           const report = this.generateHealthReport();
           this.emit('health-report', report);
-        } catch (error) {
+        } catch (_error) {
           // Don't let health check errors crash the monitor
         }
       },

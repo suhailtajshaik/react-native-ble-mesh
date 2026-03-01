@@ -31,6 +31,7 @@ class PendingFragmentSet {
   constructor(messageId, total, timeout) {
     this.messageId = messageId;
     this.total = total;
+    /** @type {Map<number, Uint8Array>} */
     this.received = new Map();
     this.createdAt = Date.now();
     this.expiresAt = this.createdAt + timeout;
@@ -97,7 +98,7 @@ class PendingFragmentSet {
 
   /**
    * Gets progress information
-   * @returns {Object} Progress { received, total, percent }
+   * @returns {any} Progress { received, total, percent }
    */
   getProgress() {
     return {
@@ -137,7 +138,7 @@ class Assembler {
 
     /**
      * Statistics
-     * @type {Object}
+     * @type {any}
      * @private
      */
     this._stats = {
@@ -236,7 +237,7 @@ class Assembler {
   /**
    * Gets progress for a pending message
    * @param {string} messageId - Message ID
-   * @returns {Object|null} Progress or null if not found
+   * @returns {any} Progress or null if not found
    */
   getProgress(messageId) {
     const pendingSet = this._pending.get(messageId);
@@ -254,7 +255,7 @@ class Assembler {
 
   /**
    * Gets assembler statistics
-   * @returns {Object} Statistics
+   * @returns {any} Statistics
    */
   getStats() {
     return {

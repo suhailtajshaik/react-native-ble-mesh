@@ -48,7 +48,7 @@ class HandshakeError extends MeshError {
    * @returns {HandshakeError} New HandshakeError instance
    */
   static fromCode(code, peerId = null, step = null, details = null) {
-    const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.E300;
+    const message = /** @type {Record<string, string>} */ (ERROR_MESSAGES)[code] || /** @type {Record<string, string>} */ (ERROR_MESSAGES).E300;
     return new HandshakeError(message, code, peerId, step, details);
   }
 
@@ -108,7 +108,7 @@ class HandshakeError extends MeshError {
 
   /**
    * Converts error to a JSON-serializable object
-   * @returns {Object} JSON representation of the error
+   * @returns {any} JSON representation of the error
    */
   toJSON() {
     return {

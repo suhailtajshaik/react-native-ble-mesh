@@ -16,6 +16,12 @@ const { PROTOCOL_VERSION, MESSAGE_TYPE, MESH_CONFIG } = require('../constants');
 const VALID_MESSAGE_TYPES = new Set(Object.values(MESSAGE_TYPE));
 
 /**
+ * Cached frozen result for valid validations to avoid repeated allocations.
+ * @type {{ valid: boolean, errors: string[] }}
+ */
+const VALID_RESULT = Object.freeze({ valid: true, errors: Object.freeze([]) });
+
+/**
  * Validates a message header.
  *
  * @param {MessageHeader|Object} header - Header to validate
@@ -102,8 +108,12 @@ function validateHeader(header) {
     errors.push(`Fragment index (${header.fragmentIndex}) >= total (${header.fragmentTotal})`);
   }
 
+  if (errors.length === 0) {
+    return VALID_RESULT;
+  }
+
   return {
-    valid: errors.length === 0,
+    valid: false,
     errors
   };
 }
@@ -152,8 +162,12 @@ function validateMessage(message) {
     }
   }
 
+  if (errors.length === 0) {
+    return VALID_RESULT;
+  }
+
   return {
-    valid: errors.length === 0,
+    valid: false,
     errors
   };
 }
@@ -171,7 +185,7 @@ function validateChecksum(headerBytes) {
 
   const view = new DataView(headerBytes.buffer, headerBytes.byteOffset, HEADER_SIZE);
   const storedChecksum = view.getUint32(44, false);
-  const checksumData = headerBytes.slice(0, 44);
+  const checksumData = headerBytes.subarray(0, 44);
   const calculatedChecksum = crc32(checksumData);
 
   return {
@@ -242,7 +256,7 @@ function validateRawMessage(data) {
   }
 
   // Validate checksum
-  const checksumResult = validateChecksum(data.slice(0, HEADER_SIZE));
+  const checksumResult = validateChecksum(data.subarray(0, HEADER_SIZE));
   if (!checksumResult.valid) {
     errors.push(
       `Checksum mismatch: expected 0x${checksumResult.expected.toString(16)}, ` +
@@ -259,8 +273,12 @@ function validateRawMessage(data) {
     errors.push(`Incomplete message: expected ${expectedTotal} bytes, got ${data.length}`);
   }
 
+  if (errors.length === 0) {
+    return VALID_RESULT;
+  }
+
   return {
-    valid: errors.length === 0,
+    valid: false,
     errors
   };
 }

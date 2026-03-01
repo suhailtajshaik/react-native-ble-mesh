@@ -116,10 +116,11 @@ class EventEmitter {
       return false;
     }
 
-    const listeners = this._events.get(event).slice();
-    const toRemove = [];
+    const listeners = this._events.get(event);
+    const hasOnce = listeners.some(e => e.once);
+    const iterList = hasOnce ? listeners.slice() : listeners;
 
-    for (const entry of listeners) {
+    for (const entry of iterList) {
       try {
         entry.listener.apply(this, args);
       } catch (error) {
@@ -130,15 +131,11 @@ class EventEmitter {
           console.error('Error in error handler:', error);
         }
       }
-
-      if (entry.once) {
-        toRemove.push(entry);
-      }
     }
 
     // Remove one-time listeners
-    if (toRemove.length > 0) {
-      const remaining = this._events.get(event).filter(e => !toRemove.includes(e));
+    if (hasOnce) {
+      const remaining = listeners.filter(e => !e.once);
       if (remaining.length === 0) {
         this._events.delete(event);
       } else {

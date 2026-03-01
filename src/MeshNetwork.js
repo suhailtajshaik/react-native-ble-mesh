@@ -23,6 +23,11 @@ const { ValidationError, MeshError } = require('./errors');
 const { FileManager } = require('./service/file');
 const { SERVICE_STATE, EVENTS } = require('./constants');
 
+/** @private Cached TextEncoder singleton – avoids per-call allocation */
+const _encoder = new TextEncoder();
+/** @private Cached TextDecoder singleton – avoids per-call allocation */
+const _decoder = new TextDecoder();
+
 /**
  * Default MeshNetwork configuration
  * @constant {Object}
@@ -571,13 +576,14 @@ class MeshNetwork extends EventEmitter {
 
     // Send offer (JSON is OK for metadata, but use binary type marker)
     const offerJson = JSON.stringify(transfer.offer);
-    const offerBytes = new TextEncoder().encode(offerJson);
+    const offerBytes = _encoder.encode(offerJson);
     const offerPayload = new Uint8Array(1 + offerBytes.length);
     offerPayload[0] = 0x01; // Binary type marker for OFFER
     offerPayload.set(offerBytes, 1);
     await this._service._sendRaw(peerId, offerPayload);
 
     // Send chunks sequentially using binary protocol
+    const transferIdBytes = _encoder.encode(transfer.id);
     for (let i = 0; i < transfer.chunks.length; i++) {
       // Check if still running (handles app backgrounding)
       if (this._state !== 'running') {
@@ -588,7 +594,6 @@ class MeshNetwork extends EventEmitter {
       const chunk = transfer.chunks[i];
 
       // Binary format: [type(1)] [transferIdLen(1)] [transferId(N)] [index(2)] [data(M)]
-      const transferIdBytes = new TextEncoder().encode(transfer.id);
       const header = new Uint8Array(1 + 1 + transferIdBytes.length + 2);
       let offset = 0;
       header[offset++] = 0x02; // Binary type marker for CHUNK
@@ -605,13 +610,16 @@ class MeshNetwork extends EventEmitter {
 
       // Add per-chunk timeout (10 seconds)
       const sendPromise = this._service._sendRaw(peerId, payload);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Chunk send timeout')), 10000)
-      );
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Chunk send timeout')), 10000);
+      });
 
       try {
         await Promise.race([sendPromise, timeoutPromise]);
+        clearTimeout(timeoutId);
       } catch (err) {
+        clearTimeout(timeoutId);
         this._fileManager.cancelTransfer(transfer.id);
         this.emit('fileTransferFailed', {
           id: transfer.id, name: fileInfo.name, error: err.message
@@ -818,7 +826,7 @@ class MeshNetwork extends EventEmitter {
     const sendFn = async (payload) => {
       // Re-encrypt and send via the proper encrypted channel
       try {
-        const text = new TextDecoder().decode(payload);
+        const text = _decoder.decode(payload);
         await this._service.sendPrivateMessage(peerId, text);
       } catch (e) {
         // Fallback to raw send if encryption fails
@@ -892,7 +900,7 @@ class MeshNetwork extends EventEmitter {
      * @private
      */
   _encodeMessage(text) {
-    return new TextEncoder().encode(text);
+    return _encoder.encode(text);
   }
 
   /**
@@ -936,7 +944,7 @@ class MeshNetwork extends EventEmitter {
     }
 
     // Check size limit (UTF-8 encoded)
-    const byteLength = new TextEncoder().encode(text).length;
+    const byteLength = _encoder.encode(text).length;
     if (byteLength > MeshNetwork.MAX_MESSAGE_SIZE) {
       throw ValidationError.outOfRange('text', byteLength, {
         min: 1,

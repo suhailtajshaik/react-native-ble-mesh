@@ -23,6 +23,9 @@ const BATTERY_MODE = Object.freeze({
   AUTO: 'auto'
 });
 
+/** Pre-computed Set of valid battery modes for O(1) lookup */
+const BATTERY_MODE_SET = new Set(Object.values(BATTERY_MODE));
+
 /**
  * Battery profile configuration
  * @typedef {Object} BatteryProfile
@@ -224,7 +227,7 @@ class BatteryOptimizer extends EventEmitter {
      * @returns {Promise<void>}
      */
   async setMode(mode) {
-    if (!Object.values(BATTERY_MODE).includes(mode)) {
+    if (!BATTERY_MODE_SET.has(mode)) {
       throw new Error(`Invalid battery mode: ${mode}`);
     }
 

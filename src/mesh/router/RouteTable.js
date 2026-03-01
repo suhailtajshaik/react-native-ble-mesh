@@ -281,16 +281,26 @@ class RouteTable {
    * @returns {Object} Statistics
    */
   getStats() {
-    const routes = this.getAllRoutes();
-    const hopCounts = routes.map(r => r.hopCount);
+    const now = Date.now();
+    let totalRoutes = 0;
+    let maxHops = 0;
+    let hopSum = 0;
+
+    for (const [, route] of this._routes) {
+      if (now <= route.expiresAt) {
+        totalRoutes++;
+        if (route.hopCount > maxHops) {
+          maxHops = route.hopCount;
+        }
+        hopSum += route.hopCount;
+      }
+    }
 
     return {
-      totalRoutes: routes.length,
+      totalRoutes,
       directNeighbors: this._neighbors.size,
-      maxHops: hopCounts.length > 0 ? Math.max(...hopCounts) : 0,
-      avgHops: hopCounts.length > 0
-        ? hopCounts.reduce((a, b) => a + b, 0) / hopCounts.length
-        : 0
+      maxHops: totalRoutes > 0 ? maxHops : 0,
+      avgHops: totalRoutes > 0 ? hopSum / totalRoutes : 0
     };
   }
 }

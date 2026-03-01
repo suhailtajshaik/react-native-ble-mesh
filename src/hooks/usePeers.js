@@ -35,18 +35,23 @@ function usePeers(mesh) {
     throw new Error('usePeers requires React. Install react as a dependency.');
   }
 
-  const { useState, useEffect, useCallback, useMemo } = React;
+  const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
   const [peers, setPeers] = useState([]);
-  const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const lastUpdateRef = useRef(Date.now());
 
   // Update peers from mesh
   const refreshPeers = useCallback(() => {
     if (mesh) {
       try {
         const allPeers = mesh.getPeers();
-        setPeers(allPeers);
-        setLastUpdate(Date.now());
+        setPeers(prev => {
+          if (prev.length === allPeers.length && prev.every((p, i) => p.id === allPeers[i]?.id && p.connectionState === allPeers[i]?.connectionState)) {
+            return prev;
+          }
+          return allPeers;
+        });
+        lastUpdateRef.current = Date.now();
       } catch (e) {
         // Mesh might not be ready
       }
@@ -84,10 +89,9 @@ function usePeers(mesh) {
     return peers.filter(p => p.connectionState === 'secured');
   }, [peers]);
 
-  // Get single peer by ID
-  const getPeer = useCallback((peerId) => {
-    return peers.find(p => p.id === peerId);
-  }, [peers]);
+  // Get single peer by ID (O(1) lookup via peerMap)
+  const peerMap = useMemo(() => new Map(peers.map(p => [p.id, p])), [peers]);
+  const getPeer = useCallback((peerId) => peerMap.get(peerId), [peerMap]);
 
   // Check if peer is connected
   const isConnected = useCallback((peerId) => {
@@ -104,7 +108,7 @@ function usePeers(mesh) {
     getPeer,
     isConnected,
     refresh: refreshPeers,
-    lastUpdate
+    lastUpdate: lastUpdateRef.current
   };
 }
 

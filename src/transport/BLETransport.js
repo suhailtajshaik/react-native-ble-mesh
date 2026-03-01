@@ -293,6 +293,15 @@ class BLETransport extends Transport {
       await this._adapter.disconnect(peerId);
     } finally {
       this._peers.delete(peerId);
+
+      // Clean up write queue and writing state
+      const queue = this._writeQueue.get(peerId);
+      if (queue) {
+        queue.forEach(({ reject }) => reject(new Error('Peer disconnected')));
+        this._writeQueue.delete(peerId);
+      }
+      this._writing.delete(peerId);
+
       this.emit('peerDisconnected', { peerId, reason: 'user_request' });
     }
   }
@@ -325,7 +334,7 @@ class BLETransport extends Transport {
 
     // Chunk data for BLE MTU compliance
     for (let offset = 0; offset < data.length; offset += chunkSize) {
-      const chunk = data.slice(offset, Math.min(offset + chunkSize, data.length));
+      const chunk = data.subarray(offset, Math.min(offset + chunkSize, data.length));
       await this._queuedWrite(peerId, chunk);
     }
   }
@@ -414,7 +423,7 @@ class BLETransport extends Transport {
    * @private
    */
   _handleData(peerId, data) {
-    this.emit('message', { peerId, data: new Uint8Array(data) });
+    this.emit('message', { peerId, data: data instanceof Uint8Array ? data : new Uint8Array(data) });
   }
 
   /**

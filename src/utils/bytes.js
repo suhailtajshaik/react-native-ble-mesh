@@ -11,9 +11,16 @@
  * @returns {Uint8Array} Concatenated array
  */
 function concat(...arrays) {
-  // Filter out undefined/null and calculate total length
-  const validArrays = arrays.filter(arr => arr !== null && arr !== undefined);
-  const totalLength = validArrays.reduce((sum, arr) => sum + arr.length, 0);
+  // Single-pass: filter out undefined/null and calculate total length
+  const validArrays = [];
+  let totalLength = 0;
+  for (let i = 0; i < arrays.length; i++) {
+    const arr = arrays[i];
+    if (arr !== null && arr !== undefined) {
+      validArrays.push(arr);
+      totalLength += arr.length;
+    }
+  }
 
   const result = new Uint8Array(totalLength);
   let offset = 0;
@@ -119,10 +126,7 @@ function xor(a, b) {
  * @returns {Uint8Array} The filled array (same reference)
  */
 function fill(array, value) {
-  const byte = value & 0xff;
-  for (let i = 0; i < array.length; i++) {
-    array[i] = byte;
-  }
+  array.fill(value & 0xff);
   return array;
 }
 
@@ -132,9 +136,7 @@ function fill(array, value) {
  * @returns {Uint8Array} Copy of the array
  */
 function copy(array) {
-  const result = new Uint8Array(array.length);
-  result.set(array);
-  return result;
+  return array.slice();
 }
 
 /**

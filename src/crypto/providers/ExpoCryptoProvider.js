@@ -98,14 +98,15 @@ class ExpoCryptoProvider extends CryptoProvider {
   hash(data) {
     // expo-crypto's digestStringAsync is async — for sync compat, use tweetnacl
     const nacl = this._getNacl();
-    return nacl.hash(data).slice(0, 32);
+    return nacl.hash(data).subarray(0, 32);
   }
 
   /** @inheritdoc */
   randomBytes(length) {
     const expoCrypto = this._getExpoCrypto();
     if (expoCrypto.getRandomBytes) {
-      return new Uint8Array(expoCrypto.getRandomBytes(length));
+      const bytes = expoCrypto.getRandomBytes(length);
+      return bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     }
     // Fallback to tweetnacl
     const nacl = this._getNacl();

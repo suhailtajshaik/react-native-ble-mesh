@@ -109,7 +109,11 @@ class PeerManager extends EventEmitter {
    * @returns {Peer[]} Array of connected peers
    */
   getConnectedPeers() {
-    return this.getAllPeers().filter(peer => peer.isConnected());
+    const result = [];
+    for (const peer of this._peers.values()) {
+      if (peer.isConnected()) result.push(peer);
+    }
+    return result;
   }
 
   /**
@@ -117,7 +121,11 @@ class PeerManager extends EventEmitter {
    * @returns {Peer[]} Array of secured peers
    */
   getSecuredPeers() {
-    return this.getAllPeers().filter(peer => peer.isSecured());
+    const result = [];
+    for (const peer of this._peers.values()) {
+      if (peer.isSecured()) result.push(peer);
+    }
+    return result;
   }
 
   /**
@@ -125,7 +133,11 @@ class PeerManager extends EventEmitter {
    * @returns {Peer[]} Array of direct peers
    */
   getDirectPeers() {
-    return this.getAllPeers().filter(peer => peer.isDirect());
+    const result = [];
+    for (const peer of this._peers.values()) {
+      if (peer.isDirect()) result.push(peer);
+    }
+    return result;
   }
 
   /**

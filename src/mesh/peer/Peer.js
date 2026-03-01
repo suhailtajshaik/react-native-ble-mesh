@@ -8,6 +8,9 @@
 const { CONNECTION_STATE } = require('../../constants');
 const { ValidationError } = require('../../errors');
 
+/** Pre-computed Set of valid connection states for O(1) lookup */
+const CONNECTION_STATE_SET = new Set(Object.values(CONNECTION_STATE));
+
 /**
  * Represents a peer in the mesh network
  * @class Peer
@@ -130,9 +133,9 @@ class Peer {
    * @param {string} state - New connection state
    */
   setConnectionState(state) {
-    if (!Object.values(CONNECTION_STATE).includes(state)) {
+    if (!CONNECTION_STATE_SET.has(state)) {
       throw ValidationError.invalidArgument('state', state, {
-        validValues: Object.values(CONNECTION_STATE)
+        validValues: Array.from(CONNECTION_STATE_SET)
       });
     }
     this.connectionState = state;

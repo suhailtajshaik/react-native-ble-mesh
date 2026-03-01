@@ -117,11 +117,32 @@ class NetworkMonitor extends EventEmitter {
     this._pendingMessages = new Map();
 
     /**
-         * Latency samples
-         * @type {number[]}
+         * Latency samples (circular buffer)
+         * @type {Float64Array}
          * @private
          */
-    this._latencies = [];
+    this._latencies = new Float64Array(this._config.latencySampleSize);
+
+    /**
+         * Circular buffer write index
+         * @type {number}
+         * @private
+         */
+    this._latencyIndex = 0;
+
+    /**
+         * Number of latency samples stored
+         * @type {number}
+         * @private
+         */
+    this._latencyCount = 0;
+
+    /**
+         * Running sum of latency samples for O(1) average
+         * @type {number}
+         * @private
+         */
+    this._latencySum = 0;
 
     /**
          * Global statistics
@@ -386,7 +407,10 @@ class NetworkMonitor extends EventEmitter {
   reset() {
     this._nodes.clear();
     this._pendingMessages.clear();
-    this._latencies = [];
+    this._latencies = new Float64Array(this._config.latencySampleSize);
+    this._latencyIndex = 0;
+    this._latencyCount = 0;
+    this._latencySum = 0;
     this._stats = {
       totalMessagesSent: 0,
       totalMessagesDelivered: 0,
@@ -430,14 +454,21 @@ class NetworkMonitor extends EventEmitter {
   }
 
   /**
-     * Adds a latency sample.
+     * Adds a latency sample using circular buffer.
      * @param {number} latency - Latency in ms
      * @private
      */
   _addLatencySample(latency) {
-    this._latencies.push(latency);
-    if (this._latencies.length > this._config.latencySampleSize) {
-      this._latencies.shift();
+    const capacity = this._latencies.length;
+    // Subtract the old value being overwritten if buffer is full
+    if (this._latencyCount >= capacity) {
+      this._latencySum -= this._latencies[this._latencyIndex];
+    }
+    this._latencies[this._latencyIndex] = latency;
+    this._latencySum += latency;
+    this._latencyIndex = (this._latencyIndex + 1) % capacity;
+    if (this._latencyCount < capacity) {
+      this._latencyCount++;
     }
   }
 
@@ -469,17 +500,30 @@ class NetworkMonitor extends EventEmitter {
   }
 
   /**
-     * Calculates average latency from samples.
+     * Calculates average latency from samples (O(1) using running sum).
      * @returns {number} Average latency
      * @private
      */
   _calculateAverageLatency() {
-    if (this._latencies.length === 0) {
+    if (this._latencyCount === 0) {
       return 0;
     }
-    return Math.round(
-      this._latencies.reduce((a, b) => a + b, 0) / this._latencies.length
-    );
+    return Math.round(this._latencySum / this._latencyCount);
+  }
+
+  /**
+     * Cleans up stale pending messages older than nodeTimeoutMs.
+     * @private
+     */
+  _cleanupPendingMessages() {
+    const now = Date.now();
+    const timeout = this._config.nodeTimeoutMs;
+    for (const [messageId, pending] of this._pendingMessages) {
+      if (now - pending.timestamp > timeout) {
+        this._pendingMessages.delete(messageId);
+        this._stats.totalMessagesFailed++;
+      }
+    }
   }
 
   /**
@@ -520,6 +564,7 @@ class NetworkMonitor extends EventEmitter {
     this._healthCheckTimer = setInterval(
       () => {
         try {
+          this._cleanupPendingMessages();
           const report = this.generateHealthReport();
           this.emit('health-report', report);
         } catch (error) {

@@ -14,18 +14,41 @@ for (let i = 0; i < 16; i++) {
   HEX_LOOKUP[HEX_CHARS.toUpperCase().charCodeAt(i)] = i;
 }
 
+// Pre-computed byte-to-hex lookup table (avoids per-byte toString + padStart)
+const HEX_TABLE = new Array(256);
+for (let i = 0; i < 256; i++) {
+  HEX_TABLE[i] = HEX_CHARS[i >> 4] + HEX_CHARS[i & 0x0f];
+}
+
+// Cached TextEncoder/TextDecoder singletons (avoid per-call allocation)
+let _cachedEncoder = null;
+let _cachedDecoder = null;
+
+function _getEncoder() {
+  if (!_cachedEncoder && typeof TextEncoder !== 'undefined') {
+    _cachedEncoder = new TextEncoder();
+  }
+  return _cachedEncoder;
+}
+
+function _getDecoder() {
+  if (!_cachedDecoder && typeof TextDecoder !== 'undefined') {
+    _cachedDecoder = new TextDecoder();
+  }
+  return _cachedDecoder;
+}
+
 /**
  * Converts a byte array to a hexadecimal string
  * @param {Uint8Array} bytes - Bytes to convert
  * @returns {string} Hexadecimal string
  */
 function bytesToHex(bytes) {
-  let result = '';
+  const parts = new Array(bytes.length);
   for (let i = 0; i < bytes.length; i++) {
-    result += HEX_CHARS[bytes[i] >> 4];
-    result += HEX_CHARS[bytes[i] & 0x0f];
+    parts[i] = HEX_TABLE[bytes[i]];
   }
-  return result;
+  return parts.join('');
 }
 
 /**
@@ -62,8 +85,9 @@ function hexToBytes(hex) {
  * @returns {Uint8Array} UTF-8 encoded bytes
  */
 function stringToBytes(str) {
-  if (typeof TextEncoder !== 'undefined') {
-    return new TextEncoder().encode(str);
+  const encoder = _getEncoder();
+  if (encoder) {
+    return encoder.encode(str);
   }
 
   // Fallback for environments without TextEncoder
@@ -99,8 +123,9 @@ function stringToBytes(str) {
  * @returns {string} Decoded string
  */
 function bytesToString(bytes) {
-  if (typeof TextDecoder !== 'undefined') {
-    return new TextDecoder().decode(bytes);
+  const decoder = _getDecoder();
+  if (decoder) {
+    return decoder.decode(bytes);
   }
 
   // Fallback for environments without TextDecoder

@@ -58,11 +58,11 @@ function useMessages(mesh, options = {}) {
 
     setMessages(prev => {
       const updated = [msg, ...prev];
-      // Trim to max messages
       if (updated.length > maxMessages) {
-        const removed = updated.slice(maxMessages);
-        removed.forEach(m => messageIdRef.current.delete(m.id));
-        return updated.slice(0, maxMessages);
+        for (let i = maxMessages; i < updated.length; i++) {
+          messageIdRef.current.delete(updated[i].id);
+        }
+        updated.length = maxMessages;
       }
       return updated;
     });

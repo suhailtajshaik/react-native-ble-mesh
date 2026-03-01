@@ -71,9 +71,8 @@ function serializeHeader(header) {
   // Byte 43: fragmentTotal
   buffer[43] = header.fragmentTotal ?? 1;
 
-  // Bytes 44-47: checksum (calculated over bytes 0-43)
-  const checksumData = buffer.slice(0, 44);
-  const checksum = crc32(checksumData);
+  // Bytes 44-47: checksum (calculated over bytes 0-43, subarray = zero-copy view)
+  const checksum = crc32(buffer.subarray(0, 44));
   view.setUint32(44, checksum, false);
 
   return buffer;
@@ -110,7 +109,8 @@ function serialize(message) {
 
   // Convert string payload to bytes
   if (typeof payload === 'string') {
-    payload = new TextEncoder().encode(payload);
+    if (!serialize._encoder) { serialize._encoder = new TextEncoder(); }
+    payload = serialize._encoder.encode(payload);
   }
 
   // Default to empty payload
@@ -122,13 +122,10 @@ function serialize(message) {
     throw MessageError.invalidFormat(null, { reason: 'Payload must be Uint8Array or string' });
   }
 
-  // Update payloadLength in header
-  const headerWithLength = {
-    ...header,
-    payloadLength: payload.length
-  };
+  // Update payloadLength directly (avoids object spread allocation)
+  header.payloadLength = payload.length;
 
-  const headerBytes = serializeHeader(headerWithLength);
+  const headerBytes = serializeHeader(header);
   const result = new Uint8Array(headerBytes.length + payload.length);
 
   result.set(headerBytes, 0);

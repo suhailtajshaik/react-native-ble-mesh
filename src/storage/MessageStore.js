@@ -9,6 +9,52 @@ const MemoryStorage = require('./MemoryStorage');
 const { MESH_CONFIG } = require('../constants');
 
 /**
+ * Base64 encoding/decoding for compact Uint8Array serialization
+ * @private
+ */
+const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+function uint8ArrayToBase64(bytes) {
+  let result = '';
+  const len = bytes.length;
+  for (let i = 0; i < len; i += 3) {
+    const b0 = bytes[i];
+    const b1 = i + 1 < len ? bytes[i + 1] : 0;
+    const b2 = i + 2 < len ? bytes[i + 2] : 0;
+    result += BASE64_CHARS[b0 >> 2];
+    result += BASE64_CHARS[((b0 & 3) << 4) | (b1 >> 4)];
+    result += (i + 1 < len) ? BASE64_CHARS[((b1 & 15) << 2) | (b2 >> 6)] : '=';
+    result += (i + 2 < len) ? BASE64_CHARS[b2 & 63] : '=';
+  }
+  return result;
+}
+
+const BASE64_LOOKUP = new Uint8Array(128);
+for (let i = 0; i < BASE64_CHARS.length; i++) {
+  BASE64_LOOKUP[BASE64_CHARS.charCodeAt(i)] = i;
+}
+
+function base64ToUint8Array(str) {
+  let len = str.length;
+  let padding = 0;
+  if (str[len - 1] === '=') { padding++; }
+  if (str[len - 2] === '=') { padding++; }
+  const byteLen = (len * 3 / 4) - padding;
+  const bytes = new Uint8Array(byteLen);
+  let j = 0;
+  for (let i = 0; i < len; i += 4) {
+    const a = BASE64_LOOKUP[str.charCodeAt(i)];
+    const b = BASE64_LOOKUP[str.charCodeAt(i + 1)];
+    const c = BASE64_LOOKUP[str.charCodeAt(i + 2)];
+    const d = BASE64_LOOKUP[str.charCodeAt(i + 3)];
+    bytes[j++] = (a << 2) | (b >> 4);
+    if (j < byteLen) { bytes[j++] = ((b & 15) << 4) | (c >> 2); }
+    if (j < byteLen) { bytes[j++] = ((c & 3) << 6) | d; }
+  }
+  return bytes;
+}
+
+/**
  * Message store for persisting and retrieving mesh network messages.
  * Provides message caching, deduplication support, and cleanup functionality.
  *
@@ -69,8 +115,9 @@ class MessageStore {
     const storedMessage = {
       ...message,
       payload: message.payload
-        ? Array.from(message.payload)
+        ? uint8ArrayToBase64(message.payload)
         : undefined,
+      payloadEncoding: message.payload ? 'base64' : undefined,
       storedAt: Date.now()
     };
 
@@ -96,7 +143,13 @@ class MessageStore {
 
     // Convert payload back to Uint8Array
     if (message.payload) {
-      message.payload = new Uint8Array(message.payload);
+      if (message.payloadEncoding === 'base64') {
+        message.payload = base64ToUint8Array(message.payload);
+      } else if (Array.isArray(message.payload)) {
+        // Backwards compatibility with old Array.from() format
+        message.payload = new Uint8Array(message.payload);
+      }
+      delete message.payloadEncoding;
     }
 
     return message;

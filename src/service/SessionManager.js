@@ -120,24 +120,26 @@ class SessionManager {
       // No crypto provider available
     }
 
+    // Pre-allocate nonce buffers per direction to avoid per-call allocation
+    const sendNonceBuf = new Uint8Array(24);
+    const sendNonceView = new DataView(sendNonceBuf.buffer);
+    const recvNonceBuf = new Uint8Array(24);
+    const recvNonceView = new DataView(recvNonceBuf.buffer);
+
     const session = {
       encrypt: (plaintext) => {
         if (provider && typeof provider.encrypt === 'function') {
-          const nonce = new Uint8Array(24);
-          const view = new DataView(nonce.buffer);
-          view.setUint32(nonce.byteLength - 8, 0, true);
-          view.setUint32(nonce.byteLength - 4, sendNonce++, true);
-          return provider.encrypt(sendKey, nonce, plaintext);
+          sendNonceView.setUint32(16, 0, true);
+          sendNonceView.setUint32(20, sendNonce++, true);
+          return provider.encrypt(sendKey, sendNonceBuf, plaintext);
         }
         return plaintext;
       },
       decrypt: (ciphertext) => {
         if (provider && typeof provider.decrypt === 'function') {
-          const nonce = new Uint8Array(24);
-          const view = new DataView(nonce.buffer);
-          view.setUint32(nonce.byteLength - 8, 0, true);
-          view.setUint32(nonce.byteLength - 4, recvNonce++, true);
-          return provider.decrypt(recvKey, nonce, ciphertext);
+          recvNonceView.setUint32(16, 0, true);
+          recvNonceView.setUint32(20, recvNonce++, true);
+          return provider.decrypt(recvKey, recvNonceBuf, ciphertext);
         }
         return ciphertext;
       },

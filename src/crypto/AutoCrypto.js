@@ -14,25 +14,36 @@ const QuickCryptoProvider = require('./providers/QuickCryptoProvider');
 const ExpoCryptoProvider = require('./providers/ExpoCryptoProvider');
 const TweetNaClProvider = require('./providers/TweetNaClProvider');
 
+/** @type {import('./CryptoProvider')|null} Cached singleton provider */
+let _cachedProvider = null;
+
 /**
  * Detects and returns the best available crypto provider.
+ * The result is cached as a singleton for subsequent calls.
  * @returns {import('./CryptoProvider')} Best available provider
  * @throws {Error} If no crypto provider is available
  */
 function detectProvider() {
+  if (_cachedProvider) {
+    return _cachedProvider;
+  }
+
   // 1. Native speed (react-native-quick-crypto)
   if (QuickCryptoProvider.isAvailable()) {
-    return new QuickCryptoProvider();
+    _cachedProvider = new QuickCryptoProvider();
+    return _cachedProvider;
   }
 
   // 2. Expo (expo-crypto + tweetnacl)
   if (ExpoCryptoProvider.isAvailable()) {
-    return new ExpoCryptoProvider();
+    _cachedProvider = new ExpoCryptoProvider();
+    return _cachedProvider;
   }
 
   // 3. Universal (tweetnacl)
   if (TweetNaClProvider.isAvailable()) {
-    return new TweetNaClProvider();
+    _cachedProvider = new TweetNaClProvider();
+    return _cachedProvider;
   }
 
   throw new Error(

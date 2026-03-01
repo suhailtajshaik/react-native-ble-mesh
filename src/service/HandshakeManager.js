@@ -177,32 +177,28 @@ class HandshakeManager extends EventEmitter {
         let sendNonce = 0;
         let recvNonce = 0;
 
+        // Pre-allocate nonce buffers per direction to avoid per-call allocation
+        const sendNonceBuf = new Uint8Array(24);
+        const sendNonceView = new DataView(sendNonceBuf.buffer);
+        const recvNonceBuf = new Uint8Array(24);
+        const recvNonceView = new DataView(recvNonceBuf.buffer);
+
         return {
           encrypt: (plaintext) => {
             if (provider && typeof provider.encrypt === 'function') {
-              // Use proper AEAD encryption with nonce
-              const nonce = new Uint8Array(24); // tweetnacl uses 24-byte nonces
-              const view = new DataView(nonce.buffer);
               // Store counter in last 8 bytes of nonce
-              if (nonce.byteLength >= 8) {
-                view.setUint32(nonce.byteLength - 8, 0, true);
-                view.setUint32(nonce.byteLength - 4, sendNonce++, true);
-              }
-              return provider.encrypt(sendKey, nonce, plaintext);
+              sendNonceView.setUint32(16, 0, true);
+              sendNonceView.setUint32(20, sendNonce++, true);
+              return provider.encrypt(sendKey, sendNonceBuf, plaintext);
             }
             throw new Error('Crypto provider required for encryption');
           },
 
           decrypt: (ciphertext) => {
             if (provider && typeof provider.decrypt === 'function') {
-              // Use proper AEAD decryption with nonce
-              const nonce = new Uint8Array(24);
-              const view = new DataView(nonce.buffer);
-              if (nonce.byteLength >= 8) {
-                view.setUint32(nonce.byteLength - 8, 0, true);
-                view.setUint32(nonce.byteLength - 4, recvNonce++, true);
-              }
-              return provider.decrypt(recvKey, nonce, ciphertext);
+              recvNonceView.setUint32(16, 0, true);
+              recvNonceView.setUint32(20, recvNonce++, true);
+              return provider.decrypt(recvKey, recvNonceBuf, ciphertext);
             }
             throw new Error('Crypto provider required for encryption');
           },

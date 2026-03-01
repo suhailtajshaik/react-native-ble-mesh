@@ -284,10 +284,11 @@ class WiFiDirectTransport extends Transport {
 
   /** @private */
   _uint8ArrayToBase64(bytes) {
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    const chunks = [];
+    for (let i = 0; i < bytes.length; i += 8192) {
+      chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + 8192, bytes.length))));
     }
+    const binary = chunks.join('');
     return typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(bytes).toString('base64');
   }
 }

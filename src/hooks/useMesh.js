@@ -47,6 +47,8 @@ function useMesh(config = {}) {
   // Create mesh instance ref (persists across renders)
   const meshRef = useRef(null);
   const mountedRef = useRef(true);
+  const stateHandlerRef = useRef(null);
+  const errorHandlerRef = useRef(null);
 
   // State
   const [state, setState] = useState('uninitialized');
@@ -71,18 +73,29 @@ function useMesh(config = {}) {
 
       const mesh = getMesh();
 
+      // Remove old listeners if they exist (prevents accumulation on re-init)
+      if (stateHandlerRef.current) {
+        mesh.off('state-changed', stateHandlerRef.current);
+      }
+      if (errorHandlerRef.current) {
+        mesh.off('error', errorHandlerRef.current);
+      }
+
       // Setup state change listener
-      mesh.on('state-changed', ({ newState }) => {
+      stateHandlerRef.current = ({ newState }) => {
         if (mountedRef.current) {
           setState(newState);
         }
-      });
+      };
 
-      mesh.on('error', (err) => {
+      errorHandlerRef.current = (err) => {
         if (mountedRef.current) {
           setError(err);
         }
-      });
+      };
+
+      mesh.on('state-changed', stateHandlerRef.current);
+      mesh.on('error', errorHandlerRef.current);
 
       // Initialize with storage
       await mesh.initialize({

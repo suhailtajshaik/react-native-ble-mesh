@@ -13,17 +13,25 @@ const RouteTable = require('./RouteTable');
 const { randomBytes } = require('../../utils/bytes');
 
 /**
+ * Hex lookup table for fast byte-to-hex conversion
+ * @constant {string[]}
+ * @private
+ */
+const HEX = Array.from({ length: 256 }, (_, i) => (i < 16 ? '0' : '') + i.toString(16));
+
+/**
  * Generates a UUID v4 string
  * @returns {string} UUID string
  * @private
  */
 function generateUUID() {
-  const bytes = randomBytes(16);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-` +
-    `${hex.slice(16, 20)}-${hex.slice(20)}`;
+  const b = randomBytes(16);
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  return HEX[b[0]] + HEX[b[1]] + HEX[b[2]] + HEX[b[3]] + '-' +
+    HEX[b[4]] + HEX[b[5]] + '-' + HEX[b[6]] + HEX[b[7]] + '-' +
+    HEX[b[8]] + HEX[b[9]] + '-' + HEX[b[10]] + HEX[b[11]] +
+    HEX[b[12]] + HEX[b[13]] + HEX[b[14]] + HEX[b[15]];
 }
 
 /**

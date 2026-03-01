@@ -16,6 +16,12 @@ const { randomBytes } = require('../utils/bytes');
  */
 const HEADER_SIZE = 48;
 
+// Pre-computed hex lookup table (avoids Array.from().map().join() per call)
+const HEX_TABLE = new Array(256);
+for (let i = 0; i < 256; i++) {
+  HEX_TABLE[i] = (i < 16 ? '0' : '') + i.toString(16);
+}
+
 /**
  * Message header class representing the 48-byte header structure.
  * @class MessageHeader
@@ -43,7 +49,6 @@ class MessageHeader {
     this.flags = options.flags ?? MESSAGE_FLAGS.NONE;
     this.hopCount = options.hopCount ?? 0;
     this.maxHops = options.maxHops ?? MESH_CONFIG.MAX_HOPS;
-    this.reserved = new Uint8Array(3);
     this.messageId = options.messageId;
     this.timestamp = options.timestamp;
     this.expiresAt = options.expiresAt;
@@ -143,9 +148,8 @@ class MessageHeader {
     view.setUint16(40, header.payloadLength, false);
     buffer[42] = header.fragmentIndex;
     buffer[43] = header.fragmentTotal;
-    // Calculate checksum over header without checksum field
-    const checksumData = buffer.slice(0, 44);
-    const checksum = crc32(checksumData);
+    // Calculate checksum over header without checksum field (subarray = zero-copy view)
+    const checksum = crc32(buffer.subarray(0, 44));
     view.setUint32(44, checksum, false);
     header.checksum = checksum;
 
@@ -204,9 +208,11 @@ function writeUint64BE(view, offset, value) {
  * @returns {string} Hex string
  */
 function bytesToHex(bytes) {
-  return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+  let hex = '';
+  for (let i = 0; i < bytes.length; i++) {
+    hex += HEX_TABLE[bytes[i]];
+  }
+  return hex;
 }
 
 module.exports = {

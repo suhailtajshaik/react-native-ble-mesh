@@ -53,8 +53,16 @@ class PeerQualityTracker {
   constructor(peerId, config) {
     this.peerId = peerId;
     this._config = config;
-    this._rssiSamples = [];
-    this._latencySamples = [];
+    // Circular buffer for RSSI samples
+    this._rssiSamples = new Float64Array(config.sampleSize);
+    this._rssiIndex = 0;
+    this._rssiCount = 0;
+    this._rssiSum = 0;
+    // Circular buffer for latency samples
+    this._latencySamples = new Float64Array(config.sampleSize);
+    this._latencyIndex = 0;
+    this._latencyCount = 0;
+    this._latencySum = 0;
     this._packetsSent = 0;
     this._packetsAcked = 0;
     this._bytesTransferred = 0;
@@ -65,25 +73,37 @@ class PeerQualityTracker {
   }
 
   /**
-   * Records an RSSI sample
+   * Records an RSSI sample using circular buffer
    * @param {number} rssi - Signal strength in dBm
    */
   recordRssi(rssi) {
-    this._rssiSamples.push(rssi);
-    if (this._rssiSamples.length > this._config.sampleSize) {
-      this._rssiSamples.shift();
+    const capacity = this._rssiSamples.length;
+    if (this._rssiCount >= capacity) {
+      this._rssiSum -= this._rssiSamples[this._rssiIndex];
+    }
+    this._rssiSamples[this._rssiIndex] = rssi;
+    this._rssiSum += rssi;
+    this._rssiIndex = (this._rssiIndex + 1) % capacity;
+    if (this._rssiCount < capacity) {
+      this._rssiCount++;
     }
     this._lastActivity = Date.now();
   }
 
   /**
-   * Records a latency measurement
+   * Records a latency measurement using circular buffer
    * @param {number} latencyMs - Round-trip latency in ms
    */
   recordLatency(latencyMs) {
-    this._latencySamples.push(latencyMs);
-    if (this._latencySamples.length > this._config.sampleSize) {
-      this._latencySamples.shift();
+    const capacity = this._latencySamples.length;
+    if (this._latencyCount >= capacity) {
+      this._latencySum -= this._latencySamples[this._latencyIndex];
+    }
+    this._latencySamples[this._latencyIndex] = latencyMs;
+    this._latencySum += latencyMs;
+    this._latencyIndex = (this._latencyIndex + 1) % capacity;
+    if (this._latencyCount < capacity) {
+      this._latencyCount++;
     }
     this._lastActivity = Date.now();
   }
@@ -125,21 +145,21 @@ class PeerQualityTracker {
   }
 
   /**
-   * Gets the average RSSI
+   * Gets the average RSSI (O(1) using running sum)
    * @returns {number|null}
    */
   getAvgRssi() {
-    if (this._rssiSamples.length === 0) { return null; }
-    return this._rssiSamples.reduce((a, b) => a + b, 0) / this._rssiSamples.length;
+    if (this._rssiCount === 0) { return null; }
+    return this._rssiSum / this._rssiCount;
   }
 
   /**
-   * Gets the average latency
+   * Gets the average latency (O(1) using running sum)
    * @returns {number|null}
    */
   getAvgLatency() {
-    if (this._latencySamples.length === 0) { return null; }
-    return this._latencySamples.reduce((a, b) => a + b, 0) / this._latencySamples.length;
+    if (this._latencyCount === 0) { return null; }
+    return this._latencySum / this._latencyCount;
   }
 
   /**
@@ -388,10 +408,15 @@ class ConnectionQuality extends EventEmitter {
   }
 
   /**
-   * Periodic update — recalculates all qualities and emits changes
+   * Periodic update — recalculates all qualities and emits changes.
+   * Stops the timer automatically when no peers are connected.
    * @private
    */
   _update() {
+    if (this._peers.size === 0) {
+      this.stop();
+      return;
+    }
     for (const tracker of this._peers.values()) {
       const quality = tracker.calculate();
       if (quality.changed) {

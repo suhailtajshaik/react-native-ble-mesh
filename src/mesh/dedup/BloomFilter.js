@@ -13,6 +13,15 @@
 const FNV_PRIME = 0x01000193;
 const FNV_OFFSET = 0x811c9dc5;
 
+// Cached TextEncoder singleton (avoids per-call allocation)
+let _encoder = null;
+function _getEncoder() {
+  if (!_encoder && typeof TextEncoder !== 'undefined') {
+    _encoder = new TextEncoder();
+  }
+  return _encoder;
+}
+
 /**
  * Bloom filter for probabilistic set membership testing
  * @class BloomFilter
@@ -56,6 +65,13 @@ class BloomFilter {
      * @private
      */
     this._count = 0;
+
+    /**
+     * Running count of set bits (avoids O(n) scan in getFillRatio)
+     * @type {number}
+     * @private
+     */
+    this._setBitCount = 0;
   }
 
   /**
@@ -90,72 +106,50 @@ class BloomFilter {
       return item;
     }
     if (typeof item === 'string') {
-      const encoder = new TextEncoder();
-      return encoder.encode(item);
+      const encoder = _getEncoder();
+      if (encoder) {
+        return encoder.encode(item);
+      }
+      // Fallback for environments without TextEncoder
+      const bytes = new Uint8Array(item.length);
+      for (let i = 0; i < item.length; i++) {
+        bytes[i] = item.charCodeAt(i) & 0xff;
+      }
+      return bytes;
     }
     throw new Error('Item must be string or Uint8Array');
   }
 
   /**
-   * Computes hash positions for an item
-   * @param {string|Uint8Array} item - Item to hash
-   * @returns {number[]} Array of bit positions
-   * @private
-   */
-  _getPositions(item) {
-    const data = this._toBytes(item);
-    const positions = [];
-    for (let i = 0; i < this.hashCount; i++) {
-      const hash = this._fnv1a(data, i);
-      positions.push(hash % this.size);
-    }
-    return positions;
-  }
-
-  /**
-   * Sets a bit at the given position
-   * @param {number} position - Bit position
-   * @private
-   */
-  _setBit(position) {
-    const byteIndex = Math.floor(position / 8);
-    const bitIndex = position % 8;
-    this._bits[byteIndex] |= (1 << bitIndex);
-  }
-
-  /**
-   * Gets a bit at the given position
-   * @param {number} position - Bit position
-   * @returns {boolean} True if bit is set
-   * @private
-   */
-  _getBit(position) {
-    const byteIndex = Math.floor(position / 8);
-    const bitIndex = position % 8;
-    return (this._bits[byteIndex] & (1 << bitIndex)) !== 0;
-  }
-
-  /**
    * Adds an item to the filter
+   * Inlined position computation to avoid intermediate array allocation
    * @param {string|Uint8Array} item - Item to add
    */
   add(item) {
-    const positions = this._getPositions(item);
-    for (const pos of positions) {
-      this._setBit(pos);
+    const data = this._toBytes(item);
+    for (let i = 0; i < this.hashCount; i++) {
+      const pos = this._fnv1a(data, i) % this.size;
+      const byteIndex = pos >> 3;
+      const mask = 1 << (pos & 7);
+      if (!(this._bits[byteIndex] & mask)) {
+        this._bits[byteIndex] |= mask;
+        this._setBitCount++;
+      }
     }
     this._count++;
   }
 
   /**
    * Tests if an item might be in the filter
+   * Inlined position computation to avoid intermediate array allocation
    * @param {string|Uint8Array} item - Item to test
    * @returns {boolean} True if item might be present, false if definitely absent
    */
   mightContain(item) {
-    const positions = this._getPositions(item);
-    for (const pos of positions) {
-      if (!this._getBit(pos)) {
+    const data = this._toBytes(item);
+    for (let i = 0; i < this.hashCount; i++) {
+      const pos = this._fnv1a(data, i) % this.size;
+      if (!(this._bits[pos >> 3] & (1 << (pos & 7)))) {
         return false;
       }
     }
@@ -168,22 +162,15 @@ class BloomFilter {
   clear() {
     this._bits.fill(0);
     this._count = 0;
+    this._setBitCount = 0;
   }
 
   /**
-   * Gets the fill ratio of the filter
+   * Gets the fill ratio of the filter (O(1) using running count)
    * @returns {number} Ratio of set bits to total bits (0-1)
    */
   getFillRatio() {
-    let setBits = 0;
-    for (let i = 0; i < this._bits.length; i++) {
-      let byte = this._bits[i];
-      while (byte) {
-        setBits += byte & 1;
-        byte >>>= 1;
-      }
-    }
-    return setBits / this.size;
+    return this._setBitCount / this.size;
   }
 
   /**

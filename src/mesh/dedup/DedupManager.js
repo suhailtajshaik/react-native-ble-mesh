@@ -70,6 +70,13 @@ class DedupManager {
     this._autoResetThreshold = config.autoResetThreshold;
 
     /**
+     * Grace period timer ID for bloom filter reset
+     * @type {ReturnType<typeof setTimeout>|null}
+     * @private
+     */
+    this._graceTimer = null;
+
+    /**
      * Statistics for monitoring
      * @type {Object}
      * @private
@@ -165,9 +172,15 @@ class DedupManager {
     // Keep old filter for a grace period by checking both
     this._oldBloomFilter = oldFilter;
 
+    // Clear any existing grace timer before starting a new one
+    if (this._graceTimer) {
+      clearTimeout(this._graceTimer);
+    }
+
     // Clear old filter after grace period
-    setTimeout(() => {
+    this._graceTimer = setTimeout(() => {
       this._oldBloomFilter = null;
+      this._graceTimer = null;
     }, 60000); // 1 minute grace
   }
 
@@ -175,6 +188,11 @@ class DedupManager {
    * Resets both the Bloom filter and cache
    */
   reset() {
+    if (this._graceTimer) {
+      clearTimeout(this._graceTimer);
+      this._graceTimer = null;
+    }
+    this._oldBloomFilter = null;
     this._bloomFilter.clear();
     this._cache.clear();
     this._stats.resets++;
@@ -232,6 +250,19 @@ class DedupManager {
    */
   getSeenTimestamp(messageId) {
     return this._cache.getTimestamp(messageId);
+  }
+
+  /**
+   * Destroys the dedup manager and cleans up resources
+   */
+  destroy() {
+    if (this._graceTimer) {
+      clearTimeout(this._graceTimer);
+      this._graceTimer = null;
+    }
+    this._oldBloomFilter = null;
+    this._bloomFilter.clear();
+    this._cache.clear();
   }
 }
 

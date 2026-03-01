@@ -54,6 +54,9 @@ class MultiTransport extends Transport {
 
     /** @type {Map<string, string>} peerId → preferred transport name */
     this._peerTransportMap = new Map();
+
+    /** @type {Array<{transport: Transport, event: string, handler: Function}>} */
+    this._wiredHandlers = [];
   }
 
   /**
@@ -122,6 +125,13 @@ class MultiTransport extends Transport {
     if (this._wifiTransport) { stopPromises.push(this._wifiTransport.stop().catch(() => {})); }
 
     await Promise.allSettled(stopPromises);
+
+    // Remove wired event handlers to prevent listener leaks
+    for (const { transport, event, handler } of this._wiredHandlers) {
+      transport.off(event, handler);
+    }
+    this._wiredHandlers = [];
+
     this._peers.clear();
     this._peerTransportMap.clear();
     this._setState(Transport.STATE.STOPPED);
@@ -272,13 +282,13 @@ class MultiTransport extends Transport {
    * @private
    */
   _wireTransport(transport, name) {
-    transport.on('peerConnected', (info) => {
+    const onPeerConnected = (info) => {
       this._peerTransportMap.set(info.peerId, name);
       this._peers.set(info.peerId, { ...info, transport: name });
       this.emit('peerConnected', { ...info, transport: name });
-    });
+    };
 
-    transport.on('peerDisconnected', (info) => {
+    const onPeerDisconnected = (info) => {
       // Only remove if no other transport has this peer
       const otherTransport = this._getFallbackTransport(transport);
       if (!otherTransport || !otherTransport.isConnected(info.peerId)) {
@@ -286,19 +296,34 @@ class MultiTransport extends Transport {
         this._peerTransportMap.delete(info.peerId);
         this.emit('peerDisconnected', { ...info, transport: name });
       }
-    });
+    };
 
-    transport.on('message', (msg) => {
+    const onMessage = (msg) => {
       this.emit('message', { ...msg, transport: name });
-    });
+    };
 
-    transport.on('deviceDiscovered', (info) => {
+    const onDeviceDiscovered = (info) => {
       this.emit('deviceDiscovered', { ...info, transport: name });
-    });
+    };
 
-    transport.on('error', (err) => {
+    const onError = (err) => {
       this.emit('transportError', { transport: name, error: err });
-    });
+    };
+
+    transport.on('peerConnected', onPeerConnected);
+    transport.on('peerDisconnected', onPeerDisconnected);
+    transport.on('message', onMessage);
+    transport.on('deviceDiscovered', onDeviceDiscovered);
+    transport.on('error', onError);
+
+    // Store references for cleanup
+    this._wiredHandlers.push(
+      { transport, event: 'peerConnected', handler: onPeerConnected },
+      { transport, event: 'peerDisconnected', handler: onPeerDisconnected },
+      { transport, event: 'message', handler: onMessage },
+      { transport, event: 'deviceDiscovered', handler: onDeviceDiscovered },
+      { transport, event: 'error', handler: onError }
+    );
   }
 }
 

@@ -9,6 +9,18 @@ const { MessageHeader, HEADER_SIZE, generateUuid } = require('./header');
 const { MESSAGE_FLAGS, MESH_CONFIG } = require('../constants');
 const { MessageError } = require('../errors');
 
+// Cached TextEncoder/TextDecoder singletons (avoids per-call allocation)
+let _encoder = null;
+let _decoder = null;
+function _getEncoder() {
+  if (!_encoder) { _encoder = new TextEncoder(); }
+  return _encoder;
+}
+function _getDecoder() {
+  if (!_decoder) { _decoder = new TextDecoder(); }
+  return _decoder;
+}
+
 /**
  * Message class representing a complete mesh network message.
  * @class Message
@@ -44,7 +56,7 @@ class Message {
 
     // Convert string payload to bytes
     if (typeof payload === 'string') {
-      payload = new TextEncoder().encode(payload);
+      payload = _getEncoder().encode(payload);
     }
 
     if (!(payload instanceof Uint8Array)) {
@@ -99,7 +111,7 @@ class Message {
       });
     }
 
-    const payload = data.slice(HEADER_SIZE, HEADER_SIZE + header.payloadLength);
+    const payload = data.subarray(HEADER_SIZE, HEADER_SIZE + header.payloadLength);
 
     return new Message(header, payload);
   }
@@ -171,7 +183,7 @@ class Message {
    * @returns {string} Decoded payload content
    */
   getContent() {
-    return new TextDecoder().decode(this.payload);
+    return _getDecoder().decode(this.payload);
   }
 
   /**

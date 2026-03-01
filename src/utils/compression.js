@@ -57,6 +57,9 @@ class MessageCompressor {
       bytesIn: 0,
       bytesOut: 0
     };
+
+    // Pre-allocate hash table to avoid per-call allocation
+    this._hashTable = new Int32Array(this._config.hashTableSize);
   }
 
   /**
@@ -177,9 +180,8 @@ class MessageCompressor {
     output[outputPos++] = (inputLen >> 16) & 0xff;
     output[outputPos++] = (inputLen >> 24) & 0xff;
 
-    // Hash table for finding matches
-    // Using Knuth's multiplicative hash constant (2654435761) for good distribution
-    const hashTable = new Int32Array(this._config.hashTableSize);
+    // Reuse pre-allocated hash table, reset for this call
+    const hashTable = this._hashTable;
     hashTable.fill(-1);
 
     let anchor = 0;

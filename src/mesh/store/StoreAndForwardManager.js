@@ -11,6 +11,14 @@
 const EventEmitter = require('../../utils/EventEmitter');
 const { EVENTS } = require('../../constants');
 const { ValidationError } = require('../../errors');
+const { randomBytes } = require('../../utils/bytes');
+
+/**
+ * Hex lookup table for fast byte-to-hex conversion
+ * @constant {string[]}
+ * @private
+ */
+const HEX = Array.from({ length: 256 }, (_, i) => (i < 16 ? '0' : '') + i.toString(16));
 
 /**
  * Default configuration for store and forward
@@ -439,9 +447,12 @@ class StoreAndForwardManager extends EventEmitter {
      * @private
      */
   _generateId() {
-    const { randomBytes } = require('../../utils/bytes');
     const bytes = randomBytes(16);
-    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    let id = '';
+    for (let i = 0; i < bytes.length; i++) {
+      id += HEX[bytes[i]];
+    }
+    return id;
   }
 
   /**

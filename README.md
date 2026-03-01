@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey.svg?style=flat-square)](https://reactnative.dev/)
-[![Tests](https://img.shields.io/badge/Tests-432%20passing-brightgreen.svg?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-433%20passing-brightgreen.svg?style=flat-square)]()
 
 ---
 
@@ -558,7 +558,7 @@ react-native-ble-mesh/
 │   └── hooks/                # React hooks
 ├── docs/                     # Guides & specs
 ├── app.plugin.js             # Expo plugin entry
-└── __tests__/                # 432 tests, 0 failures ✅
+└── __tests__/                # 433 tests, 0 failures ✅
 ```
 
 ---
@@ -579,7 +579,7 @@ react-native-ble-mesh/
 ## Testing
 
 ```bash
-npm test             # Run all 432 tests
+npm test             # Run all 433 tests
 npm run test:coverage  # With coverage report
 ```
 

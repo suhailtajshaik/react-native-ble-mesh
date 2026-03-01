@@ -5,6 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-03-01
+
+Performance optimization release targeting React Native speed and reduced GC pressure.
+All changes are non-breaking. **433 tests passing across 23 test suites.**
+
+### Performance — Hot Path Optimizations
+
+#### Zero-Copy Buffer Views (`slice()` → `subarray()`)
+- **Protocol serializer/deserializer** — Replaced 5 `Uint8Array.slice()` calls with zero-copy `subarray()` views in the message serialization/deserialization pipeline. Eliminates buffer copies on every incoming and outgoing message.
+- **Header CRC32 checksum** — Checksum computation in `header.js`, `serializer.js`, `deserializer.js`, and `validator.js` now uses `subarray()` instead of `slice()`, avoiding a 44-byte copy per message.
+- **BLE transport chunking** — `BLETransport.send()` uses `subarray()` for chunk views instead of copying each chunk.
+- **Message fragmentation** — `Fragmenter.js` uses `subarray()` in the fragment loop, eliminating double-copy (slice + set) per fragment.
+- **Crypto hash** — `TweetNaClProvider.hash()` and `ExpoCryptoProvider.hash()` return `subarray()` views instead of copying the first 32 bytes.
+
+#### Cached TextEncoder/TextDecoder Singletons
+- **Eliminated per-call allocations** across 15+ files. `TextEncoder`/`TextDecoder` instances are now created once at module level and reused. Affected hot paths:
+  - `encoding.js` (stringToBytes/bytesToString)
+  - `BloomFilter._toBytes()` (called 2x per message for dedup)
+  - `Message.create()`, `Message.getContent()`
+  - `MeshNetwork._validateMessageText()`, `_encodeMessage()`, `sendFile()`
+  - `MeshService.sendBroadcast()`, `sendPrivateMessage()`, `_handleIncoming()`
+  - `TextManager._handleReadReceipt()`, `_handleChannelMessagePayload()`, `_flushReadReceipts()`
+  - `AudioManager` encode/decode
+  - `serializer.js` string payload encoding
+
+#### BloomFilter O(n) → O(1) `getFillRatio()`
+- Replaced full bit-array scan with a running `_setBitCount` counter, updated incrementally in `_setBit()`. `getFillRatio()` is now O(1) instead of O(n) — called on every `markSeen()` in the dedup path.
+- Inlined `_getPositions()` in `add()` and `mightContain()` to eliminate intermediate array allocation (was creating a 7-element array per call, 2x per message).
+
+#### Hex Conversion Lookup Tables
+- **`encoding.js`** — Added pre-computed `HEX_TABLE[256]` array, replacing per-byte `toString(16) + padStart()`. Used by `bytesToHex()`.
+- **`header.js`** — Same optimization for `getMessageIdHex()` (called in error paths and logging).
+- **`MessageRouter.js`** — UUID generation now uses hex lookup table with direct string concatenation instead of `Array.from().map().join()` + multiple `slice()` calls.
+- **`StoreAndForwardManager._generateId()`** — Same hex table optimization.
+
+#### Pre-Allocated Nonce Buffers (Crypto Hot Path)
+- **`SessionManager.js`** and **`HandshakeManager.js`** — Pre-allocate `Uint8Array(24)` nonce buffers and `DataView` wrappers once per session direction. Previously allocated on every `encrypt()`/`decrypt()` call (the hottest path in the library — every mesh message).
+
+#### Circular Buffers for Sliding Windows
+- **`NetworkMonitor._latencies`** — Replaced `Array` with `Float64Array` circular buffer. `push()/shift()` was O(n) per sample; now O(1). Added running sum for O(1) average computation.
+- **`ConnectionQuality._rssiSamples/_latencySamples`** — Same circular buffer optimization. Running sums for O(1) `getAvgRssi()` and `getAvgLatency()`.
+
+#### EventEmitter Emit Optimization
+- `emit()` now only copies the listeners array when `once` listeners are present. For the common case (persistent listeners), iteration is zero-copy.
+
+#### Compression Hash Table Reuse
+- `MessageCompressor._lz4Compress()` now reuses a pre-allocated `Int32Array` hash table instead of allocating 16KB on every compression call.
+
+### Performance — Memory Leak Fixes
+
+#### Timer Leaks Fixed
+- **`MeshNetwork.sendFile()`** — Per-chunk timeout timers are now cleared on success/failure (previously leaked N timers per file transfer).
+- **`DedupManager._resetBloomFilter()`** — Grace period timer is now stored and cleared on reset/destroy (previously leaked on repeated resets).
+
+#### Event Listener Leaks Fixed
+- **`MultiTransport._wireTransport()`** — Handler references are now stored and removed in `stop()`. Previously, listeners accumulated on child transports across start/stop cycles.
+- **`useMesh.js`** — Event handlers stored in refs; old handlers removed before re-adding on re-initialization.
+- **`AppStateManager`** — Handler bound once in constructor; old subscription removed before creating new one.
+
+#### Unbounded Map/Set Growth Fixed
+- **`NetworkMonitor._pendingMessages`** — Added cleanup for entries older than `nodeTimeoutMs`, preventing unbounded growth from undelivered messages.
+- **`ConnectionQuality`** — Update timer now stops when no peers are connected, avoiding empty iterations.
+- **`BLETransport.disconnectFromPeer()`** — Now cleans up `_writeQueue` and `_writing` maps (was only done in the disconnect event handler).
+
+### Performance — React Hook Optimizations
+
+- **`usePeers.js`** — `lastUpdate` changed from state to ref, eliminating double re-render on every peer event. Added shallow peer comparison to skip state updates when peers haven't changed. Added `peerMap` via `useMemo` for O(1) `getPeer()` lookup (was O(n) `Array.find()`).
+- **`useMessages.js`** — Reduced array copies from 3 to 1 per incoming message when trimming (truncate in-place instead of `slice`).
+
+### Performance — Miscellaneous
+
+- **`QuickCryptoProvider`** — Cached `require('tweetnacl')` result and hoisted DER header Buffer constants to module level (previously re-allocated from hex on every call).
+- **`AutoCrypto.detectProvider()`** — Cached singleton result (previously created a new provider instance per call).
+- **`ExpoCryptoProvider.randomBytes()`** — Skip unnecessary `Uint8Array` wrapper when return value is already a `Uint8Array`.
+- **`Peer.setConnectionState()`** — Uses pre-computed `Set` instead of `Object.values().includes()`.
+- **`BatteryOptimizer.setMode()`** — Same `Set` optimization.
+- **`PeerManager`** — `getConnectedPeers()`, `getSecuredPeers()`, `getDirectPeers()` iterate directly over the Map instead of `Array.from().filter()` (eliminates intermediate array).
+- **`RouteTable.getStats()`** — Computes stats in a single pass instead of allocating a full routes array and using `Math.max(...spread)`.
+- **`validator.js`** — Returns a cached frozen `VALID_RESULT` object for the common success case.
+- **`header.js`** — Removed per-instance `reserved` Uint8Array(3) allocation (unused field).
+- **`serializer.js`** — Set `payloadLength` directly on header object instead of object spread clone.
+- **`bytes.js`** — `fill()` uses native `Uint8Array.fill()`, `copy()` uses `slice()`, `concat()` uses single-pass loop.
+- **`WiFiDirectTransport._uint8ArrayToBase64()`** — Fixed O(n^2) string concatenation with chunk-based approach.
+- **`MessageStore`** — Payload serialized as base64 instead of `Array.from(Uint8Array)` (was 8x memory bloat).
+- **`TextManager._flushReadReceipts()`** — Pre-calculates total size and allocates once instead of N intermediate arrays.
+
+---
+
 ## [2.0.0] - 2026-02-28
 
 Major release consolidating all features since v1.1.1. Replaces the slow pure-JS
@@ -339,6 +427,7 @@ The handshake now requires a proper crypto provider or throws an explicit error.
 
 ---
 
+[2.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.1.0
 [2.0.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v2.0.0
 [1.1.1]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.1
 [1.1.0]: https://github.com/suhailtajshaik/react-native-ble-mesh/releases/tag/v1.1.0

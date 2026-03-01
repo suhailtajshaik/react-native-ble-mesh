@@ -121,7 +121,7 @@ function fragment(payload, messageId, maxSize = DEFAULT_FRAGMENT_SIZE) {
   for (let i = 0; i < fragmentCount; i++) {
     const remainingLength = payload.length - offset;
     const chunkLength = Math.min(payloadCapacity, remainingLength);
-    const chunk = payload.slice(offset, offset + chunkLength);
+    const chunk = payload.subarray(offset, offset + chunkLength);
 
     // Create fragment with header
     const header = createFragmentHeader(i, fragmentCount, chunkLength);

@@ -98,7 +98,7 @@ class TweetNaClProvider extends CryptoProvider {
     const nacl = this._getNacl();
     // tweetnacl provides SHA-512; we return first 32 bytes for SHA-256 compatibility
     const full = nacl.hash(data);
-    return full.slice(0, 32);
+    return full.subarray(0, 32);
   }
 
   /** @inheritdoc */

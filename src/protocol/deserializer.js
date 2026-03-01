@@ -39,15 +39,14 @@ function deserializeHeader(data) {
     });
   }
 
-  const headerData = data.slice(0, HEADER_SIZE);
-  const view = new DataView(headerData.buffer, headerData.byteOffset, HEADER_SIZE);
+  const headerData = data.subarray(0, HEADER_SIZE);
+  const view = new DataView(data.buffer, data.byteOffset, HEADER_SIZE);
 
   // Extract checksum from bytes 44-47 (big-endian)
   const storedChecksum = view.getUint32(44, false);
 
-  // Calculate checksum over bytes 0-43
-  const checksumData = headerData.slice(0, 44);
-  const calculatedChecksum = crc32(checksumData);
+  // Calculate checksum over bytes 0-43 (subarray = zero-copy view)
+  const calculatedChecksum = crc32(headerData.subarray(0, 44));
 
   // Verify checksum
   if (storedChecksum !== calculatedChecksum) {
@@ -65,7 +64,7 @@ function deserializeHeader(data) {
     hopCount: headerData[3],
     maxHops: headerData[4],
     // bytes 5-7 are reserved
-    messageId: headerData.slice(8, 24),
+    messageId: new Uint8Array(headerData.buffer, headerData.byteOffset + 8, 16),
     timestamp: readUint64BE(view, 24),
     expiresAt: readUint64BE(view, 32),
     payloadLength: view.getUint16(40, false),
@@ -120,8 +119,8 @@ function deserialize(data) {
     });
   }
 
-  // Extract payload
-  const payload = data.slice(HEADER_SIZE, HEADER_SIZE + header.payloadLength);
+  // Extract payload (subarray = zero-copy view)
+  const payload = data.subarray(HEADER_SIZE, HEADER_SIZE + header.payloadLength);
 
   return new Message(header, payload);
 }
@@ -175,7 +174,7 @@ function deserializeBatch(data) {
     }
 
     // Extract and deserialize this message
-    const messageData = data.slice(offset, offset + messageLength);
+    const messageData = data.subarray(offset, offset + messageLength);
 
     try {
       const message = deserialize(messageData);
@@ -228,7 +227,7 @@ function peekMessageId(data) {
   if (!(data instanceof Uint8Array) || data.length < 24) {
     return null;
   }
-  return data.slice(8, 24);
+  return data.subarray(8, 24);
 }
 
 module.exports = {

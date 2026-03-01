@@ -13,6 +13,13 @@ const { ChannelManager } = require('./channel');
 const { BroadcastManager } = require('./broadcast');
 
 /**
+ * Cached TextEncoder/TextDecoder instances to avoid per-call allocation
+ * @private
+ */
+const cachedEncoder = new TextEncoder();
+const cachedDecoder = new TextDecoder();
+
+/**
  * Text manager states
  * @constant {Object}
  */
@@ -420,8 +427,8 @@ class TextManager extends EventEmitter {
   _handleChannelMessagePayload(peerId, payload) {
     // First byte is channel ID length
     const channelIdLength = payload[0];
-    const channelId = new TextDecoder().decode(payload.slice(1, 1 + channelIdLength));
-    const messagePayload = payload.slice(1 + channelIdLength);
+    const channelId = cachedDecoder.decode(payload.subarray(1, 1 + channelIdLength));
+    const messagePayload = payload.subarray(1 + channelIdLength);
 
     this.handleChannelMessage(peerId, channelId, messagePayload);
   }
@@ -435,7 +442,7 @@ class TextManager extends EventEmitter {
     while (offset < payload.length) {
       const length = payload[offset];
       offset += 1;
-      const messageId = new TextDecoder().decode(payload.slice(offset, offset + length));
+      const messageId = cachedDecoder.decode(payload.subarray(offset, offset + length));
       messageIds.push(messageId);
       offset += length;
     }
@@ -456,21 +463,20 @@ class TextManager extends EventEmitter {
     const messageIds = Array.from(this._pendingReadReceipts);
     this._pendingReadReceipts.clear();
 
-    // Build read receipt payload
-    const parts = messageIds.map(id => {
-      const bytes = new TextEncoder().encode(id);
-      const part = new Uint8Array(1 + bytes.length);
-      part[0] = bytes.length;
-      part.set(bytes, 1);
-      return part;
-    });
+    // Pre-calculate total size and allocate once
+    const encodedIds = messageIds.map(id => cachedEncoder.encode(id));
+    let totalLength = 0;
+    for (let i = 0; i < encodedIds.length; i++) {
+      totalLength += 1 + encodedIds[i].length;
+    }
 
-    const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
     const payload = new Uint8Array(totalLength);
     let offset = 0;
-    for (const part of parts) {
-      payload.set(part, offset);
-      offset += part.length;
+    for (let i = 0; i < encodedIds.length; i++) {
+      payload[offset] = encodedIds[i].length;
+      offset += 1;
+      payload.set(encodedIds[i], offset);
+      offset += encodedIds[i].length;
     }
 
     this.emit('read-receipts-sent', { messageIds, count: messageIds.length });

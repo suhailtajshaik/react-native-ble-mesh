@@ -45,6 +45,8 @@ class AppStateManager {
     this._initialized = false;
     /** @private */
     this._AppState = null;
+    /** @private */
+    this._boundHandleStateChange = this._handleStateChange.bind(this);
   }
 
   /**
@@ -64,9 +66,15 @@ class AppStateManager {
       return false;
     }
 
+    // Remove old subscription before creating new one
+    if (this._subscription) {
+      this._subscription.remove();
+      this._subscription = null;
+    }
+
     this._subscription = this._AppState.addEventListener(
       'change',
-      this._handleStateChange.bind(this)
+      this._boundHandleStateChange
     );
 
     this._initialized = true;

@@ -19,7 +19,9 @@
       "Bash(npm run docs:*)",
       "Bash(git rm:*)",
       "Bash(npm config set:*)",
-      "Bash(npm publish:*)"
+      "Bash(npm publish:*)",
+      "Bash(wc:*)",
+      "Bash(npx jest:*)"
     ]
   }
 }
